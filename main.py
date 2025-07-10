@@ -16,7 +16,7 @@ def parse_agrs():
     parser.add_argument('--threshold', type=int, default=1, help='the cut off frequency for the words.')
     parser.add_argument('--num_workers', type=int, default=2, help='the number of workers for dataloader.')
     parser.add_argument('--batch_size', type=int, default=1, help='the number of samples for a batch.')
-    parser.add_argument('--ckpt_path', type=str, help='model checkpoint path')
+    # parser.add_argument('--ckpt_path', type=str, help='model checkpoint path')
 
     parser.add_argument('--d_model', type=int, default=512, help='the dimension of Transformer.')
     parser.add_argument('--d_ff', type=int, default=512, help='the dimension of FFN.')
