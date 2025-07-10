@@ -62,7 +62,7 @@ def parse_agrs():
 def train(args):
 
     split_frac = [0.8, 0.12, 0.08]
-    tokenizer = Tokenizer(reports_json_path)
+    tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
     trainer.train()
