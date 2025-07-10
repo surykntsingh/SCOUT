@@ -17,7 +17,7 @@ class ReportModel(pl.LightningModule):
         self.__lr = args.lr
         self.__weight_decay = weight_decay
         self.val_rouge = ROUGEScore()
-        self.test_bleu = BLEUScore(n_gram=1)
+        self.val_bleu = BLEUScore(n_gram=1)
         self.test_rouge = ROUGEScore()
         self.test_bleu = BLEUScore(n_gram=1)
         # self.bleu_2 = BLEUScore(n_gram=2)
