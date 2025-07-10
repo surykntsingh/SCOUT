@@ -101,7 +101,7 @@ class ReportModel(pl.LightningModule):
         return pred_texts
 
     def on_validation_epoch_end(self):
-        # print(self.meteor_scores)
+        print(self.meteor_scores)
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
