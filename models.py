@@ -10,7 +10,7 @@ from modules.report_gen_model import ReportGenModel
 
 class ReportModel(pl.LightningModule):
 
-    def __init__(self, args, tokenizer, weight_decay=0.01, device='cuda'):
+    def __init__(self, args, tokenizer, weight_decay=0.01):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)
         self.tokenizer = tokenizer
@@ -26,7 +26,7 @@ class ReportModel(pl.LightningModule):
         self.val_meteor = evaluate.load("meteor")
         self.test_meteor = evaluate.load("meteor")
         self.meteor_scores = []
-        self.device= device
+        # self.device = device
 
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()
