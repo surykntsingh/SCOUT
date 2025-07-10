@@ -61,21 +61,21 @@ class ReportModel(pl.LightningModule):
             # print(f'report_ids: {report_ids}, output: {output}')
             # print(f'pred_texts: {pred_texts}, target_texts: {target_texts}')
 
-            rouge_score = self.val_rouge(pred_texts, target_texts)
-            bleu_score1 = self.val_bleu(pred_texts, target_texts)
+            rouge_score = self.val_rouge(pred_texts, target_texts).to('cuda')
+            bleu_score1 = self.val_bleu(pred_texts, target_texts).to('cuda')
             # bleu_score2 = self.bleu_2(pred_texts, target_texts)
             # bleu_score3 = self.bleu_3(pred_texts, target_texts)
             # bleu_score4 = self.bleu_4(pred_texts, target_texts)
             self.meteor_scores.append(
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            # print(self.meteor_scores)
+            print(self.meteor_scores, rouge_score, bleu_score1)
 
-            self.log('val_rouge', self.val_rouge, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('val_bleu', self.val_bleu, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('val_rouge', rouge_score['rouge1_fmeasure'], on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu2', bleu_score2, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu3', bleu_score3, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu4', bleu_score4, on_epoch=True, prog_bar=True, sync_dist=True)
-            # print('val step end')
+            print('val step end')
 
     def test_step(self, batch, batch_idx):
         _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
@@ -102,12 +102,12 @@ class ReportModel(pl.LightningModule):
         return pred_texts
 
     def on_validation_epoch_end(self):
-        # print('on_validation_epoch_end start')
-        # print(f'meteor_scores: {self.meteor_scores}')
+        print('on_validation_epoch_end start')
+        print(f'meteor_scores: {self.meteor_scores}')
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
-        # print('on_validation_epoch_end end')
+        print('on_validation_epoch_end end')
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
