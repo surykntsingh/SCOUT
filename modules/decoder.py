@@ -3,6 +3,8 @@ import torch.nn as nn
 
 from modules.common import SublayerConnection, LayerNorm
 from utils import utils
+from utils.utils import clones
+
 
 class DecoderLayer(nn.Module):
     def __init__(self, d_model, self_attn, src_attn, feed_forward, dropout):

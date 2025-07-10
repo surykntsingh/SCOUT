@@ -9,6 +9,8 @@ from modules.attention_model import AttModel
 from modules.common import subsequent_mask
 from modules.decoder import DecoderLayer, Decoder
 from modules.encoder import Encoder, EncoderLayer
+from utils.utils import pad_tokens, pack_wrapper, clones
+
 
 class Transformer(nn.Module):
     def __init__(self, encoder, decoder, src_embed, tgt_embed):
