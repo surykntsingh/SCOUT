@@ -61,7 +61,7 @@ class ReportModel(pl.LightningModule):
             # print(f'report_ids: {report_ids}, output: {output}')
             # print(f'pred_texts: {pred_texts}, target_texts: {target_texts}')
 
-            rouge_score = self.val_rouge(pred_texts, target_texts).to('cuda')
+            rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cuda')
             bleu_score1 = self.val_bleu(pred_texts, target_texts).to('cuda')
             # bleu_score2 = self.bleu_2(pred_texts, target_texts)
             # bleu_score3 = self.bleu_3(pred_texts, target_texts)
@@ -70,7 +70,7 @@ class ReportModel(pl.LightningModule):
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
             print(self.meteor_scores, rouge_score, bleu_score1)
 
-            self.log('val_rouge', rouge_score['rouge1_fmeasure'], on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu2', bleu_score2, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu3', bleu_score3, on_epoch=True, prog_bar=True, sync_dist=True)
