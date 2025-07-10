@@ -10,7 +10,6 @@ class Trainer:
     def __init__(self, args, model, tokenizer, split_frac=(0.75, 0.12, 0.13)):
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
-        self.devices = list(map(int, args.devices.split(',')))
         self.split_frac = split_frac
         self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         self.model = model
@@ -31,8 +30,8 @@ class Trainer:
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
-            devices=self.devices,
-            strategy='ddp',
+            devices=[1],
+            strategy='auto',
             enable_progress_bar=True,
             log_every_n_steps=2,
             fast_dev_run=fast_dev_run
@@ -43,6 +42,31 @@ class Trainer:
         train_metrics = self.trainer.logged_metrics
         return train_metrics
 
+    def test(self, model=None, fast_dev_run=False):
+
+        if model:
+            trainer = pl.Trainer(
+                accelerator='gpu',
+                devices=[1],
+                strategy='auto',
+                enable_progress_bar=True,
+                log_every_n_steps=2,
+                fast_dev_run=fast_dev_run
+            )
+        else:
+            model = self.model
+            trainer = self.trainer
+
+        trainer.test(
+            model, datamodule=self.datamodule
+        )
+        test_metrics = trainer.logged_metrics
+        return test_metrics
+
     def save_model(self, model_path):
+
         self.trainer.save_checkpoint(model_path)
         print(f'model saved at path: {model_path}')
+
+    def load_model(self, model_cls, model_path, **kwargs):
+        return model_cls.load_from_checkpoint(model_path, **kwargs)

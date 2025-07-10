@@ -8,12 +8,13 @@ from utils.utils import read_json_file
 
 class EmbeddingDataset(Dataset):
 
-    def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length):
+    def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length, embeddings_path_2):
         reports = read_json_file(reports_json_path)
         self.__reports = {report['id'].split('.')[0]: report['report'] for report in reports}
         self.__tokenizer = tokenizer
         self.__embeddings_path = embeddings_path
         self.__max_seq_length = max_seq_length
+        self.__embeddings_path_2 = embeddings_path_2
 
         files = os.listdir(embeddings_path)
         self.__slides = [file.split('.')[0] for file in files]
@@ -28,7 +29,7 @@ class EmbeddingDataset(Dataset):
             embeddings_np = h5_file["features"][:]
 
             coords = torch.tensor(coords_np).float()
-            embedding = torch.tensor(embeddings_np)
+            embedding1 = torch.tensor(embeddings_np)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 
@@ -39,18 +40,11 @@ class EmbeddingDataset(Dataset):
             report_masks = [1] * len(report_ids)
             seq_length = len(report_ids)
 
+        with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
+            embeddings_np = h5_file["features"][:]
+            embedding2 = torch.tensor(embeddings_np)
 
-        return slide_id, embedding, coords, report_ids, report_masks, seq_length
-
-class EmbeddingDatasetTitan(EmbeddingDataset):
-
-    def __init__(self,embeddings_path, reports_json_path, tokenizer, max_seq_length):
-        super().__init__(embeddings_path, reports_json_path, tokenizer, max_seq_length)
-
-    def __getitem__(self, idx):
-        slide_id, embedding, coords, report_ids, report_masks, seq_length = super().__getitem__(idx)
-
-        return slide_id, embedding.unsqueeze(0), coords, report_ids, report_masks, seq_length
+        return slide_id, embedding1.unsqueeze(0), embedding2 , coords, report_ids, report_masks, seq_length
 
 
 

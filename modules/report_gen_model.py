@@ -27,14 +27,27 @@ class ReportGenModel(nn.Module):
             nn.Dropout(0.4),
             nn.Linear(d, d)
         )
+        d1 = args.d1
+        d2 = args.d2
+        self.adapter_mlp = nn.Sequential(
+            nn.Linear(d1, 2 * d1),
+            nn.ReLU(),
+            nn.Linear(2 * d1, 2 * d2),
+            nn.ReLU(),
+            nn.Linear(2 * d2, d2),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(d2, d)
+        )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
-    def forward(self, image_embeddings, pos_embeddings, report_ids, patch_masks, mode='train'):
+    def forward(self, image_embeddings1, image_embeddings2, report_ids, patch_masks, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
-        patch_feats = image_embeddings  # + coords_encoded
-        # print(f'image_embeddings: {image_embeddings.shape}')
-
+        # patch_feats = image_embeddings # + coords_encoded
+        # print(f'image_embeddings1: {image_embeddings1}')
+        image_embeddings1 = self.adapter_mlp(image_embeddings1)
+        patch_feats = torch.cat([image_embeddings1, image_embeddings2], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)

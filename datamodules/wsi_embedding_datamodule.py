@@ -20,10 +20,12 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         self.__max_seq_length = args.max_seq_length
         self.__split_frac = split_frac
         self.__tokenizer = tokenizer
+        self.__embeddings_path_2 = args.embeddings_path_2
 
     def setup(self, stage=None):
         dataset = EmbeddingDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
-                              self.__max_seq_length)
+                              self.__max_seq_length, self.__embeddings_path_2)
+        # print(dataset[0][1])
         self.train_ds, self.val_ds, self.test_ds = random_split(dataset, self.__split_frac)
 
     def train_dataloader(self):
@@ -37,15 +39,16 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch):
-        slide_ids, patch_feats, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
-        patch_feats_pad = pad_sequence(patch_feats, batch_first=True)
+        slide_ids, patch_feats_1,patch_feats_2, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
+        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True)
+        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True)
         # dummy_feat = torch.randn(patch_feats_pad.shape)
-        coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
-        patch_mask = torch.zeros(patch_feats_pad.shape[:2], dtype=torch.float32)
-        for i, p in enumerate(patch_feats):
-            patch_mask[i, :p.shape[0]] = 1
-
-        return (slide_ids, patch_feats_pad, coord_feats_pad, torch.LongTensor(report_ids),
-                torch.FloatTensor(report_masks), torch.FloatTensor(patch_mask))
+        # coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
+        # patch_mask = torch.zeros(patch_feats_pad.shape[:2], dtype=torch.float32)
+        # for i, p in enumerate(patch_feats):
+        #     patch_mask[i, :p.shape[0]] = 1
+        # print(slide_ids, len(patch_feats1), len(patch_feats2))
+        return (slide_ids, patch_feats1_pad, patch_feats2_pad, torch.LongTensor(report_ids),
+                torch.FloatTensor(report_masks), seq_length)
 
 
