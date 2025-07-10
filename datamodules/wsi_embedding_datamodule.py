@@ -38,17 +38,18 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         return DataLoader(self.test_ds, batch_size=self.__batch_size, collate_fn = self.collate_fn)
 
     @staticmethod
-    def collate_fn(batch):
+    def collate_fn(batch, device='cuda'):
         slide_ids, patch_feats_1,patch_feats_2, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
-        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True)
-        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True)
+        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True).to(device)
+        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True).to(device)
+        report_ids = torch.LongTensor(report_ids).to(device)
         # dummy_feat = torch.randn(patch_feats_pad.shape)
         # coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
         # patch_mask = torch.zeros(patch_feats_pad.shape[:2], dtype=torch.float32)
         # for i, p in enumerate(patch_feats):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
-        return (slide_ids, patch_feats1_pad, patch_feats2_pad, torch.LongTensor(report_ids),
+        return (slide_ids, patch_feats1_pad, patch_feats2_pad, report_ids,
                 torch.FloatTensor(report_masks), seq_length)
 
 
