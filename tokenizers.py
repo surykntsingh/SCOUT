@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from collections import Counter
 
 from utils.utils import read_json_file
@@ -7,17 +8,17 @@ from utils.utils import read_json_file
 
 class Tokenizer:
 
-    def __init__(self, reports_json_path, threshold = 1):
+    def __init__(self, reports_json_path, threshold=1):
         self.__threshold = threshold
+        self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
         self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
-
 
     def create_vocabulary(self, reports_json_path):
         total_tokens = []
         reports = read_json_file(reports_json_path)
 
         for report in reports:
-            tokens = report['report'].split()
+            tokens = self.__split_text(report['report'])
             # for token in tokens:
             #     total_tokens.append(token)
             total_tokens.extend(tokens)
@@ -43,8 +44,14 @@ class Tokenizer:
     def get_vocab_size(self):
         return len(self.__token2idx)
 
+    def __split_text(self, text):
+        text = text.lower()
+        return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+
+        # return [m.group(0) for m in self.__pattern.finditer(text)]
+
     def __call__(self, report):
-        tokens = report.split()
+        tokens = self.__split_text(report)
         ids = []
         for token in tokens:
             ids.append(self.get_id_by_token(token))
@@ -52,6 +59,7 @@ class Tokenizer:
         return ids
 
     def decode(self, ids):
+        # print(ids)
         txt = ''
         for i, idx in enumerate(ids):
             if idx > 0:
@@ -63,6 +71,7 @@ class Tokenizer:
         return txt
 
     def batch_decode(self, ids_batch):
+        # print(f'ids_batch: {ids_batch}, {ids_batch.shape}')
         out = []
         for ids in ids_batch:
             out.append(self.decode(ids))

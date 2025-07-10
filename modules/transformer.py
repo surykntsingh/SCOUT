@@ -9,8 +9,6 @@ from modules.attention_model import AttModel
 from modules.common import subsequent_mask
 from modules.decoder import DecoderLayer, Decoder
 from modules.encoder import Encoder, EncoderLayer
-from utils import utils
-
 
 class Transformer(nn.Module):
     def __init__(self, encoder, decoder, src_embed, tgt_embed):
@@ -25,6 +23,7 @@ class Transformer(nn.Module):
         return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
 
     def encode(self, src, src_mask):
+        # print(f'src: {src.shape}')
         return self.encoder(self.src_embed(src), src_mask)
 
     def decode(self, hidden_states, src_mask, tgt, tgt_mask):
@@ -37,7 +36,7 @@ class MultiHeadedAttention(nn.Module):
         assert d_model % h == 0
         self.d_k = d_model // h
         self.h = h
-        self.linears = utils.clones(nn.Linear(d_model, d_model), 4)
+        self.linears = clones(nn.Linear(d_model, d_model), 4)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
@@ -112,6 +111,7 @@ class PAM(nn.Module):
 
     def forward(self, x):
         B, H, C = x.shape
+        # print(f'B, H, C : {(B, H, C)}')
         assert int(math.sqrt(H))**2==H, f'{x.shape}'
         cnn_feat = x.transpose(1, 2).view(B, C, int(math.sqrt(H)), int(math.sqrt(H))).contiguous()
         x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
@@ -165,16 +165,16 @@ class EncoderDecoder(AttModel):
                 nn.init.xavier_uniform_(p)
 
     def _prepare_feature(self, fc_feats, att_feats, att_masks, meshes=None):
-        att_feats = utils.pad_tokens(att_feats)
+        att_feats = pad_tokens(att_feats)
         att_feats, seq, _, att_masks, seq_mask, _ = self._prepare_feature_forward(att_feats, att_masks, meshes)
         memory = self.model.encode(att_feats, att_masks)
 
         return fc_feats[..., :1], att_feats[..., :1], memory, att_masks
 
     def _prepare_feature_mesh(self, att_feats, att_masks=None, meshes=None):
-        att_feats = utils.pad_tokens(att_feats)
+        att_feats = pad_tokens(att_feats)
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
-        att_feats = utils.pack_wrapper(self.att_embed, att_feats, att_masks)
+        att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
@@ -196,7 +196,7 @@ class EncoderDecoder(AttModel):
     def _prepare_feature_forward(self, att_feats, att_masks=None, meshes=None, seq=None):
 
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
-        att_feats = utils.pack_wrapper(self.att_embed, att_feats, att_masks)
+        att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
@@ -227,10 +227,13 @@ class EncoderDecoder(AttModel):
         return att_feats, seq, meshes, att_masks, seq_mask, meshes_mask
 
     def _forward(self, fc_feats, att_feats, report_ids, att_masks=None):
+        # log_message(fc_feats, att_feats, report_ids, att_masks)
         att_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, att_masks, report_ids)
         out = self.model(att_feats, report_ids, att_masks, report_mask)
 
+        # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
+        # print(f'outputs: {outputs}')
 
         return outputs
 

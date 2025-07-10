@@ -6,7 +6,6 @@ from torch.utils.data import Dataset
 
 from utils.utils import read_json_file
 
-
 class EmbeddingDataset(Dataset):
 
     def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length):
@@ -42,6 +41,17 @@ class EmbeddingDataset(Dataset):
 
 
         return slide_id, embedding, coords, report_ids, report_masks, seq_length
+
+class EmbeddingDatasetTitan(EmbeddingDataset):
+
+    def __init__(self,embeddings_path, reports_json_path, tokenizer, max_seq_length):
+        super().__init__(embeddings_path, reports_json_path, tokenizer, max_seq_length)
+
+    def __getitem__(self, idx):
+        slide_id, embedding, coords, report_ids, report_masks, seq_length = super().__getitem__(idx)
+
+        return slide_id, embedding.unsqueeze(0), coords, report_ids, report_masks, seq_length
+
 
 
 

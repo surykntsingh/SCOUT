@@ -5,7 +5,6 @@ import pytorch_lightning as pl
 
 from datasets.embedding_dataset import EmbeddingDataset
 
-
 class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     def __init__(self,args, tokenizer, split_frac, shuffle = False):
@@ -40,6 +39,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
     def collate_fn(batch):
         slide_ids, patch_feats, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
         patch_feats_pad = pad_sequence(patch_feats, batch_first=True)
+        # dummy_feat = torch.randn(patch_feats_pad.shape)
         coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
         patch_mask = torch.zeros(patch_feats_pad.shape[:2], dtype=torch.float32)
         for i, p in enumerate(patch_feats):

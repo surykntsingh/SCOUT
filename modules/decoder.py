@@ -4,7 +4,6 @@ import torch.nn as nn
 from modules.common import SublayerConnection, LayerNorm
 from utils import utils
 
-
 class DecoderLayer(nn.Module):
     def __init__(self, d_model, self_attn, src_attn, feed_forward, dropout):
         super().__init__()
@@ -12,7 +11,7 @@ class DecoderLayer(nn.Module):
         self.self_attn = self_attn
         self.src_attn = src_attn
         self.feed_forward = feed_forward
-        self.sublayer = utils.clones(SublayerConnection(d_model, dropout), 3)
+        self.sublayer = clones(SublayerConnection(d_model, dropout), 3)
 
     def forward(self, x, hidden_states, src_mask, tgt_mask):
         m = hidden_states
@@ -24,7 +23,7 @@ class DecoderLayer(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, layer, N):
         super().__init__()
-        self.layers = utils.clones(layer, N)
+        self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
 
     def forward(self, x, hidden_states, src_mask, tgt_mask):

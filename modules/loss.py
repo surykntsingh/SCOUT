@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-
 class LanguageModelCriterion(nn.Module):
     def __init__(self):
         super(LanguageModelCriterion, self).__init__()

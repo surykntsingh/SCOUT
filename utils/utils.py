@@ -39,7 +39,11 @@ def length_average(length, logprobs, alpha=0.):
     """
     Returns the average probability of tokens in a sequence.
     """
-    return logprobs / length
+    if length < alpha:
+        penalty = -1000
+    else:
+        penalty = logprobs / length
+    return penalty
 
 
 def split_tensors(n, x):
@@ -70,6 +74,7 @@ def repeat_tensors(n, x):
 def clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
+
 def pad_tokens(att_feats):
     # ---->pad
     H = att_feats.shape[1]
@@ -78,7 +83,9 @@ def pad_tokens(att_feats):
     att_feats = torch.cat([att_feats, att_feats[:, :add_length, :]], dim=1)  # [B, N, L]
     return att_feats
 
+
 def sort_pack_padded_sequence(input, lengths):
+    lengths = lengths.cpu()
     sorted_lengths, indices = torch.sort(lengths, descending=True)
     tmp = pack_padded_sequence(input[indices], sorted_lengths, batch_first=True)
     inv_ix = indices.clone()
@@ -91,7 +98,9 @@ def pad_unsort_packed_sequence(input, inv_ix):
     tmp = tmp[inv_ix]
     return tmp
 
+
 def pack_wrapper(module, att_feats, att_masks):
+    # print(module, att_feats, att_masks)
     if att_masks is not None:
         packed, inv_ix = sort_pack_padded_sequence(att_feats, att_masks.data.long().sum(1))
         return pad_unsort_packed_sequence(PackedSequence(module(packed[0]), packed[1]), inv_ix)
