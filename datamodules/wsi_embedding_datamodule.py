@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader, random_split
 from torch.nn.utils.rnn import pad_sequence
 import pytorch_lightning as pl
 
-from datasets.embedding_dataset import EmbeddingDataset
+from embedding_datasets.embedding_dataset import EmbeddingDataset
 
 class PatchEmbeddingDataModule(pl.LightningDataModule):
 
