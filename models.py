@@ -68,7 +68,7 @@ class ReportModel(pl.LightningModule):
             # bleu_score4 = self.bleu_4(pred_texts, target_texts)
             self.meteor_scores.append(
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            # print(rouge_score)
+            print(self.meteor_scores)
 
             self.log('val_rouge', rouge_score['rouge1_fmeasure'], on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
