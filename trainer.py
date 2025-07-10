@@ -30,8 +30,8 @@ class Trainer:
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
-            devices=[1],
-            strategy='auto',
+            devices=[1,2,3],
+            strategy='ddp',
             enable_progress_bar=True,
             log_every_n_steps=2,
             fast_dev_run=fast_dev_run
@@ -47,8 +47,8 @@ class Trainer:
         if model:
             trainer = pl.Trainer(
                 accelerator='gpu',
-                devices=[1],
-                strategy='auto',
+                devices=[1,2,3],
+                strategy='ddp',
                 enable_progress_bar=True,
                 log_every_n_steps=2,
                 fast_dev_run=fast_dev_run

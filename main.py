@@ -51,23 +51,40 @@ def parse_agrs():
     parser.add_argument('--embeddings_path', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan', help='emb 1 path.')
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
+    parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/0', help='reports path.')
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250709_1_model.ckpt',
+                        help='model save path')
     parser.add_argument('--devices', type=str, default='0,1,2', help='devices.')
     args = parser.parse_args()
     return args
 
 
-def train():
-    args = parse_agrs()
+def train(args):
+
     split_frac = [0.8, 0.12, 0.08]
     tokenizer = Tokenizer(reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
-    metrics = trainer.train()
-    print(metrics)
+    trainer.train()
+    # train_metrics = trainer.logged_metrics
+
+    print('model training finished')
+    trainer.test()
+    print('model testing finished')
+    return trainer
+
+
+
+
+def save_model(args, trainer):
+    print(f'Saving model at path: {args.model_save_path}')
+    trainer.save_model(args.model_save_path)
 
 
 
 
 
 if __name__ == "__main__":
-    pass
+    args = parse_agrs()
+    trainer = train(args)
+    save_model(args, trainer)
