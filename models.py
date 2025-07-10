@@ -64,7 +64,7 @@ class ReportModel(pl.LightningModule):
             # bleu_score3 = self.bleu_3(pred_texts, target_texts)
             # bleu_score4 = self.bleu_4(pred_texts, target_texts)
             self.meteor_scores.append(
-                self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+                self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'].to('cuda'))
             # print(rouge_score)
 
             self.log('val_rouge', rouge_score['rouge1_fmeasure'], on_epoch=True, prog_bar=True, sync_dist=True)
@@ -87,7 +87,7 @@ class ReportModel(pl.LightningModule):
 
         rouge_score = self.test_rouge(pred_texts, target_texts)
         bleu_score1 = self.test_bleu(pred_texts, target_texts)
-        self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+        self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'].to('cuda'))
         self.log('val_rouge', rouge_score['rouge1_fmeasure'], on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
