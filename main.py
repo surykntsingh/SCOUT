@@ -66,7 +66,7 @@ def train(args):
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
-    trainer.train()
+    trainer.train(fast_dev_run=True)
     # train_metrics = trainer.logged_metrics
 
     print('model training finished')
