@@ -31,7 +31,7 @@ class Trainer:
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=[1,2,3],
-            strategy='ddp',
+            strategy='auto',
             enable_progress_bar=True,
             log_every_n_steps=2,
             fast_dev_run=fast_dev_run
@@ -48,7 +48,7 @@ class Trainer:
             trainer = pl.Trainer(
                 accelerator='gpu',
                 devices=[1,2,3],
-                strategy='ddp',
+                strategy='auto',
                 enable_progress_bar=True,
                 log_every_n_steps=2,
                 fast_dev_run=fast_dev_run
