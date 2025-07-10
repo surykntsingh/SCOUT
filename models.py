@@ -59,7 +59,7 @@ class ReportModel(pl.LightningModule):
             target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
             # print(f'val output: {output_}')
             # print(f'report_ids: {report_ids}, output: {output}')
-            print(f'pred_texts: {pred_texts}, target_texts: {target_texts}')
+            # print(f'pred_texts: {pred_texts}, target_texts: {target_texts}')
 
             rouge_score = self.val_rouge(pred_texts, target_texts)
             bleu_score1 = self.val_bleu(pred_texts, target_texts)
@@ -102,10 +102,12 @@ class ReportModel(pl.LightningModule):
         return pred_texts
 
     def on_validation_epoch_end(self):
+        print('on_validation_epoch_end start')
         print(f'meteor_scores: {self.meteor_scores}')
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
+        print('on_validation_epoch_end end')
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
