@@ -75,6 +75,7 @@ class ReportModel(pl.LightningModule):
             # self.log('val_bleu2', bleu_score2, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu3', bleu_score3, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu4', bleu_score4, on_epoch=True, prog_bar=True, sync_dist=True)
+            print('val step end')
 
     def test_step(self, batch, batch_idx):
         _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
