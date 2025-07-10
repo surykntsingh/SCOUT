@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-
+from pytorch_lightning.utilities.rank_zero import rank_zero_only
 from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule
 
 
@@ -63,6 +63,7 @@ class Trainer:
         test_metrics = trainer.logged_metrics
         return test_metrics
 
+    @rank_zero_only
     def save_model(self, model_path):
 
         self.trainer.save_checkpoint(model_path)

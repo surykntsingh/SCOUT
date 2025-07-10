@@ -53,7 +53,7 @@ def parse_agrs():
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
     parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/0', help='reports path.')
-    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250710_1_model.ckpt',
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250710_2_model.ckpt',
                         help='model save path')
     parser.add_argument('--devices', type=str, default='0,1,2', help='devices.')
     args = parser.parse_args()
@@ -66,7 +66,7 @@ def train(args):
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
-    trainer.train(fast_dev_run=True)
+    trainer.train()
     # train_metrics = trainer.logged_metrics
 
     print('model training finished')
