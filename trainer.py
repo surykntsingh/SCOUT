@@ -46,6 +46,7 @@ class Trainer:
     def test(self, model=None, fast_dev_run=False):
 
         if model:
+            print('---------------------> ')
             trainer = pl.Trainer(
                 accelerator='gpu',
                 devices=self.__devices,
