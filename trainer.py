@@ -15,6 +15,7 @@ class Trainer:
         self.model = model
         pl.seed_everything(42)
         self.trainer = None
+        self.__devices = list(map(int, args.devices.split(',')))
 
     def train(self, fast_dev_run=False):
         checkpoint_callback = ModelCheckpoint(
@@ -30,7 +31,7 @@ class Trainer:
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
-            devices=[1,2,3],
+            devices=self.__devices,
             strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True,
             log_every_n_steps=2,
@@ -47,7 +48,7 @@ class Trainer:
         if model:
             trainer = pl.Trainer(
                 accelerator='gpu',
-                devices=[1,2,3],
+                devices=self.__devices,
                 strategy='ddp_find_unused_parameters_true',
                 enable_progress_bar=True,
                 log_every_n_steps=2,
