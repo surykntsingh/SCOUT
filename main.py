@@ -33,16 +33,11 @@ def test(model_path):
     trainer.test()
     print('model testing finished')
 
-
-
 def save_model(trainer):
     print(f'Saving model at path: {args.model_save_path}')
     trainer.save_model(args.model_save_path)
 
 
-
-
-
+args = parse_agrs()
 if __name__ == "__main__":
-    args = parse_agrs()
     app()
