@@ -58,6 +58,7 @@ class Trainer:
             model = self.model
             trainer = self.trainer
 
+        print(model, trainer)
         trainer.test(
             model, datamodule=self.datamodule
         )
