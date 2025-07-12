@@ -25,7 +25,8 @@ def train():
     return trainer
 
 @app.command()
-def test(model_path):
+def test():
+    model_path = 'saved_models/mi_gen_titan_plus_conch1.5_20250711_1_model.ckpt'
     split_frac = [0.8, 0.12, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel.load_from_checkpoint(model_path, args=args, tokenizer=tokenizer)
