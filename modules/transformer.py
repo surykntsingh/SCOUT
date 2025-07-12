@@ -117,7 +117,7 @@ class PAM(nn.Module):
         assert int(math.sqrt(H))**2==H, f'{x.shape}'
         cnn_feat = x.transpose(1, 2).view(B, C, int(math.sqrt(H)), int(math.sqrt(H))).contiguous()
         x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
-        x = x.flatten(2).transpose(1, 2)
+        x = x.flatten(2).transpose(1, 2).contiguous()
 
         return x
 
