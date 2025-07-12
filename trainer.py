@@ -46,7 +46,7 @@ class Trainer:
     def test(self, model=None, fast_dev_run=False):
 
         if model is not None:
-            print('---------------------> ')
+            print('---------------------> if')
             trainer = pl.Trainer(
                 accelerator='gpu',
                 devices=self.__devices,
@@ -56,6 +56,7 @@ class Trainer:
                 fast_dev_run=fast_dev_run
             )
         else:
+            print('---------------------> else')
             model = self.model
             trainer = self.trainer
 
