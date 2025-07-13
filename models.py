@@ -93,8 +93,8 @@ class ReportModel(pl.LightningModule):
         rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
         bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
         self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-        self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
     def predict_step(self, batch):
         _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
