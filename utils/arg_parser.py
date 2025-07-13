@@ -48,7 +48,7 @@ def parse_agrs():
     parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250712_1_model.ckpt',
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
-    parser.add_argument('test')
-    parser.add_argument('train')
+    # parser.add_argument('test')
+    # parser.add_argument('train')
     args = parser.parse_args()
     return args
