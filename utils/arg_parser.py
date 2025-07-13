@@ -49,5 +49,6 @@ def parse_agrs():
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
     parser.add_argument('test')
-    args = parser.parse_args('train')
+    parser.add_argument('train')
+    args = parser.parse_args()
     return args
