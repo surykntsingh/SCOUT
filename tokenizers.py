@@ -46,9 +46,9 @@ class Tokenizer:
 
     def __split_text(self, text):
         text = text.lower()
-        return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+        # return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
 
-        # return [m.group(0) for m in self.__pattern.finditer(text)]
+        return [m.group(0) for m in self.__pattern.finditer(text)]
 
     def __call__(self, report):
         tokens = self.__split_text(report)

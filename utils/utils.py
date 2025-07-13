@@ -106,3 +106,8 @@ def pack_wrapper(module, att_feats, att_masks):
         return pad_unsort_packed_sequence(PackedSequence(module(packed[0]), packed[1]), inv_ix)
     else:
         return module(att_feats)
+
+
+def save_model(args, trainer):
+    print(f'Saving model at path: {args.model_save_path}')
+    trainer.save_model(args.model_save_path)

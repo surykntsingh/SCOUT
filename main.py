@@ -4,6 +4,7 @@ from models import ReportModel
 from tokenizers import Tokenizer
 from trainer import Trainer
 from utils.arg_parser import parse_agrs
+from utils.utils import save_model
 
 app = typer.Typer()
 
@@ -21,7 +22,7 @@ def train():
     trainer.test()
     print('model testing finished')
 
-    save_model(trainer)
+    save_model(args, trainer)
     return trainer
 
 @app.command()
@@ -34,9 +35,7 @@ def test():
     trainer.test()
     print('model testing finished')
 
-def save_model(trainer):
-    print(f'Saving model at path: {args.model_save_path}')
-    trainer.save_model(args.model_save_path)
+
 
 
 args = parse_agrs()
