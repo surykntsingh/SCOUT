@@ -10,9 +10,9 @@ def train(args):
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
-    train_metrics = trainer.train(fast_dev_run=args.fastdevrun)
+    train_metrics = trainer.train()
     print('model training finished')
-    test_metrics = trainer.test(fast_dev_run=args.fastdevrun)
+    test_metrics = trainer.test()
     print('model testing finished')
     save_model(args, trainer)
 
@@ -22,3 +22,4 @@ def train(args):
 if __name__ == "__main__":
     args = parse_agrs()
     train(args)
+    print('Finished processing!')
