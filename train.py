@@ -6,7 +6,7 @@ from utils.utils import save_model
 
 
 def train(args):
-    split_frac = [0.8, 0.12, 0.08]
+    split_frac = [0.82, 0.1, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)

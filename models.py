@@ -54,13 +54,10 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 20 == 0:
+        if batch_idx % 10==0:
             output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-            # print(f'val output: {output_}')
-            # print(f'report_ids: {report_ids}, output: {output}')
-            # print(f'pred_texts: {pred_texts}, target_texts: {target_texts}')
 
             rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
