@@ -60,6 +60,24 @@ class Trainer:
         test_metrics = trainer.logged_metrics
         return test_metrics
 
+    def predict(self, fast_dev_run=False):
+
+        trainer = pl.Trainer(
+            accelerator='gpu',
+            devices=self.__devices,
+            strategy='ddp_find_unused_parameters_true',
+            enable_progress_bar=True,
+            log_every_n_steps=2,
+            fast_dev_run=fast_dev_run
+        )
+
+        trainer.predict(
+            self.model, datamodule=self.datamodule
+        )
+        test_metrics = trainer.logged_metrics
+        return test_metrics
+
+
     @rank_zero_only
     def save_model(self, model_path):
 

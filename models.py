@@ -5,6 +5,7 @@ from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
 from modules.loss import LanguageModelCriterion
+from modules.metrics import REG_Evaluator
 from modules.report_gen_model import ReportGenModel
 
 
@@ -26,7 +27,8 @@ class ReportModel(pl.LightningModule):
         self.val_meteor = evaluate.load("meteor")
         self.test_meteor = evaluate.load("meteor")
         self.meteor_scores = []
-        # self.device = device
+        self.reg_evaluator = REG_Evaluator()
+        self.reg_scores = []
 
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()
@@ -66,7 +68,7 @@ class ReportModel(pl.LightningModule):
             # bleu_score4 = self.bleu_4(pred_texts, target_texts)
             self.meteor_scores.append(
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            # print(self.meteor_scores, rouge_score, bleu_score1)
+            self.reg_scores.append(self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts))))
 
             self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -90,6 +92,7 @@ class ReportModel(pl.LightningModule):
         rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
         bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
         self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+        self.reg_scores.append(self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts))))
         self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
@@ -105,13 +108,20 @@ class ReportModel(pl.LightningModule):
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
-        # print('on_validation_epoch_end end')
+
+        reg_score = sum(self.reg_scores) / len(self.reg_scores)
+        self.log('val_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.reg_scores.clear()
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
+
+        reg_score = sum(self.reg_scores) / len(self.reg_scores)
+        self.log('test_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.reg_scores.clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())

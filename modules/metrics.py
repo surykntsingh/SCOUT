@@ -70,7 +70,7 @@ class KeywordEvaluator:
 
 
 class REG_Evaluator:
-    def __init__(self, embedding_model, spacy_model='en_core_sci_lg', api_key=None):
+    def __init__(self, embedding_model='dmis-lab/biobert-v1.1', spacy_model='en_core_sci_lg', api_key=None):
         self.embedding_eval = EmbeddingEvaluator(embedding_model)
 
         self.key_eval = KeywordEvaluator(spacy_model)
