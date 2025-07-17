@@ -138,8 +138,8 @@ class REG_Evaluator:
     def evaluate_dummy(self, eval_lists):
         ''' list of tuples(pairs) '''
         score = 0
-        pbar = tqdm(eval_lists, total=len(eval_lists))
-        for i, (ref_text, hyp_text) in enumerate(pbar):
+        # pbar = tqdm(eval_lists, total=len(eval_lists))
+        for i, (ref_text, hyp_text) in enumerate(eval_lists):
             score += self.evaluate_text(ref_text, hyp_text)
         score /= len(eval_lists)
         return score
