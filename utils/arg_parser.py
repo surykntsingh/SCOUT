@@ -15,7 +15,7 @@ def parse_agrs():
     parser.add_argument('--d_ff', type=int, default=512, help='the dimension of FFN.')
     parser.add_argument('--d_vf', type=int, default=768, help='the dimension of the patch features.')
     parser.add_argument('--num_heads', type=int, default=4, help='the number of heads in Transformer.')
-    parser.add_argument('--num_layers', type=int, default=12, help='the number of layers of Transformer.')
+    parser.add_argument('--num_layers', type=int, default=8, help='the number of layers of Transformer.')
     parser.add_argument('--dropout', type=float, default=0.1, help='the dropout rate of Transformer.')
     parser.add_argument('--logit_layers', type=int, default=1, help='the number of the logit layer.')
     parser.add_argument('--bos_idx', type=int, default=0, help='the index of <bos>.')
@@ -45,9 +45,9 @@ def parse_agrs():
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
     parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/2', help='reports path.')
-    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250717_1_model.ckpt',
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250717_2_model.ckpt',
                         help='model save path')
-    parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
+    parser.add_argument('--devices', type=str, default='1,2,3,4', help='devices.')
     parser.add_argument('--fastdevrun', type=bool, default='false', help='fast dev run.')
     args = parser.parse_args()
     return args
