@@ -45,7 +45,7 @@ def parse_agrs():
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
     parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/2', help='reports path.')
-    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250716_1_model.ckpt',
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250717_1_model.ckpt',
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
     parser.add_argument('--fastdevrun', type=bool, default='false', help='fast dev run.')
