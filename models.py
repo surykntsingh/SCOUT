@@ -5,7 +5,7 @@ from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
 from modules.loss import LanguageModelCriterion
-# from modules.metrics import REG_Evaluator
+from modules.metrics import REG_Evaluator
 from modules.report_gen_model import ReportGenModel
 
 
