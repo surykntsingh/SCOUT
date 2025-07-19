@@ -20,6 +20,8 @@ class EmbeddingDataset(Dataset):
         files_1 = os.listdir(embeddings_path)
         self.__slides = [file.split('.')[0] for file in files if file in files_1]
 
+        print(f'files: {len(files)}, files_1: {len(files_1)}')
+
     def __len__(self):
         return len(self.__slides)
 
