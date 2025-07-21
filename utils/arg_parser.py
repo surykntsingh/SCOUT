@@ -8,7 +8,7 @@ def parse_agrs():
     parser.add_argument('--threshold', type=int, default=1, help='the cut off frequency for the words.')
     parser.add_argument('--num_workers', type=int, default=2, help='the number of workers for dataloader.')
     parser.add_argument('--batch_size', type=int, default=1, help='the number of samples for a batch.')
-    parser.add_argument('--max_epochs', type=int, default=100, help='Max number of epochs.')
+    parser.add_argument('--max_epochs', type=int, default=200, help='Max number of epochs.')
     # parser.add_argument('--ckpt_path', type=str, help='model checkpoint path')
 
     parser.add_argument('--d_model', type=int, default=512, help='the dimension of Transformer.')
@@ -35,7 +35,7 @@ def parse_agrs():
     parser.add_argument('--suppress_UNK', type=int, default=1, help='suppress UNK tokens in the decoding.')
     parser.add_argument('--block_trigrams', type=int, default=1, help='whether to use block trigrams.')
 
-    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate.')
+    parser.add_argument('--lr', type=float, default=5e-5, help='learning rate.')
     parser.add_argument('--length_penalty', type=str, default='wu_0.9', help='length penality')
     parser.add_argument('--diversity_lambda', type=float, default=1.5, help='diversity lambda')
 
@@ -44,8 +44,8 @@ def parse_agrs():
     parser.add_argument('--embeddings_path', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan', help='emb 1 path.')
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
-    parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/2', help='reports path.')
-    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250720_1_model.ckpt',
+    parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/3', help='reports path.')
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250721_1_model.ckpt',
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
     parser.add_argument('--fastdevrun', type=bool, default='false', help='fast dev run.')
