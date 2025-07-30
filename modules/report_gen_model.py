@@ -47,6 +47,7 @@ class ReportGenModel(nn.Module):
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
         image_embeddings1 = self.adapter_mlp(image_embeddings1)
+        print(f'image_embeddings1: {image_embeddings1.shape}, image_embeddings2: {image_embeddings2.shape}')
         patch_feats = torch.cat([image_embeddings1, image_embeddings2], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
