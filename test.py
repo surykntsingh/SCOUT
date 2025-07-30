@@ -9,12 +9,12 @@ def test(args):
     split_frac = [0.8, 0.12, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     model_path = args.model_save_path
+
     model = ReportModel.load_from_checkpoint(model_path, args=args, tokenizer=tokenizer)
     trainer = Trainer(args, model, tokenizer, split_frac)
 
     test_metrics = trainer.test()
     print('model testing finished')
-    save_model(args, trainer)
 
     print(f'test_metrics: {test_metrics}')
 
