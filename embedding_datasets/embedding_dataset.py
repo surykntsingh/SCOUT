@@ -49,7 +49,7 @@ class EmbeddingDataset(Dataset):
 
 
 
-        return slide_id, embedding1.unsqueeze(0), embedding2 , report_ids, report_masks, seq_length
+        return slide_id, embedding1.unsqueeze(0), embedding2.unsqueeze(0), report_ids, report_masks, seq_length
 
 
 
