@@ -39,7 +39,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
-        slide_ids, patch_feats_1,patch_feats_2, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
+        slide_ids, patch_feats_1,patch_feats_2, report_ids, report_masks, seq_length = zip(*batch)
         patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True).to(device)
         patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True).to(device)
         report_ids = torch.LongTensor(report_ids).to(device)

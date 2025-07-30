@@ -13,7 +13,7 @@ def parse_agrs():
 
     parser.add_argument('--d_model', type=int, default=512, help='the dimension of Transformer.')
     parser.add_argument('--d_ff', type=int, default=512, help='the dimension of FFN.')
-    parser.add_argument('--d_vf', type=int, default=768, help='the dimension of the patch features.')
+    parser.add_argument('--d_vf', type=int, default=512, help='the dimension of the patch features.')
     parser.add_argument('--num_heads', type=int, default=4, help='the number of heads in Transformer.')
     parser.add_argument('--num_layers', type=int, default=6, help='the number of layers of Transformer.')
     parser.add_argument('--dropout', type=float, default=0.1, help='the dropout rate of Transformer.')
@@ -39,9 +39,9 @@ def parse_agrs():
     parser.add_argument('--length_penalty', type=str, default='wu_0.9', help='length penality')
     parser.add_argument('--diversity_lambda', type=float, default=1.5, help='diversity lambda')
 
-    parser.add_argument('--d1', type=int, default=768, help='devices.')
-    parser.add_argument('--d2', type=int, default=768, help='devices.')
-    parser.add_argument('--embeddings_path', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan', help='emb 1 path.')
+    parser.add_argument('--d1', type=int, default=512, help='devices.')
+    parser.add_argument('--d2', type=int, default=66, help='devices.')
+    parser.add_argument('--embeddings_path', type=str, default='/mnt/surya/dataset/REG_2025/gecko', help='emb 1 path.')
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
     parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/3', help='reports path.')

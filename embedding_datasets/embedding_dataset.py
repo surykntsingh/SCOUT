@@ -28,11 +28,14 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         slide_id = self.__slides[idx]
         with h5py.File(f'{self.__embeddings_path}/{slide_id}.h5', "r") as h5_file:
-            coords_np = h5_file["coords"][:]
-            embeddings_np = h5_file["features"][:]
+            # coords_np = h5_file["coords"][:]
+            bag_feats_deep_np = h5_file["bag_feats_deep"][:]
+            bag_feats_np = h5_file["bag_feats"][:]
 
-            coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np)
+
+            # coords = torch.tensor(coords_np).float()
+            embedding1 = torch.tensor(bag_feats_deep_np)
+            embedding2 = torch.tensor(bag_feats_np)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 
@@ -43,11 +46,10 @@ class EmbeddingDataset(Dataset):
             report_masks = [1] * len(report_ids)
             seq_length = len(report_ids)
 
-        with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
-            embeddings_np = h5_file["features"][:]
-            embedding2 = torch.tensor(embeddings_np)
 
-        return slide_id, embedding1.unsqueeze(0), embedding2 , coords, report_ids, report_masks, seq_length
+
+
+        return slide_id, embedding1.unsqueeze(0), embedding2 , report_ids, report_masks, seq_length
 
 
 
