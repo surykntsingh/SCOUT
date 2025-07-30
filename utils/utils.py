@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 
 import numpy as np
 import torch
@@ -111,3 +112,76 @@ def pack_wrapper(module, att_feats, att_masks):
 def save_model(args, trainer):
     print(f'Saving model at path: {args.model_save_path}')
     trainer.save_model(args.model_save_path)
+
+
+def extract_fields(report_text):
+    fields = {}
+    # Normalize whitespace
+    text = " ".join(report_text.strip().split())
+    # ---- Biopsy site and mode (header) ----
+    m = re.match(r'^\s*([^,]+),\s*([^;]+);', text, re.IGNORECASE)
+    if m:
+        fields['Biopsy site'] = m.group(1).strip()
+        fields['Biopsy mode'] = m.group(2).strip()
+        text = text[m.end():].strip()
+    # ---- Diagnosis ----
+    diag_m = re.match(r'^(.*?)(?:\(|$)', text)
+    if diag_m:
+        diag = diag_m.group(1).strip().rstrip(',;')
+        # Remove a trailing ", grade X" if present
+        diag = re.sub(r',\s*grade\s+[IVX]+', '', diag, flags=re.IGNORECASE).strip()
+        if diag:
+            fields['Diagnosis'] = diag
+    # ---- Optional Fields ----
+    # Gleason score (e.g., "Gleason 3+4")
+    gleason = re.search(r'gleason\s*(?:score)?\s*[:\s]*([\d+]+)', text, re.IGNORECASE)
+    if gleason:
+        fields['Gleason score'] = gleason.group(1)
+    # Tumor volume (number or % after "tumor volume")
+    vol = re.search(r'\btumor\s+volume\s*[:\s]*([\d\.]+\s*%?)', text, re.IGNORECASE)
+    if vol:
+        fields['Tumor volume'] = vol.group(1).strip()
+    # Tumor grade (Roman numeral)
+    grade = re.search(r'grade\s+([IVX]+)\b', text, re.IGNORECASE)
+    if grade:
+        fields['Tumor grade'] = grade.group(1)
+
+    nuclear_grade = re.search(r'\bnuclear grade\s+([IVX]+)\b', text, re.IGNORECASE)
+    if nuclear_grade:
+        fields['Nuclear grade'] = nuclear_grade.group(1)
+
+    tubule = re.search(r'\btubule formation\s+([IVX]+)\b', text, re.IGNORECASE)
+    if nuclear_grade:
+        fields['Tubule formation'] = tubule.group(1)
+
+    mitosis = re.search(r'\bmitosis\s+([IVX]+)\b', text, re.IGNORECASE)
+    if nuclear_grade:
+        fields['Mitosis'] = mitosis.group(1)
+
+    # Margins: find any phrase containing "margin"
+    if re.search(r'\bmargin', text, re.IGNORECASE):
+        margins = re.findall(r'\bmargin[s]?\b[^,;.]*', text, re.IGNORECASE)
+        if margins:
+            fields['Margins'] = "; ".join([m.strip() for m in margins])
+    # Histologic subtype: e.g. after 'of'
+    if 'Diagnosis' in fields:
+        subtype = re.search(r'of\s+(.+)', fields['Diagnosis'], re.IGNORECASE)
+        if subtype:
+            sub = subtype.group(1).strip()
+            fields['Histologic subtype'] = sub
+    # Lymphovascular invasion (LVI): present or absent
+    if re.search(r'\blymphovascular\b|\bLVI\b', text, re.IGNORECASE):
+        if re.search(r'\bno\b\s+evidence\s+of\s+lymphovascular', text, re.IGNORECASE):
+            fields['Lymphovascular invasion'] = 'Absent'
+        else:
+            fields['Lymphovascular invasion'] = 'Present'
+    # Perineural invasion (PNI)
+    if re.search(r'\bperineural\b|\bPNI\b', text, re.IGNORECASE):
+        if re.search(r'\bno\b\s+evidence\s+of\s+perineural', text, re.IGNORECASE):
+            fields['Perineural invasion'] = 'Absent'
+        else:
+            fields['Perineural invasion'] = 'Present'
+    # DCIS presence
+    if re.search(r'\bDCIS\b', text, re.IGNORECASE):
+        fields['DCIS presence'] = 'Present'
+    return fields
