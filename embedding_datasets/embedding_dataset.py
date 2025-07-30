@@ -34,8 +34,8 @@ class EmbeddingDataset(Dataset):
 
 
             # coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(bag_feats_deep_np)
-            embedding2 = torch.tensor(bag_feats_np)
+            embedding2 = torch.tensor(bag_feats_deep_np)
+            embedding1 = torch.tensor(bag_feats_np)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 

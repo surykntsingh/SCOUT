@@ -39,8 +39,8 @@ def parse_agrs():
     parser.add_argument('--length_penalty', type=str, default='wu_0.9', help='length penality')
     parser.add_argument('--diversity_lambda', type=float, default=1.5, help='diversity lambda')
 
-    parser.add_argument('--d1', type=int, default=512, help='devices.')
-    parser.add_argument('--d2', type=int, default=66, help='devices.')
+    parser.add_argument('--d1', type=int, default=66, help='devices.')
+    parser.add_argument('--d2', type=int, default=512, help='devices.')
     parser.add_argument('--embeddings_path', type=str, default='/mnt/surya/dataset/REG_2025/gecko', help='emb 1 path.')
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
