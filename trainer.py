@@ -74,9 +74,11 @@ class Trainer:
             fast_dev_run=fast_dev_run
         )
 
-        trainer.predict(
+        preds = trainer.predict(
             self.model, datamodule=self.datamodule
         )
+        return preds
+    
 
 
 
