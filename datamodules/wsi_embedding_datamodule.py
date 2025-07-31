@@ -53,3 +53,45 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
                 torch.FloatTensor(report_masks), seq_length)
 
 
+class EmbeddingPredictDataset:
+    pass
+
+
+class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
+
+    def __init__(self,args, tokenizer, shuffle = False, slide_ids=None):
+        super().__init__()
+        self.predict_ds = None
+        self.__batch_size = args.batch_size
+        self.__shuffle = shuffle
+        self.__num_workers = args.num_workers
+        self.__embeddings_path = args.embeddings_path
+        self.__reports_json_path = args.reports_json_path
+        self.__max_seq_length = args.max_seq_length
+        self.__tokenizer = tokenizer
+        self.__embeddings_path_2 = args.embeddings_path_2
+        self.__slide_ids = slide_ids
+
+    def setup(self, stage=None):
+        self.predict_ds = EmbeddingPredictDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
+                              self.__max_seq_length, self.__embeddings_path_2, self.__slide_ids)
+        # print(dataset[0][1])
+
+
+    def predict_dataloader(self):
+        return DataLoader(self.self.predict_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
+
+
+    @staticmethod
+    def collate_fn(batch, device='cuda'):
+        slide_ids, patch_feats_1,patch_feats_2 = zip(*batch)
+        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True).to(device)
+        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True).to(device)
+
+
+        return (slide_ids, patch_feats1_pad, patch_feats2_pad)
+
+
+
+
+

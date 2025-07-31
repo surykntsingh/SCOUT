@@ -2,16 +2,19 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
-from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule
+from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, PatchEmbeddingDataPredictModule
 
 
 class Trainer:
 
-    def __init__(self, args, model, tokenizer, split_frac=(0.75, 0.12, 0.13)):
+    def __init__(self, args, model, tokenizer, split_frac=(0.75, 0.12, 0.13), predict=False, slide_ids=None):
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
-        self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+        if predict:
+            self.datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slide_ids)
+        else:
+            self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         self.model = model
         pl.seed_everything(42)
         self.trainer = None
@@ -74,8 +77,7 @@ class Trainer:
         trainer.predict(
             self.model, datamodule=self.datamodule
         )
-        test_metrics = trainer.logged_metrics
-        return test_metrics
+
 
 
     @rank_zero_only
