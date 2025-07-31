@@ -77,7 +77,7 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
 
 
     def predict_dataloader(self):
-        return DataLoader(self.self.predict_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
+        return DataLoader(self.predict_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
 
 
     @staticmethod
