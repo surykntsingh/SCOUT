@@ -22,6 +22,7 @@ def predict(args):
     results = {}
 
     for batch in predictions:
+        print(f'batch: {batch}')
         for i in range(args.batch_size):
             print(f'i: {i}, batchi: {batch[i]}')
             results[batch[i][0]] = batch[i][1]
