@@ -12,8 +12,8 @@ def predict(args):
     model_path = args.model_save_path
 
     model = ReportModel.load_from_checkpoint(model_path, args=args, tokenizer=tokenizer)
-    slide_ids = ['PIT_01_04212_01', 'PIT_01_09950_01', 'PIT_03_01569_01', 'PIT_01_08982_01'
-                 'PIT_01_01683_01.', 'PIT_01_04165_01', 'PIT_03_00832_01', 'PIT_03_01590_01',
+    slide_ids = ['PIT_01_04212_01', 'PIT_01_09950_01', 'PIT_03_01569_01', 'PIT_01_08982_01',
+                 'PIT_01_01683_01', 'PIT_01_04165_01', 'PIT_03_00832_01', 'PIT_03_01590_01',
                  'PIT_03_01675_01', 'PIT_01_00872_01'
                  ]
     trainer = Trainer(args, model, tokenizer, predict=True, slide_ids=slide_ids)
