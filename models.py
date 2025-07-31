@@ -118,7 +118,16 @@ class ReportModel(pl.LightningModule):
         output = self.model(patch_feats, pos_feats, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
 
-        print(f'slide: {slide_id}, pred_texts: {pred_texts}')
+        RED = '\033[91m'
+        RESET = '\033[0m'
+
+        print('*' * 100)
+        print(f'{RESET} Predicted report for slide: {slide_id[0]}: {pred_texts[0]} {RESET}')
+        print(f' {RED} Predicted synoptic reportfor slide: {slide_id[0]}: \n {RESET}')
+
+        json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
+        print(f'{RED} {json_string} {RESET}')
+        print('*' * 100)
         return slide_id,pred_texts
 
     def on_validation_epoch_end(self):

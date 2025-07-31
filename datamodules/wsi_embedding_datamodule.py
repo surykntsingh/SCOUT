@@ -3,7 +3,8 @@ from torch.utils.data import DataLoader, random_split
 from torch.nn.utils.rnn import pad_sequence
 import pytorch_lightning as pl
 
-from embedding_datasets.embedding_dataset import EmbeddingDataset
+from embedding_datasets.embedding_dataset import EmbeddingDataset, EmbeddingPredictDataset
+
 
 class PatchEmbeddingDataModule(pl.LightningDataModule):
 
@@ -52,9 +53,6 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         return (slide_ids, patch_feats1_pad, patch_feats2_pad, report_ids,
                 torch.FloatTensor(report_masks), seq_length)
 
-
-class EmbeddingPredictDataset:
-    pass
 
 
 class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
