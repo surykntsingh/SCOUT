@@ -4,7 +4,7 @@ from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer
 from utils.arg_parser import parse_agrs
-
+from utils.utils import save_results
 
 
 def predict(args):
@@ -31,10 +31,13 @@ def predict(args):
                 'report': reports[i]
             })
 
-    pprint(results)
+    # pprint(results)
+    return results
 
 
 if __name__ == "__main__":
     args = parse_agrs()
-    predict(args)
+    results = predict(args)
+    print(f'Saving results at path: {args.results_path} ')
+    save_results(results, args.results_path)
     print('Finished processing!')

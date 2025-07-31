@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import re
 
 import numpy as np
@@ -13,6 +14,15 @@ def read_json_file(json_path):
         d = json.load(f)
     return d
 
+def write_json_file(json, out_path):
+    with open(out_path, 'w') as f:
+        json.dump(json, f, indent=4)
+
+
+def save_results(results, results_dir):
+    os.makedirs(results_dir, exist_ok=True)
+    results_path = f'{results_dir}/predictions.json'
+    write_json_file(results, results_path)
 
 def penalty_builder(penalty_config):
     if penalty_config == '':

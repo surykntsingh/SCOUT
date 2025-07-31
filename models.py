@@ -123,7 +123,7 @@ class ReportModel(pl.LightningModule):
 
         print('*' * 100)
         print(f'{RESET} Predicted report for slide: {slide_id[0]}: {pred_texts[0]} {RESET}')
-        print(f' {RED} Predicted synoptic reportfor slide: {slide_id[0]}: \n {RESET}')
+        print(f' {RED} Predicted synoptic report for slide: {slide_id[0]}: \n {RESET}')
 
         json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
         print(f'{RED} {json_string} {RESET}')

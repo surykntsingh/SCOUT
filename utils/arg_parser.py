@@ -49,5 +49,6 @@ def parse_agrs():
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
     parser.add_argument('--fastdevrun', type=bool, default='false', help='fast dev run.')
+    parser.add_argument('--results_path', type=str, default='/mnt/surya/projects/Wsi-rgen/results/mi_gen_titan_plus_conch1.5_20250721_2', help='results path')
     args = parser.parse_args()
     return args
