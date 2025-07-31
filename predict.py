@@ -23,9 +23,9 @@ def predict(args):
 
     for batch in predictions:
         print(f'batch: {batch}')
-        for i in range(args.batch_size):
-            print(f'i: {i}, batchi: {batch[i]}')
-            results[batch[i][0]] = batch[i][1]
+        for slide_ids, reports  in batch:
+            for i in range(args.batch_size):
+                results[slide_ids[i]] = reports[i]
 
     print(f'results: {results}')
 
