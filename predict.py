@@ -21,11 +21,12 @@ def predict(args):
     print('model predictions finished')
     results = {}
 
-    for batch in predictions:
-        print(f'batch: {batch}')
-        for slide_ids, reports  in batch:
-            for i in range(args.batch_size):
-                results[slide_ids[i]] = reports[i]
+    # for batch in predictions:
+    #     print(f'batch: {batch}')
+    print(f'predictions: {predictions}')
+    for slide_ids, reports  in predictions:
+        for i in range(args.batch_size):
+            results[slide_ids[i]] = reports[i]
 
     print(f'results: {results}')
 
