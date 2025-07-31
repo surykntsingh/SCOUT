@@ -2,7 +2,6 @@ from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer
 from utils.arg_parser import parse_agrs
-from utils.utils import save_model
 
 
 
@@ -20,8 +19,13 @@ def predict(args):
 
     predictions = trainer.predict()
     print('model predictions finished')
+    results = {}
 
-    print(f'predictions: {predictions}')
+    for batch in predictions:
+        for i in range(args.batch_size):
+            results[batch[i][0]] = batch[i][1]
+
+    print(f'results: {results}')
 
 
 if __name__ == "__main__":
