@@ -73,7 +73,7 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
     def setup(self, stage=None):
         self.predict_ds = EmbeddingPredictDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
                               self.__max_seq_length, self.__embeddings_path_2, self.__slide_ids)
-        # print(dataset[0][1])
+        print(f'predict ds: {len(self.predict_ds)}')
 
 
     def predict_dataloader(self):

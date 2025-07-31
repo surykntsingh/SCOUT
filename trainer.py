@@ -65,6 +65,7 @@ class Trainer:
 
     def predict(self, fast_dev_run=False):
 
+
         trainer = pl.Trainer(
             accelerator='gpu',
             devices=self.__devices,
@@ -78,7 +79,7 @@ class Trainer:
             self.model, datamodule=self.datamodule
         )
         return preds
-    
+
 
 
 
