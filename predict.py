@@ -6,7 +6,7 @@ from utils.utils import save_model
 
 
 
-def test(args):
+def predict(args):
 
     tokenizer = Tokenizer(args.reports_json_path)
     model_path = args.model_save_path
