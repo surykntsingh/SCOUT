@@ -13,7 +13,7 @@ def parse_agrs():
 
     parser.add_argument('--d_model', type=int, default=512, help='the dimension of Transformer.')
     parser.add_argument('--d_ff', type=int, default=512, help='the dimension of FFN.')
-    parser.add_argument('--d_vf', type=int, default=768, help='the dimension of the patch features.')
+    parser.add_argument('--d_vf', type=int, default=512, help='the dimension of the patch features.')
     parser.add_argument('--num_heads', type=int, default=4, help='the number of heads in Transformer.')
     parser.add_argument('--num_layers', type=int, default=6, help='the number of layers of Transformer.')
     parser.add_argument('--dropout', type=float, default=0.1, help='the dropout rate of Transformer.')
@@ -26,10 +26,10 @@ def parse_agrs():
 
     parser.add_argument('--sample_method', type=str, default='beam_search',
                         help='the sample methods to sample a report.')
-    parser.add_argument('--beam_size', type=int, default=6, help='the beam size when beam searching.')
+    parser.add_argument('--beam_size', type=int, default=8, help='the beam size when beam searching.')
     parser.add_argument('--temperature', type=float, default=1.5, help='the temperature when sampling.')
     parser.add_argument('--sample_n', type=int, default=1, help='the sample number per image.')
-    parser.add_argument('--group_size', type=int, default=3, help='the group size.')
+    parser.add_argument('--group_size', type=int, default=4, help='the group size.')
     parser.add_argument('--output_logsoftmax', type=int, default=1, help='whether to output the probabilities.')
     parser.add_argument('--decoding_constraint', type=int, default=1, help='whether decoding constraint.')
     parser.add_argument('--suppress_UNK', type=int, default=1, help='suppress UNK tokens in the decoding.')
