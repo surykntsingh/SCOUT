@@ -67,7 +67,7 @@ class EmbeddingPredictDataset(Dataset):
         if slide_ids:
             self.__slides = [slide_id for slide_id in slide_ids if slide_id in self.__slides]
 
-        print(f'files: {len(files)}, files_1: {len(files_1)}')
+        print(f'self.__slides: {self.__slides}')
 
     def __len__(self):
         return len(self.__slides)
