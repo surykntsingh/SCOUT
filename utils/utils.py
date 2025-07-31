@@ -14,9 +14,9 @@ def read_json_file(json_path):
         d = json.load(f)
     return d
 
-def write_json_file(json, out_path):
+def write_json_file(obj, out_path):
     with open(out_path, 'w') as f:
-        json.dump(json, f, indent=4)
+        json.dump(obj, f, indent=4)
 
 
 def save_results(results, results_dir):
