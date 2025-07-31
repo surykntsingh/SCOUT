@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer
@@ -29,7 +31,7 @@ def predict(args):
                 'report': reports[i]
             })
 
-    print(f'results: {results}')
+    pprint(results)
 
 
 if __name__ == "__main__":
