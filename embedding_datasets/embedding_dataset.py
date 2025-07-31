@@ -63,6 +63,7 @@ class EmbeddingPredictDataset(Dataset):
         files_1 = os.listdir(embeddings_path)
 
         self.__slides = [file.split('.')[0] for file in files if file in files_1]
+        print(f'slide_ids:: {slide_ids}')
         if slide_ids:
             self.__slides = [slide_id for slide_id in slide_ids if slide_id in self.__slides]
 
