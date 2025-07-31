@@ -2,7 +2,6 @@ from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer
 from utils.arg_parser import parse_agrs
-from utils.utils import save_model
 
 
 def test(args):

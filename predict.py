@@ -19,14 +19,15 @@ def predict(args):
 
     predictions = trainer.predict()
     print('model predictions finished')
-    results = {}
+    results = []
 
-    # for batch in predictions:
-    #     print(f'batch: {batch}')
     print(f'predictions: {predictions}')
     for slide_ids, reports  in predictions:
         for i in range(args.batch_size):
-            results[slide_ids[i]] = reports[i]
+            results.append({
+                'id': f'{slide_ids[i]}.tiff',
+                'report': reports[i]
+            })
 
     print(f'results: {results}')
 
