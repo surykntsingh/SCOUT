@@ -45,10 +45,10 @@ def parse_agrs():
     parser.add_argument('--embeddings_path_2', type=str, default='/mnt/saarthak/datasets/REG_test1_processed/20x_512px_0px_overlap/features_conch_v15', help='emb 2 path.')
     parser.add_argument('--reports_json_path', type=str, default='/mnt/surya/train.json', help='reports path.')
     parser.add_argument('--ckpt_path', type=str, default='/mnt/surya/projects/Wsi-rgen/checkpoints/3', help='reports path.')
-    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250721_2_model.ckpt',
+    parser.add_argument('--model_save_path', type=str, default='/mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250714_1_model.ckpt',
                         help='model save path')
     parser.add_argument('--devices', type=str, default='1,2,3,4,5', help='devices.')
     parser.add_argument('--fastdevrun', type=bool, default='false', help='fast dev run.')
-    parser.add_argument('--results_path', type=str, default='/mnt/surya/projects/Wsi-rgen/results/test/mi_gen_titan_plus_conch1.5_20250721_2', help='results path')
+    parser.add_argument('--results_path', type=str, default='/mnt/surya/projects/Wsi-rgen/results/test/mi_gen_titan_plus_conch1.5_20250714_1', help='results path')
     args = parser.parse_args()
     return args
