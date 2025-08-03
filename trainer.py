@@ -105,7 +105,7 @@ class KFoldTrainer(Trainer):
 
     def train(self, fast_dev_run=False):
 
-        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(self.__reports.keys())):
+        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(self.__reports)):
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
             checkpoint_callback = ModelCheckpoint(
                 dirpath=self.ckpt_path,  # Directory to save checkpoints
