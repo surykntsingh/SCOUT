@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import Subset, DataLoader, random_split
 from torch.nn.utils.rnn import pad_sequence
 import pytorch_lightning as pl
 
@@ -53,3 +53,15 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
                 torch.FloatTensor(report_masks), seq_length)
 
 
+class EmbeddingDataModule(PatchEmbeddingDataModule):
+
+    def __init__(self, args, tokenizer, split_frac, shuffle, train_idx, test_idx):
+        super().__init__(args, tokenizer, split_frac, shuffle)
+        self.__train_idx = train_idx
+        self.__test_idx = test_idx
+
+    def setup(self, stage=None):
+        dataset = EmbeddingDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
+                                   self.__max_seq_length, self.__embeddings_path_2)
+        self.train_ds, self.val_ds = random_split(Subset(dataset, self.__train_idx), self.__split_frac)
+        self.test_ds = Subset(dataset, self.__test_idx)

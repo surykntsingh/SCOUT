@@ -1,6 +1,8 @@
 import copy
 import json
 import re
+import yaml
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -185,3 +187,21 @@ def extract_fields(report_text):
     if re.search(r'\bDCIS\b', text, re.IGNORECASE):
         fields['DCIS presence'] = 'Present'
     return fields
+
+
+def get_params_for_key(file_path: str, param_key: str):
+    """utility function to get the params
+    from params.yaml file given the key
+
+    :param file_path: path of the params file
+    :param param_key: key to read
+    :returns: params dict
+
+    """
+
+    with open(file_path) as f:
+        all_params = yaml.safe_load(f)
+        params = all_params[param_key]
+
+        print(f'params: {params}')
+        return SimpleNamespace(**params)
