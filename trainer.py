@@ -96,8 +96,8 @@ class Trainer:
 class KFoldTrainer(Trainer):
     def __init__(self, args, tokenizer, split_frac, num_fold):
         super().__init__(args, tokenizer, split_frac)
-        reports = read_json_file(args.reports_json_path)
-        self.__slides = reports.keys()
+        self.__reports = read_json_file(args.reports_json_path)
+        # self.__slides = reports.keys()
         self.__kf = KFold(n_splits=num_fold, shuffle=True, random_state=42)
         self.args = args
         self.tokenizer = tokenizer
@@ -105,7 +105,7 @@ class KFoldTrainer(Trainer):
 
     def train(self, fast_dev_run=False):
 
-        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(self.__slides)):
+        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(self.__reports.keys())):
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
             checkpoint_callback = ModelCheckpoint(
                 dirpath=self.ckpt_path,  # Directory to save checkpoints
@@ -128,7 +128,7 @@ class KFoldTrainer(Trainer):
                 fast_dev_run=fast_dev_run
             )
 
-            model = ReportModel(self.args, self.tokenizer)
+            model = ReportModel(self.args, self.tokenizer, reports=self.__reports)
             trainer.fit(
                 model, datamodule=self.datamodule
             )
