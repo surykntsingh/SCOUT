@@ -17,7 +17,7 @@ class Trainer:
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
         # self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
-        self.model = ReportModel(args, tokenizer)
+        # self.model = ReportModel(args, tokenizer)
         pl.seed_everything(42)
         self.trainer = None
         self.__devices = list(map(int, args.devices.split(',')))
