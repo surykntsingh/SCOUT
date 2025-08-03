@@ -94,7 +94,7 @@ class Trainer:
 
 
 class KFoldTrainer(Trainer):
-    def __init__(self, args, tokenizer, split_frac, num_fold):
+    def __init__(self, args, tokenizer, split_frac):
         super().__init__(args, tokenizer, split_frac)
         self.__reports = read_json_file(args.reports_json_path)
         # self.__slides = reports.keys()
