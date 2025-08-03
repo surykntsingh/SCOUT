@@ -28,7 +28,7 @@ def train(config_file_path='config.yaml'):
     return trainer
 
 @app.command()
-def train_kfold(config_file_path='config.yaml', num_fold = 3):
+def trainkfold(config_file_path='config.yaml', num_fold=3):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.85, 0.15]
     tokenizer = Tokenizer(args.reports_json_path)
