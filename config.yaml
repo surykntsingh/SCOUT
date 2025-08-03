@@ -37,4 +37,5 @@ train:
   model_save_path: /mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250731_1_model.ckpt
   devices: 1,2,3,4,5
   fastdevrun: false
+  num_folds: 3
 

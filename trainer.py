@@ -98,7 +98,7 @@ class KFoldTrainer(Trainer):
         super().__init__(args, tokenizer, split_frac)
         self.__reports = read_json_file(args.reports_json_path)
         # self.__slides = reports.keys()
-        self.__kf = KFold(n_splits=num_fold, shuffle=True, random_state=42)
+        self.__kf = KFold(n_splits=args.num_fold, shuffle=True, random_state=42)
         self.args = args
         self.tokenizer = tokenizer
         self.split_frac =split_frac

@@ -28,13 +28,13 @@ def train(config_file_path='config.yaml'):
     return trainer
 
 @app.command()
-def trainkfold(config_file_path='config.yaml', num_fold=3):
+def trainkfold(config_file_path='config.yaml'):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.85, 0.15]
     tokenizer = Tokenizer(args.reports_json_path)
     # model = ReportModel(args, tokenizer)
 
-    trainer = KFoldTrainer(args, tokenizer, split_frac, num_fold)
+    trainer = KFoldTrainer(args, tokenizer, split_frac)
     trainer.train()
 
 
