@@ -59,8 +59,10 @@ def test(config_file_path='config.yaml'):
 
 
 def write_metrics(results_path, metrics):
-    metrics_df = pd.DataFrame(metrics)
-    metrics_df['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    metrics['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    metrics_df = pd.DataFrame([metrics])
+
+
     metrics_df.to_csv(results_path,mode='a')
 
 
