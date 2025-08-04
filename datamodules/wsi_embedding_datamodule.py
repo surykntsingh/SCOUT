@@ -60,6 +60,9 @@ class EmbeddingDataModule(PatchEmbeddingDataModule):
         self.train_idx = train_idx
         self.test_idx = test_idx
 
+        print(f'self.train_idx: {self.train_idx}')
+        print(f'self.test_idx: {self.test_idx}')
+
     def setup(self, stage=None):
         dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
                                    self.max_seq_length, self.embeddings_path_2)
