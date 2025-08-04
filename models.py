@@ -34,7 +34,7 @@ class ReportModel(pl.LightningModule):
         self.reg_scores = []
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
 
-        print(f'self.reports: {self.reports.keys()}')
+        # print(f'self.reports: {self.reports.keys()}')
 
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()

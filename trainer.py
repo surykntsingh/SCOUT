@@ -1,5 +1,6 @@
 import os
-
+from collections import defaultdict
+import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -105,21 +106,29 @@ class KFoldTrainer(Trainer):
         self.tokenizer = tokenizer
         self.split_frac =split_frac
 
-        self.train_metrics={}
-        self.test_metrics={}
+        self.train_metrics=defaultdict(list)
+        self.test_metrics=defaultdict(list)
 
     def get_metrics(self):
-        # keys = self.train_metrics[f'fold_{0}']
-        # train_metrics
-        #
-        #
-        return self.train_metrics, self.test_metrics
+        print(f'train_metrics: {self.train_metrics}, test_metrics: {self.test_metrics}')
+
+        train_metrics = {
+            metric: f'{np.mean(value)} \u00B1 {np.std(value)}' for metric, value in self.train_metrics.items()
+        }
+
+        test_metrics = {
+            metric: f'{np.mean(value)} \u00B1 {np.std(value)}' for metric, value in self.test_metrics.items()
+        }
+
+        return train_metrics, test_metrics
 
     def train(self, fast_dev_run=False):
         files = os.listdir(self.args.embeddings_path)
 
         for fold, (train_idx, test_idx) in enumerate(self.__kf.split(files)):
             # print(f'__reports: {len(self.__reports)}, train_idx: {len(train_idx)}: {train_idx}, test_idx: {len(test_idx)}: {test_idx}')
+            print("*"*100)
+            print(f'training for fold: {fold}')
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
             checkpoint_callback = ModelCheckpoint(
                 dirpath=self.ckpt_path,  # Directory to save checkpoints
@@ -147,16 +156,25 @@ class KFoldTrainer(Trainer):
                 model, datamodule=self.datamodule
             )
             train_metrics = trainer.logged_metrics
-            self.train_metrics[f'fold_{fold}'] = train_metrics
+            # self.train_metrics[f'fold_{fold}'] = train_metrics
             print(f'fold: {fold}, train_metrics: {train_metrics}')
+
+            for metric,value in  train_metrics.items():
+                self.train_metrics[metric].append(value)
 
             trainer.test(
                 model, datamodule=self.datamodule
             )
             test_metrics = trainer.logged_metrics
-            self.test_metrics[f'fold_{fold}'] = test_metrics
+            # self.test_metrics[f'fold_{fold}'] = test_metrics
 
             print(f'fold: {fold}, test_metrics: {test_metrics}')
+
+            for metric,value in  test_metrics.items():
+                self.test_metrics[metric].append(value)
+
+            print(f'Finished!')
+            print("*"*100)
 
 
 
