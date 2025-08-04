@@ -105,7 +105,7 @@ class KFoldTrainer(Trainer):
         self.args = args
         self.tokenizer = tokenizer
         self.split_frac =split_frac
-
+        self.best_models = []
         self.train_metrics=defaultdict(list)
         self.test_metrics=defaultdict(list)
 
@@ -120,7 +120,14 @@ class KFoldTrainer(Trainer):
             metric: f'{np.mean(value)} \u00B1 {np.std(value)}' for metric, value in self.test_metrics.items()
         }
 
+        metrics = {**train_metrics, **test_metrics}
+        metrics['best_model_path'] = self.get_best_model_path()
         return train_metrics, test_metrics
+
+    def get_best_model_path(self):
+        self.best_models.sort(reverse=True, key=lambda x: x[1])
+        return self.best_models[0]
+
 
     def train(self, fast_dev_run=False):
         files = os.listdir(self.args.embeddings_path)
@@ -167,6 +174,9 @@ class KFoldTrainer(Trainer):
             )
             test_metrics = trainer.logged_metrics
             # self.test_metrics[f'fold_{fold}'] = test_metrics
+
+            best_model_path = checkpoint_callback.best_model_path
+            self.best_models.append((best_model_path, test_metrics['test_reg'], fold))
 
             print(f'fold: {fold}, test_metrics: {test_metrics}')
 
