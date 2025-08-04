@@ -55,7 +55,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
 class EmbeddingDataModule(PatchEmbeddingDataModule):
 
-    def __init__(self, args, tokenizer, split_frac, shuffle, train_idx, test_idx):
+    def __init__(self, args, tokenizer, split_frac, train_idx, test_idx, shuffle=False):
         super().__init__(args, tokenizer, split_frac, shuffle)
         self.__train_idx = train_idx
         self.__test_idx = test_idx
