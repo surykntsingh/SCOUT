@@ -32,7 +32,7 @@ class ReportModel(pl.LightningModule):
         self.meteor_scores = []
         self.reg_evaluator = REG_Evaluator()
         self.reg_scores = []
-        self.reports = reports
+        self.reports = {report['id']: report['report'] for report in reports}
 
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()
