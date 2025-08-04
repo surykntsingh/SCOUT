@@ -3,8 +3,9 @@ import typer
 from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
-from utils.arg_parser import parse_agrs
+import pandas as pd
 from utils.utils import save_model, get_params_for_key
+from datetime import datetime
 
 app = typer.Typer()
 
@@ -40,7 +41,7 @@ def trainkfold(config_file_path='config.yaml'):
     train_metrics, test_metrics = trainer.get_metrics()
     print(f'train_metrics: {train_metrics}')
     print(f'test_metrics: {test_metrics}')
-
+    write_metrics(f'{args.results_path}/experiments/results.csv', {**train_metrics, **test_metrics})
 
 
 
@@ -55,6 +56,13 @@ def test(config_file_path='config.yaml'):
     trainer = Trainer(args, model, tokenizer, split_frac)
     trainer.test()
     print('model testing finished')
+
+
+def write_metrics(results_path, metrics):
+    metrics_df = pd.DataFrame(metrics)
+    metrics_df['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    metrics_df.to_csv(results_path,mode='a')
+
 
 
 

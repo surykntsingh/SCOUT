@@ -15,6 +15,9 @@ def read_json_file(json_path):
         d = json.load(f)
     return d
 
+def write_json_file(obj, out_path):
+    with open(out_path, 'w') as f:
+        json.dump(obj, f, indent=4)
 
 def penalty_builder(penalty_config):
     if penalty_config == '':

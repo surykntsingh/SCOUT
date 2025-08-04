@@ -8,7 +8,7 @@ train:
   max_epochs: 200
   d_model: 512
   d_ff: 512
-  d_vf: 512
+  d_vf: 768
   num_heads: 8
   num_layers: 6
   dropout: 0.1
@@ -27,15 +27,16 @@ train:
   decoding_constraint: 1
   suppress_UNK: 1
   block_trigrams: 1
-  lr: 5e-1
+  lr: 0.00005
   d1: 768
   d2: 768
   embeddings_path: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan
   embeddings_path_2: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15
   reports_json_path: /mnt/surya/train.json
-  ckpt_path: /mnt/surya/projects/Wsi-rgen/checkpoints/3
-  model_save_path: /mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250731_1_model.ckpt
-  devices: 1,2,3,4,5
-  fastdevrun: false
+  ckpt_path: /mnt/surya/projects/Wsi-rgen/checkpoints/5
+  model_save_path: /mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250804_1_model.ckpt
+  results_path: /mnt/surya/projects/Wsi-rgen/results
+  devices: 1,2,3,4,6
+  fast_dev_run: false
   num_folds: 3
 
