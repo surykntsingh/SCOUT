@@ -1,3 +1,5 @@
+import os
+
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -104,8 +106,11 @@ class KFoldTrainer(Trainer):
         self.split_frac =split_frac
 
     def train(self, fast_dev_run=False):
+        files = os.listdir(self.args.embeddings_path)
 
-        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(self.__reports)):
+        for fold, (train_idx, test_idx) in enumerate(self.__kf.split(files)):
+
+
             print(f'__reports: {len(self.__reports)}, train_idx: {len(train_idx)}: {train_idx}, test_idx: {len(test_idx)}: {test_idx}')
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
             checkpoint_callback = ModelCheckpoint(
