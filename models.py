@@ -51,7 +51,7 @@ class ReportModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         # print('val ---------->')
 
-        slide_id, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
+        slide_ids, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
 
@@ -65,7 +65,7 @@ class ReportModel(pl.LightningModule):
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
 
-            target_texts = self.reports[slide_id]
+            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
             rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
