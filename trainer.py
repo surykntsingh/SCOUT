@@ -105,13 +105,21 @@ class KFoldTrainer(Trainer):
         self.tokenizer = tokenizer
         self.split_frac =split_frac
 
+        self.train_metrics={}
+        self.test_metrics={}
+
+    def get_metrics(self):
+        # keys = self.train_metrics[f'fold_{0}']
+        # train_metrics
+        #
+        #
+        return self.train_metrics, self.test_metrics
+
     def train(self, fast_dev_run=False):
         files = os.listdir(self.args.embeddings_path)
 
         for fold, (train_idx, test_idx) in enumerate(self.__kf.split(files)):
-
-
-            print(f'__reports: {len(self.__reports)}, train_idx: {len(train_idx)}: {train_idx}, test_idx: {len(test_idx)}: {test_idx}')
+            # print(f'__reports: {len(self.__reports)}, train_idx: {len(train_idx)}: {train_idx}, test_idx: {len(test_idx)}: {test_idx}')
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
             checkpoint_callback = ModelCheckpoint(
                 dirpath=self.ckpt_path,  # Directory to save checkpoints
@@ -138,14 +146,15 @@ class KFoldTrainer(Trainer):
             trainer.fit(
                 model, datamodule=self.datamodule
             )
-            train_metrics = self.trainer.logged_metrics
-
+            train_metrics = trainer.logged_metrics
+            self.train_metrics[f'fold_{fold}'] = train_metrics
             print(f'fold: {fold}, train_metrics: {train_metrics}')
 
             trainer.test(
-                self.model, datamodule=self.datamodule
+                model, datamodule=self.datamodule
             )
             test_metrics = trainer.logged_metrics
+            self.test_metrics[f'fold_{fold}'] = test_metrics
 
             print(f'fold: {fold}, test_metrics: {test_metrics}')
 

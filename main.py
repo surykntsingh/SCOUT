@@ -37,6 +37,10 @@ def trainkfold(config_file_path='config.yaml'):
     trainer = KFoldTrainer(args, tokenizer, split_frac)
     trainer.train(fast_dev_run=args.fast_dev_run)
 
+    train_metrics, test_metrics = trainer.get_metrics()
+    print(f'train_metrics: {train_metrics}')
+    print(f'test_metrics: {test_metrics}')
+
 
 
 
