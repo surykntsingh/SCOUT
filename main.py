@@ -35,7 +35,7 @@ def trainkfold(config_file_path='config.yaml'):
     # model = ReportModel(args, tokenizer)
 
     trainer = KFoldTrainer(args, tokenizer, split_frac)
-    trainer.train()
+    trainer.train(fast_dev_run=args.fast_dev_run)
 
 
 

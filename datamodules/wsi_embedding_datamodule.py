@@ -12,30 +12,30 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         self.test_ds = None
         self.val_ds = None
         self.train_ds = None
-        self.__batch_size = args.batch_size
-        self.__shuffle = shuffle
-        self.__num_workers = args.num_workers
-        self.__embeddings_path = args.embeddings_path
-        self.__reports_json_path = args.reports_json_path
-        self.__max_seq_length = args.max_seq_length
-        self.__split_frac = split_frac
-        self.__tokenizer = tokenizer
-        self.__embeddings_path_2 = args.embeddings_path_2
+        self.batch_size = args.batch_size
+        self.shuffle = shuffle
+        self.num_workers = args.num_workers
+        self.embeddings_path = args.embeddings_path
+        self.reports_json_path = args.reports_json_path
+        self.max_seq_length = args.max_seq_length
+        self.split_frac = split_frac
+        self.tokenizer = tokenizer
+        self.embeddings_path_2 = args.embeddings_path_2
 
     def setup(self, stage=None):
-        dataset = EmbeddingDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
-                              self.__max_seq_length, self.__embeddings_path_2)
+        dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+                              self.max_seq_length, self.embeddings_path_2)
         # print(dataset[0][1])
-        self.train_ds, self.val_ds, self.test_ds = random_split(dataset, self.__split_frac)
+        self.train_ds, self.val_ds, self.test_ds = random_split(dataset, self.split_frac)
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=self.shuffle, collate_fn = self.collate_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.val_ds, batch_size=self.__batch_size, collate_fn = self.collate_fn)
+        return DataLoader(self.val_ds, batch_size=self.batch_size, collate_fn = self.collate_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.test_ds, batch_size=self.__batch_size, collate_fn = self.collate_fn)
+        return DataLoader(self.test_ds, batch_size=self.batch_size, collate_fn = self.collate_fn)
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
@@ -57,11 +57,11 @@ class EmbeddingDataModule(PatchEmbeddingDataModule):
 
     def __init__(self, args, tokenizer, split_frac, train_idx, test_idx, shuffle=False):
         super().__init__(args, tokenizer, split_frac, shuffle)
-        self.__train_idx = train_idx
-        self.__test_idx = test_idx
+        self.train_idx = train_idx
+        self.test_idx = test_idx
 
     def setup(self, stage=None):
-        dataset = EmbeddingDataset(self.__embeddings_path, self.__reports_json_path, self.__tokenizer,
-                                   self.__max_seq_length, self.__embeddings_path_2)
-        self.train_ds, self.val_ds = random_split(Subset(dataset, self.__train_idx), self.__split_frac)
-        self.test_ds = Subset(dataset, self.__test_idx)
+        dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+                                   self.max_seq_length, self.embeddings_path_2)
+        self.train_ds, self.val_ds = random_split(Subset(dataset, self.train_idx), self.split_frac)
+        self.test_ds = Subset(dataset, self.test_idx)
