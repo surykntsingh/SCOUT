@@ -120,9 +120,8 @@ class KFoldTrainer(Trainer):
             metric: f'{np.mean(value)} \u00B1 {np.std(value)}' for metric, value in self.test_metrics.items()
         }
 
-        metrics = {**train_metrics, **test_metrics}
-        metrics['best_model_path'] = self.get_best_model_path()
-        return train_metrics, test_metrics
+        metrics = {**train_metrics, **test_metrics, 'best_model_path': self.get_best_model_path()}
+        return metrics
 
     def get_best_model_path(self):
         self.best_models.sort(reverse=True, key=lambda x: x[1])
