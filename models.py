@@ -86,7 +86,7 @@ class ReportModel(pl.LightningModule):
             # print('val step end')
 
     def test_step(self, batch, batch_idx):
-        _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
+        slide_ids, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
 
         output_ = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='train')
         loss = self.loss_fn(output_, report_ids, report_masks)
@@ -94,8 +94,9 @@ class ReportModel(pl.LightningModule):
 
         output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
-        target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+        # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
         # print(f'pred_texts: {pred_texts},\n target_texts: {target_texts}')
+        target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
         RED = '\033[91m'
         BLUE = '\033[94m'
