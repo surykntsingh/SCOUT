@@ -127,6 +127,16 @@ class KFoldTrainer(Trainer):
         self.best_models.sort(reverse=True, key=lambda x: x[1])
         return self.best_models[0]
 
+    def load_model(self, model_cls, **kwargs):
+        model_path = self.get_best_model_path()
+        super().load_model(model_cls, model_path, **kwargs)
+
+    @rank_zero_only
+    def save_model(self, trainer, model_path):
+
+        trainer.save_checkpoint(model_path)
+        print(f'model saved at path: {model_path}')
+
 
     def train(self, fast_dev_run=False):
         files = os.listdir(self.args.embeddings_path)
@@ -184,6 +194,8 @@ class KFoldTrainer(Trainer):
 
             print(f'Finished!')
             print("*"*100)
+
+
 
 
 
