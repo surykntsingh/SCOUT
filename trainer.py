@@ -1,5 +1,7 @@
 import os
 from collections import defaultdict
+from datetime import datetime
+
 import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -16,18 +18,25 @@ from utils.utils import read_json_file
 class Trainer:
 
     def __init__(self, args, tokenizer, split_frac):
+        self.best_model_path = None
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
-        # self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+        self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         # self.model = ReportModel(args, tokenizer)
         pl.seed_everything(42)
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
+        self.args = args
+        self.tokenizer = tokenizer
 
-    def train(self, fast_dev_run=False):
+    def train(self, model, datamodule, fast_dev_run=False):
+        # datamodule = PatchEmbeddingDataModule(self.args, self.tokenizer, self.split_frac)
+        ts = datetime.now().strftime("%Y%m%d")
+        ckpt_path = f'{self.ckpt_path}/{ts}'
+
         checkpoint_callback = ModelCheckpoint(
-            dirpath=self.ckpt_path,  # Directory to save checkpoints
+            dirpath=ckpt_path,  # Directory to save checkpoints
             filename="best_model",  # Naming convention
             monitor="val_loss",  # Metric to monitor for saving best checkpoints
             mode="min",  # Whether to minimize or maximize the monitored metric
@@ -46,12 +55,14 @@ class Trainer:
             fast_dev_run=fast_dev_run
         )
         self.trainer.fit(
-            self.model, datamodule=self.datamodule
+            model, datamodule=datamodule
         )
+        self.best_model_path = checkpoint_callback.best_model_path
         train_metrics = self.trainer.logged_metrics
+
         return train_metrics
 
-    def test(self, fast_dev_run=False):
+    def test(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(
             accelerator='gpu',
@@ -63,12 +74,12 @@ class Trainer:
         )
 
         trainer.test(
-            self.model, datamodule=self.datamodule
+            model, datamodule=datamodule
         )
         test_metrics = trainer.logged_metrics
         return test_metrics
 
-    def predict(self, fast_dev_run=False):
+    def predict(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(
             accelerator='gpu',
@@ -80,17 +91,16 @@ class Trainer:
         )
 
         trainer.predict(
-            self.model, datamodule=self.datamodule
+            model, datamodule=datamodule
         )
         test_metrics = trainer.logged_metrics
         return test_metrics
 
-
-    @rank_zero_only
-    def save_model(self, model_path):
-
-        self.trainer.save_checkpoint(model_path)
-        print(f'model saved at path: {model_path}')
+    # @rank_zero_only
+    # def save_model(self, model_path):
+    #
+    #     self.trainer.save_checkpoint(model_path)
+    #     print(f'model saved at path: {model_path}')
 
     def load_model(self, model_cls, model_path, **kwargs):
         return model_cls.load_from_checkpoint(model_path, **kwargs)
@@ -102,8 +112,7 @@ class KFoldTrainer(Trainer):
         self.__reports = read_json_file(args.reports_json_path)
         # self.__slides = reports.keys()
         self.__kf = KFold(n_splits=args.num_folds, shuffle=True, random_state=42)
-        self.args = args
-        self.tokenizer = tokenizer
+
         self.split_frac =split_frac
         self.best_models = []
         self.train_metrics=defaultdict(list)
@@ -138,7 +147,7 @@ class KFoldTrainer(Trainer):
         print(f'model saved at path: {model_path}')
 
 
-    def train(self, fast_dev_run=False):
+    def train_and_test(self, fast_dev_run=False):
         files = os.listdir(self.args.embeddings_path)
 
         for fold, (train_idx, test_idx) in enumerate(self.__kf.split(files)):
@@ -146,8 +155,10 @@ class KFoldTrainer(Trainer):
             print("*"*100)
             print(f'training for fold: {fold}')
             self.datamodule = EmbeddingDataModule(self.args, self.tokenizer, self.split_frac, train_idx, test_idx)
+            ts = datetime.now().strftime("%Y%m%d")
+            ckpt_path = f'{self.ckpt_path}/{ts}'
             checkpoint_callback = ModelCheckpoint(
-                dirpath=self.ckpt_path,  # Directory to save checkpoints
+                dirpath=ckpt_path,  # Directory to save checkpoints
                 filename=f"fold{fold}_" + "{epoch:02d}_{val_loss:.5f}",  # Naming convention
                 monitor="val_loss",  # Metric to monitor for saving best checkpoints
                 mode="min",  # Whether to minimize or maximize the monitored metric

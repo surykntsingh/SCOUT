@@ -1,5 +1,6 @@
 import typer
 
+from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule
 from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
@@ -15,18 +16,21 @@ app = typer.Typer()
 @app.command()
 def train(config_file_path='config.yaml'):
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.8, 0.12, 0.08]
+    split_frac = [0.9, 0.065, 0.035]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
-    trainer = Trainer(args, model, tokenizer, split_frac)
-    train_metrics = trainer.train()
-    print('model training finished')
-    test_metrics = trainer.test()
-    print('model testing finished')
-    save_model(args, trainer)
 
+    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    trainer = Trainer(args, tokenizer, split_frac)
+    train_metrics = trainer.train(model, datamodule)
+    print('model training finished')
+    test_metrics = trainer.test(model, datamodule)
+    print('model testing finished')
+    # save_model(args, trainer)
+    metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
     print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}')
-    return trainer
+
+    write_metrics(f'{args.results_path}/experiments/results.csv', metrics)
 
 @app.command()
 def trainkfold(config_file_path='config.yaml'):
@@ -36,7 +40,7 @@ def trainkfold(config_file_path='config.yaml'):
     # model = ReportModel(args, tokenizer)
 
     trainer = KFoldTrainer(args, tokenizer, split_frac)
-    trainer.train(fast_dev_run=args.fast_dev_run)
+    trainer.train_and_test(fast_dev_run=args.fast_dev_run)
 
     metrics = trainer.get_metrics()
     print(f'metrics: {metrics}')
