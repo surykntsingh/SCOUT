@@ -109,8 +109,7 @@ class Trainer:
 class KFoldTrainer(Trainer):
     def __init__(self, args, tokenizer, split_frac):
         super().__init__(args, tokenizer, split_frac)
-        self.__reports = read_json_file(args.reports_json_path)
-        # self.__slides = reports.keys()
+
         self.__kf = KFold(n_splits=args.num_folds, shuffle=True, random_state=42)
 
         self.split_frac =split_frac
@@ -178,7 +177,7 @@ class KFoldTrainer(Trainer):
                 fast_dev_run=fast_dev_run
             )
 
-            model = ReportModel(self.args, self.tokenizer, reports=self.__reports)
+            model = ReportModel(self.args, self.tokenizer)
             trainer.fit(
                 model, datamodule=self.datamodule
             )

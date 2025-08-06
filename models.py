@@ -9,12 +9,12 @@ import evaluate
 from modules.loss import LanguageModelCriterion
 from modules.metrics import REG_Evaluator
 from modules.report_gen_model import ReportGenModel
-from utils.utils import extract_fields
+from utils.utils import extract_fields, read_json_file
 
 
 class ReportModel(pl.LightningModule):
 
-    def __init__(self, args, tokenizer, reports, weight_decay=0.01):
+    def __init__(self, args, tokenizer, weight_decay=0.01):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)
         self.tokenizer = tokenizer
@@ -32,6 +32,7 @@ class ReportModel(pl.LightningModule):
         self.meteor_scores = []
         self.reg_evaluator = REG_Evaluator()
         self.reg_scores = []
+        reports = read_json_file(args.reports_json_path)
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
 
         # print(f'self.reports: {self.reports.keys()}')
@@ -62,7 +63,7 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 10==0:
+        if batch_idx % 5==0:
             output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
