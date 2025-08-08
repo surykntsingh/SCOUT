@@ -24,6 +24,8 @@ def train(config_file_path='config.yaml'):
     trainer = Trainer(args, tokenizer, split_frac)
     train_metrics = trainer.train(model, datamodule)
     print('model training finished')
+    print(f'loading best model from {trainer.best_model_path}' )
+    model = ReportModel.load_from_checkpoint(trainer.best_model_path)
     test_metrics = trainer.test(model, datamodule)
     print('model testing finished')
     # save_model(args, trainer)
