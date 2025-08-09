@@ -61,7 +61,7 @@ def test(config_file_path='config.yaml'):
     trainer = Trainer(args, tokenizer, split_frac)
 
     print(f'loading best model from {args.model_load_path}')
-    model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
+    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
     test_metrics = trainer.test(model, datamodule)
     print(f'test_metrics: {test_metrics}')
     print('model testing finished')
