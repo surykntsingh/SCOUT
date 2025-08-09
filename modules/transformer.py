@@ -143,7 +143,7 @@ class EncoderDecoder(AttModel):
         self.logit_mesh = nn.Linear(args.d_model, args.d_model)
 
     def __build_model(self, tgt_vocab):
-        attn = MultiHeadedAttention(self.num_heads, self.d_model)
+        attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)

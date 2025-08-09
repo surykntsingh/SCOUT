@@ -1,7 +1,7 @@
 
 train:
   max_fea_length: 1000
-  max_seq_length: 200
+  max_seq_length: 400
   threshold: 1
   num_workers: 2
   batch_size: 1
@@ -11,13 +11,14 @@ train:
   d_vf: 768
   num_heads: 8
   num_layers: 6
-  dropout: 0.1
+  dropout: 0.3
+  weight_decay: 0.05
   logit_layers: 1
   bos_idx: 0
   eos_idx: 0
   pad_idx: 0
   use_bn: 0
-  drop_prob_lm: 0.5
+  drop_prob_lm: 0.4
   sample_method: beam_search
   beam_size: 10
   temperature: 1.5
@@ -33,10 +34,9 @@ train:
   embeddings_path: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan
   embeddings_path_2: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15
   reports_json_path: /mnt/surya/train.json
-  ckpt_path: /mnt/surya/projects/Wsi-rgen/checkpoints/5
-  model_save_path: /mnt/surya/projects/Wsi-rgen/saved_models/mi_gen_titan_plus_conch1.5_20250804_1_model.ckpt
+  ckpt_path: /mnt/surya/projects/Wsi-rgen/model_checkpoints
+  model_load_path: /mnt/surya/projects/Wsi-rgen/model_checkpoints/20250808/best_model-v3.ckpt
   results_path: /mnt/surya/projects/Wsi-rgen/results
-  devices: 1,2,3,4,6
-  fast_dev_run: false
+  devices: '2,3,4'
+  fast_dev_run: true
   num_folds: 3
-

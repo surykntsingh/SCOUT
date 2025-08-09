@@ -14,12 +14,12 @@ from utils.utils import extract_fields, read_json_file
 
 class ReportModel(pl.LightningModule):
 
-    def __init__(self, args, tokenizer, weight_decay=0.01):
+    def __init__(self, args, tokenizer):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)
         self.tokenizer = tokenizer
         self.__lr = args.lr
-        self.__weight_decay = weight_decay
+        self.__weight_decay = args.weight_decay
         self.val_rouge = ROUGEScore()
         self.val_bleu = BLEUScore(n_gram=1)
         self.test_rouge = ROUGEScore()
