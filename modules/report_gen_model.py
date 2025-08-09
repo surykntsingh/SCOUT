@@ -21,10 +21,10 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.Linear(4 * d, 2 * d),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(args.dropout),
             nn.Linear(2 * d, d),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(args.dropout),
             nn.Linear(d, d)
         )
         d1 = args.d1
@@ -36,7 +36,7 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.Linear(2 * d2, d2),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(args.dropout),
             nn.Linear(d2, d)
         )
 
