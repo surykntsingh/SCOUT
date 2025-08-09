@@ -25,7 +25,7 @@ def train(config_file_path='config.yaml'):
     train_metrics = trainer.train(model, datamodule)
     print('model training finished')
     print(f'loading best model from {trainer.best_model_path}' )
-    model = ReportModel.load_from_checkpoint(trainer.best_model_path)
+    model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
     test_metrics = trainer.test(model, datamodule)
     print('model testing finished')
     # save_model(args, trainer)
@@ -58,8 +58,14 @@ def test(config_file_path='config.yaml'):
     split_frac = [0.8, 0.12, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel.load_from_checkpoint(model_path, args=args, tokenizer=tokenizer)
-    trainer = Trainer(args, model, tokenizer, split_frac)
-    trainer.test()
+
+    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    trainer = Trainer(args, tokenizer, split_frac)
+
+    print(f'loading best model from {args.best_model_path}')
+    model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
+    test_metrics = trainer.test(model, datamodule)
+    print(f'test_metrics: {test_metrics}')
     print('model testing finished')
 
 
