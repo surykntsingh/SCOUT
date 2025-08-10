@@ -16,7 +16,7 @@ app = typer.Typer()
 @app.command()
 def train(config_file_path='config.yaml'):
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.8, 0.14, 0.06]
+    split_frac = [0.75, 0.2, 0.05]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
 

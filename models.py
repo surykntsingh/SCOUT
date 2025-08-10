@@ -63,7 +63,7 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 20==0:
+        if batch_idx % 50==0:
             output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
