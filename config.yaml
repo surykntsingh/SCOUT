@@ -30,6 +30,7 @@ train:
   suppress_UNK: 1
   block_trigrams: 1
   lr: 0.00005
+  lr_patience: 2
   d1: 768
   d2: 768
   embeddings_path: /lustre/nvwulf/home/sbsingh/datasets/REG_2025/20x_512px_0px_overlap/slide_features_titan
