@@ -13,13 +13,13 @@ train:
   num_layers: 6
   dropout: 0.1
   dropout_mlp: 0.4
-  weight_decay: 0.05
+  weight_decay: 0.01
   logit_layers: 1
   bos_idx: 0
   eos_idx: 0
   pad_idx: 0
   use_bn: 0
-  drop_prob_lm: 0.4
+  drop_prob_lm: 0.5
   sample_method: beam_search
   beam_size: 10
   temperature: 1.5
@@ -32,12 +32,12 @@ train:
   lr: 0.00005
   d1: 768
   d2: 768
-  embeddings_path: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/slide_features_titan
-  embeddings_path_2: /mnt/saarthak/datasets/REG_processed/20x_512px_0px_overlap/features_conch_v15
-  reports_json_path: /mnt/surya/train.json
-  ckpt_path: /mnt/surya/projects/Wsi-rgen/model_checkpoints
-  model_load_path: /mnt/surya/projects/Wsi-rgen/model_checkpoints/20250808/best_model-v3.ckpt
-  results_path: /mnt/surya/projects/Wsi-rgen/results
-  devices: '2,3,4'
+  embeddings_path: /lustre/nvwulf/home/sbsingh/datasets/REG_2025/20x_512px_0px_overlap/slide_features_titan
+  embeddings_path_2: /lustre/nvwulf/home/sbsingh/datasets/REG_2025/20x_512px_0px_overlap/features_conch_v15
+  reports_json_path: /lustre/nvwulf/home/sbsingh/report_gen/train.json
+  ckpt_path: /lustre/nvwulf/home/sbsingh/report_gen/Wsi-rgen/model_checkpoints
+  model_load_path: /lustre/nvwulf/home/sbsingh/report_gen/Wsi-rgen/model_checkpoints/20250808/best_model-v3.ckpt
+  results_path: /lustre/nvwulf/home/sbsingh/report_gen/Wsi-rgen/results
+  devices: '0,1,2,3,4,5,6,7'
   fast_dev_run: true
   num_folds: 3
