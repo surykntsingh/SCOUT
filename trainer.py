@@ -37,7 +37,7 @@ class Trainer:
 
         checkpoint_callback = ModelCheckpoint(
             dirpath=ckpt_path,  # Directory to save checkpoints
-            filename="best_model",  # Naming convention
+            filename="model_{epoch:02d}_{val_loss:.5f}",  # Naming convention
             monitor="val_loss",  # Metric to monitor for saving best checkpoints
             mode="min",  # Whether to minimize or maximize the monitored metric
             save_top_k=1,  # Number of best checkpoints to keep

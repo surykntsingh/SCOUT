@@ -150,5 +150,5 @@ class ReportModel(pl.LightningModule):
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.__lr, weight_decay=self.__weight_decay)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.3, patience=3)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
