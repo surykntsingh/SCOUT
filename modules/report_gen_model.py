@@ -20,25 +20,27 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, 4 * d),
             nn.ReLU(),
             nn.Linear(4 * d, 2 * d),
+            nn.LayerNorm(2*d),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
+            nn.Dropout(args.dropout_mlp),
             nn.Linear(2 * d, d),
-            nn.LayerNorm(d),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
-            nn.Linear(d, d)
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(d, d),
+            nn.LayerNorm(d)
         )
         d1 = args.d1
         d2 = args.d2
         self.adapter_mlp = nn.Sequential(
             nn.Linear(d1, 2 * d1),
             nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
             nn.Linear(2 * d1, 2 * d2),
             nn.ReLU(),
             nn.Linear(2 * d2, d2),
             nn.LayerNorm(d2),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
+            nn.Dropout(args.dropout_mlp),
             nn.Linear(d2, d)
         )
 

@@ -11,7 +11,8 @@ train:
   d_vf: 768
   num_heads: 8
   num_layers: 6
-  dropout: 0.3
+  dropout: 0.1
+  dropout_mlp: 0.4
   weight_decay: 0.05
   logit_layers: 1
   bos_idx: 0
