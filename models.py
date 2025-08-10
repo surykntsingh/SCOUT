@@ -63,7 +63,7 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 50==0:
+        if batch_idx % 10==0:
             output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
@@ -150,5 +150,5 @@ class ReportModel(pl.LightningModule):
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.__lr, weight_decay=self.__weight_decay)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=25, T_mult=1, eta_min=0)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20, T_mult=1, eta_min=0)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
