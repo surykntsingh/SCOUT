@@ -5,7 +5,7 @@ from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
 import pandas as pd
-from utils.utils import save_model, get_params_for_key
+from utils.utils import save_model, get_params_for_key, copy_yaml
 from datetime import datetime
 
 app = typer.Typer()
@@ -21,6 +21,8 @@ def train(config_file_path='config.yaml'):
     model = ReportModel(args, tokenizer)
 
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    date = datetime.now()
+    args.ckpt_path += '/'+ date.strftime("%Y%m%d_%H%M%S")
     trainer = Trainer(args, tokenizer, split_frac)
     train_metrics = trainer.train(model, datamodule)
     print('model training finished')
@@ -32,7 +34,9 @@ def train(config_file_path='config.yaml'):
     metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
     print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}')
 
-    write_metrics(f'{args.results_path}/experiments/results.csv', metrics)
+    copy_yaml(config_file_path, args.ckpt_path)
+    write_metrics(f'{args.ckpt_path}/results', metrics, date)
+    write_metrics(f'{args.results_path}/experiments', metrics, date)
 
 @app.command()
 def trainkfold(config_file_path='config.yaml'):
@@ -40,13 +44,15 @@ def trainkfold(config_file_path='config.yaml'):
     split_frac = [0.85, 0.15]
     tokenizer = Tokenizer(args.reports_json_path)
     # model = ReportModel(args, tokenizer)
+    date = datetime.now()
+    args.ckpt_path += '/' + date.strftime("%Y%m%d_%H%M%S")
 
     trainer = KFoldTrainer(args, tokenizer, split_frac)
     trainer.train_and_test(fast_dev_run=args.fast_dev_run)
 
     metrics = trainer.get_metrics()
     print(f'metrics: {metrics}')
-    write_metrics(f'{args.results_path}/experiments/results.csv', metrics)
+    write_metrics(f'{args.results_path}/experiments', metrics, date)
 
 
 
@@ -67,12 +73,12 @@ def test(config_file_path='config.yaml'):
     print('model testing finished')
 
 
-def write_metrics(results_path, metrics):
-    metrics['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def write_metrics(results_path, metrics, date):
+    metrics['date'] = date.strftime("%Y-%m-%d %H:%M:%S")
     metrics_df = pd.DataFrame([metrics])
 
 
-    metrics_df.to_csv(results_path,mode='a')
+    metrics_df.to_csv(f'{results_path}/results.csv',mode='a')
 
 
 

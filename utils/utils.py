@@ -208,3 +208,11 @@ def get_params_for_key(file_path: str, param_key: str):
 
         print(f'params: {params}')
         return SimpleNamespace(**params)
+
+def copy_yaml(source_path, target_dir, file_name='config.yaml'):
+    target_path = f'{target_dir}/{file_name}'
+    with open(source_path) as source_file:
+        params = yaml.safe_load(source_file)
+
+    with open(target_path, 'w') as destination_file:
+        yaml.dump(params, destination_file, default_flow_style=False, sort_keys=False)
