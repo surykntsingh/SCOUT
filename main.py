@@ -23,7 +23,7 @@ def train(config_file_path='config.yaml'):
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     date = datetime.now()
     args.ckpt_path += '/'+ date.strftime("%Y%m%d_%H%M%S")
-    os.makedirs(self.args.ckpt_path, exist_ok=True)
+    os.makedirs(args.ckpt_path, exist_ok=True)
     trainer = Trainer(args, tokenizer, split_frac)
     train_metrics = trainer.train(model, datamodule)
     print('model training finished')
