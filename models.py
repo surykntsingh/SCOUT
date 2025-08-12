@@ -64,7 +64,7 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 20==0:
+        if batch_idx % 50==0:
             output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
@@ -100,19 +100,20 @@ class ReportModel(pl.LightningModule):
         # print(f'pred_texts: {pred_texts},\n target_texts: {target_texts}')
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-        RED = '\033[91m'
-        BLUE = '\033[94m'
-        RESET = '\033[0m'
+        if batch_idx % 50 == 0:
+            RED = '\033[91m'
+            BLUE = '\033[94m'
+            RESET = '\033[0m'
 
-        print('*' * 100)
-        print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
-        print(f' {RED} Predicted synoptic report: \n {RESET}')
+            print('*' * 100)
+            print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
+            print(f' {RED} Predicted synoptic report: \n {RESET}')
 
-        json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
-        print(f'{RED} {json_string} {RESET}')
+            json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
+            print(f'{RED} {json_string} {RESET}')
 
-        print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
-        print('*' * 100)
+            print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
+            print('*' * 100)
 
         rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
         bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
