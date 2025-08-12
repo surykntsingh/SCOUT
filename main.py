@@ -22,7 +22,7 @@ def train(config_file_path='config.yaml'):
 
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     date = datetime.now()
-    args.ckpt_path += '/'+ date.strftime("%Y%m%d_%H%M%S")
+    args.ckpt_path +=  f'/{date.strftime("%Y%m%d")}/{date.strftime("%H%M%S")}'
     os.makedirs(args.ckpt_path, exist_ok=True)
     trainer = Trainer(args, tokenizer, split_frac)
     train_metrics = trainer.train(model, datamodule)
@@ -49,7 +49,7 @@ def trainkfold(config_file_path='config.yaml'):
     tokenizer = Tokenizer(args.reports_json_path)
     # model = ReportModel(args, tokenizer)
     date = datetime.now()
-    args.ckpt_path += '/' + date.strftime("%Y%m%d_%H%M%S")
+    args.ckpt_path +=  f'/{date.strftime("%Y%m%d")}/{date.strftime("%H%M%S")}'
 
     trainer = KFoldTrainer(args, tokenizer, split_frac)
     trainer.train_and_test(fast_dev_run=args.fast_dev_run)
