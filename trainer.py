@@ -52,7 +52,7 @@ class Trainer:
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
-            strategy='ddp',
+            strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True,
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
