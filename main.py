@@ -36,7 +36,10 @@ def train(config_file_path='config.yaml'):
     print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}')
 
     copy_yaml(config_file_path, args.ckpt_path)
+    os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)
     write_metrics(f'{args.ckpt_path}/results', metrics, date)
+
+    os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
 @app.command()
