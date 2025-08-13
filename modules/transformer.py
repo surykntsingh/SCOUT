@@ -147,14 +147,14 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        norm = LayerNorm(self.d_model)
+        # norm = LayerNorm(self.d_model)
 
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
                 DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn), deepcopy(ff), self.dropout),
                 self.num_layers),
-            lambda x: norm(x),
+            LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position))
         )
         return model
