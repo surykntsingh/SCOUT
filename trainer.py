@@ -26,7 +26,9 @@ class Trainer:
         self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         # self.model = ReportModel(args, tokenizer)
         pl.seed_everything(42)
-        # torch.set_float32_matmul_precision('high')
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
