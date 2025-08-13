@@ -29,7 +29,9 @@ class Trainer:
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
         torch.set_float32_matmul_precision('high')
-        # torch.use_deterministic_algorithms(True)
+        torch.use_deterministic_algorithms(True)
+        torch.manual_seed(42)
+        torch.cuda.manual_seed_all(42)
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
         self.args = args
@@ -55,6 +57,8 @@ class Trainer:
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
+            precision=32,  # Full precision FP32
+            deterministic=True,
             enable_progress_bar=True,
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
@@ -73,6 +77,8 @@ class Trainer:
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
+            precision=32,  # Full precision FP32
+            deterministic=True,
             enable_progress_bar=True,
             log_every_n_steps=2,
             fast_dev_run=fast_dev_run
