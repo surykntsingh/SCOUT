@@ -1,11 +1,11 @@
 import typer
 import os
-from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule
+from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, PatchEmbeddingDataPredictModule
 from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
 import pandas as pd
-from utils.utils import save_model, get_params_for_key, copy_yaml
+from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_file
 from datetime import datetime
 
 app = typer.Typer()
@@ -14,7 +14,7 @@ app = typer.Typer()
 
 
 @app.command()
-def train(config_file_path='config.yaml'):
+def train(config_file_path='config.yaml', reg_threshold=0.8):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.8, 0.14, 0.06]
     tokenizer = Tokenizer(args.reports_json_path)
@@ -41,6 +41,15 @@ def train(config_file_path='config.yaml'):
 
     os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
+
+    if test_metrics['test_reg'] > reg_threshold:
+        print(f'Generating predictions since reg_score > {reg_threshold}')
+        results = predict(model, trainer, args, tokenizer)
+        results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
+        print(f'Saving predictions at {results_dir}')
+        save_results(results, results_dir)
+    else:
+        print(f'Not generating predictions since reg_score < {reg_threshold}')
 
 
 @app.command()
@@ -77,6 +86,22 @@ def trainkfold(config_file_path='config.yaml'):
 
 
 
+def predict(model, trainer, args, tokenizer):
+    datamodule = PatchEmbeddingDataPredictModule(args, tokenizer)
+    predictions = trainer.predict(model, datamodule)
+    print('model predictions finished')
+    results = []
+
+    print(f'predictions: {predictions}')
+    for slide_ids, reports in predictions:
+        for i in range(args.batch_size):
+            results.append({
+                'id': f'{slide_ids[i]}.tiff',
+                'report': reports[i]
+            })
+
+    return results
+
 def write_metrics(results_path, metrics, date):
     metrics['date'] = date.strftime("%Y-%m-%d %H:%M:%S")
     metrics_df = pd.DataFrame([metrics])
@@ -84,7 +109,10 @@ def write_metrics(results_path, metrics, date):
 
     metrics_df.to_csv(f'{results_path}/results.csv',mode='a')
 
-
+def save_results(results, results_dir):
+    os.makedirs(results_dir, exist_ok=True)
+    results_path = f'{results_dir}/predictions.json'
+    write_json_file(results, results_path)
 
 
 
