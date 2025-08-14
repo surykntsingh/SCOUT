@@ -164,7 +164,7 @@ class KFoldTrainer(Trainer):
                 save_top_k=1,  # Number of best checkpoints to keep
                 save_last=True  # Save the last checkpoint regardless of the monitored metric
             )
-            early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=21, verbose=True,
+            early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=23, verbose=True,
                                                 mode="min")
             trainer = pl.Trainer(
                 max_epochs=self.max_epochs,
