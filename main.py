@@ -1,6 +1,6 @@
 import typer
 import os
-from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule
+from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, PatchEmbeddingDataPredictModule
 from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
@@ -40,6 +40,47 @@ def train(config_file_path='config.yaml'):
     os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
+    if test_metrics['test_reg'] > 0.8:
+        results = predict(model, trainer, args, tokenizer)
+        print(results)
+
+
+
+@app.command()
+def test(config_file_path='config.yaml'):
+
+    args = get_params_for_key(config_file_path, "train")
+    split_frac = [0.8, 0.12, 0.08]
+    tokenizer = Tokenizer(args.reports_json_path)
+    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    trainer = Trainer(args, tokenizer, split_frac)
+
+    print(f'loading best model from {args.model_load_path}')
+    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
+    test_metrics = trainer.test(model, datamodule)
+    print(f'test_metrics: {test_metrics}')
+    print('model testing finished')
+
+
+
+def predict(model, trainer, args, tokenizer):
+    datamodule = PatchEmbeddingDataPredictModule(args, tokenizer)
+    predictions = trainer.predict(model, datamodule)
+    print('model predictions finished')
+    results = []
+
+    print(f'predictions: {predictions}')
+    for slide_ids, reports in predictions:
+        for i in range(args.batch_size):
+            results.append({
+                'id': f'{slide_ids[i]}.tiff',
+                'report': reports[i]
+            })
+
+    return results
+
+
+
 @app.command()
 def trainkfold(config_file_path='config.yaml'):
     args = get_params_for_key(config_file_path, "train")
@@ -58,21 +99,6 @@ def trainkfold(config_file_path='config.yaml'):
 
 
 
-
-@app.command()
-def test(config_file_path='config.yaml'):
-
-    args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.8, 0.12, 0.08]
-    tokenizer = Tokenizer(args.reports_json_path)
-    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
-    trainer = Trainer(args, tokenizer, split_frac)
-
-    print(f'loading best model from {args.model_load_path}')
-    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
-    test_metrics = trainer.test(model, datamodule)
-    print(f'test_metrics: {test_metrics}')
-    print('model testing finished')
 
 
 def write_metrics(results_path, metrics, date):
