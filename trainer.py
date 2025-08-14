@@ -12,8 +12,7 @@ from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, Embed
 from sklearn.model_selection import KFold
 
 from models import ReportModel
-from utils.utils import read_json_file
-
+import torch
 
 class Trainer:
 
@@ -25,6 +24,8 @@ class Trainer:
         self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         # self.model = ReportModel(args, tokenizer)
         pl.seed_everything(42)
+        torch.set_float32_matmul_precision('high')
+        torch.use_deterministic_algorithms(True)
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
         self.args = args
