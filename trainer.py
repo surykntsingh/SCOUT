@@ -28,6 +28,8 @@ class Trainer:
         pl.seed_everything(42)
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         torch.set_float32_matmul_precision('high')
         torch.use_deterministic_algorithms(True)
         torch.manual_seed(42)
