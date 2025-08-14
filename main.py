@@ -42,6 +42,23 @@ def train(config_file_path='config.yaml'):
     os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
+
+@app.command()
+def test(config_file_path='config.yaml'):
+
+    args = get_params_for_key(config_file_path, "train")
+    split_frac = [0.7, 0.10, 0.20]
+    tokenizer = Tokenizer(args.reports_json_path)
+    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    trainer = Trainer(args, tokenizer, split_frac)
+
+    print(f'loading best model from {args.model_load_path}')
+    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
+    test_metrics = trainer.test(model, datamodule)
+    print(f'test_metrics: {test_metrics}')
+    print('model testing finished')
+
+
 @app.command()
 def trainkfold(config_file_path='config.yaml'):
     args = get_params_for_key(config_file_path, "train")
@@ -58,23 +75,6 @@ def trainkfold(config_file_path='config.yaml'):
     print(f'metrics: {metrics}')
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
-
-
-
-@app.command()
-def test(config_file_path='config.yaml'):
-
-    args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.8, 0.12, 0.08]
-    tokenizer = Tokenizer(args.reports_json_path)
-    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
-    trainer = Trainer(args, tokenizer, split_frac)
-
-    print(f'loading best model from {args.model_load_path}')
-    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
-    test_metrics = trainer.test(model, datamodule)
-    print(f'test_metrics: {test_metrics}')
-    print('model testing finished')
 
 
 def write_metrics(results_path, metrics, date):
