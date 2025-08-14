@@ -122,10 +122,21 @@ class ReportModel(pl.LightningModule):
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
     def predict_step(self, batch):
-        _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
-        output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
+        slide_id, patch_feats, pos_feats = batch
+        output = self.model(patch_feats, pos_feats, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
-        return pred_texts
+
+        RED = '\033[91m'
+        RESET = '\033[0m'
+
+        print('*' * 100)
+        print(f'{RESET} Predicted report for slide: {slide_id[0]}: {pred_texts[0]} {RESET}')
+        print(f' {RED} Predicted synoptic report for slide: {slide_id[0]}: \n {RESET}')
+
+        json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
+        print(f'{RED} {json_string} {RESET}')
+        print('*' * 100)
+        return slide_id,pred_texts
 
     def on_validation_epoch_end(self):
         # print('on_validation_epoch_end start')
