@@ -42,7 +42,7 @@ class ReportGenModel(nn.Module):
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
-    def forward(self, image_embeddings1, image_embeddings2, report_ids, patch_masks, mode='train'):
+    def forward(self, image_embeddings1, image_embeddings2, report_ids=None, patch_masks=None, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
