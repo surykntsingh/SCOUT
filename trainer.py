@@ -61,7 +61,7 @@ class Trainer:
         self.best_model_path = checkpoint_callback.best_model_path
         train_metrics = self.trainer.logged_metrics
 
-        return train_metrics
+        return train_metrics, trainer
 
     def test(self, model, datamodule, fast_dev_run=False):
 
@@ -78,7 +78,7 @@ class Trainer:
             model, datamodule=datamodule
         )
         test_metrics = trainer.logged_metrics
-        return test_metrics
+        return test_metrics, trainer
 
     def predict(self, model, datamodule, fast_dev_run=False):
 
@@ -96,11 +96,11 @@ class Trainer:
         )
         return preds
 
-    # @rank_zero_only
-    # def save_model(self, model_path):
-    #
-    #     self.trainer.save_checkpoint(model_path)
-    #     print(f'model saved at path: {model_path}')
+    @rank_zero_only
+    def save_model(self,trainer, model_path):
+
+        trainer.save_checkpoint(model_path)
+        print(f'model saved at path: {model_path}')
 
     def load_model(self, model_cls, model_path, **kwargs):
         return model_cls.load_from_checkpoint(model_path, **kwargs)
