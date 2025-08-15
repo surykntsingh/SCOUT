@@ -25,13 +25,13 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     args.ckpt_path +=  f'/{date.strftime("%Y%m%d")}/{date.strftime("%H%M%S")}'
     os.makedirs(args.ckpt_path, exist_ok=True)
     trainer = Trainer(args, tokenizer, split_frac)
-    train_metrics, tr = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
+    train_metrics, _ = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
 
     if not args.fast_dev_run:
         print(f'loading best model from {trainer.best_model_path}')
         model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
-    test_metrics, _ = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
+    test_metrics, tr = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
     # save_model(args, trainer)
     metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
