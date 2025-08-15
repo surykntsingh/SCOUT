@@ -61,7 +61,7 @@ class Trainer:
         self.best_model_path = checkpoint_callback.best_model_path
         train_metrics = self.trainer.logged_metrics
 
-        return train_metrics
+        return train_metrics, self.trainer
 
     def test(self, model, datamodule, fast_dev_run=False):
 
@@ -78,7 +78,7 @@ class Trainer:
             model, datamodule=datamodule
         )
         test_metrics = trainer.logged_metrics
-        return test_metrics
+        return test_metrics, trainer
 
     def predict(self, model, datamodule, fast_dev_run=False):
 

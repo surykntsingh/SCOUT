@@ -25,11 +25,13 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     args.ckpt_path +=  f'/{date.strftime("%Y%m%d")}/{date.strftime("%H%M%S")}'
     os.makedirs(args.ckpt_path, exist_ok=True)
     trainer = Trainer(args, tokenizer, split_frac)
-    train_metrics = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
+    train_metrics, tr = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
-    print(f'loading best model from {trainer.best_model_path}' )
-    # model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
-    test_metrics = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
+
+    if not args.fast_dev_run:
+        print(f'loading best model from {trainer.best_model_path}')
+        model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
+    test_metrics, _ = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
     # save_model(args, trainer)
     metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
@@ -48,12 +50,14 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
         results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
         print(f'Saving predictions at {results_dir}')
         save_results(results, results_dir)
+        save_model_path = f'{args.ckpt_path}/saved_model/reg_{test_metrics["test_reg"]}.ckpt'
+        trainer.save_model(tr, save_model_path)
     else:
         print(f'Not generating predictions since reg_score < {reg_threshold}')
 
 
 @app.command()
-def test(config_file_path='config.yaml'):
+def test(config_file_path: str='config.yaml', reg_threshold: float=0.8):
 
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.7, 0.10, 0.20]
@@ -63,9 +67,18 @@ def test(config_file_path='config.yaml'):
 
     print(f'loading best model from {args.model_load_path}')
     model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
-    test_metrics = trainer.test(model, datamodule)
+    test_metrics, tr = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
     print(f'test_metrics: {test_metrics}')
     print('model testing finished')
+
+    if test_metrics['test_reg'].item() > reg_threshold:
+        print(f'Generating predictions since reg_score > {reg_threshold}')
+        results = predict(model, trainer, args, tokenizer)
+        results_dir = f'{args.results_path}/results_{test_metrics["test_reg"]}'
+        print(f'Saving predictions at {results_dir}')
+        save_results(results, results_dir)
+    else:
+        print(f'Not generating predictions since reg_score < {reg_threshold}')
 
 
 @app.command()
@@ -113,7 +126,6 @@ def save_results(results, results_dir):
     os.makedirs(results_dir, exist_ok=True)
     results_path = f'{results_dir}/predictions.json'
     write_json_file(results, results_path)
-
 
 
 # args = parse_agrs()
