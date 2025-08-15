@@ -10,6 +10,6 @@ class LanguageModelCriterion(nn.Module):
         target = target[:, :input.size(1)]
         mask = mask[:, :input.size(1)]
         output = -input.gather(2, target.long().unsqueeze(2)).squeeze(2) * mask
-        output = torch.sum(output) / torch.sum(mask)
+        output = 10*torch.sum(output) / torch.sum(mask)
 
         return output
