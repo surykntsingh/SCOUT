@@ -96,11 +96,11 @@ class Trainer:
         )
         return preds
 
-    # @rank_zero_only
-    # def save_model(self, model_path):
-    #
-    #     self.trainer.save_checkpoint(model_path)
-    #     print(f'model saved at path: {model_path}')
+    @rank_zero_only
+    def save_model(self,trainer, model_path):
+
+        trainer.save_checkpoint(model_path)
+        print(f'model saved at path: {model_path}')
 
     def load_model(self, model_cls, model_path, **kwargs):
         return model_cls.load_from_checkpoint(model_path, **kwargs)
