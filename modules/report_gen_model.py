@@ -40,8 +40,8 @@ class ReportGenModel(nn.Module):
             nn.Linear(d2, d)
         )
 
-        gd = args.gd1
-        gcd =args.gd2
+        gd = args.gd
+        gcd =args.gcd
         self.gecko_mlp = nn.Sequential(
             nn.Linear(gcd, 2 * gcd),
             nn.ReLU(),
@@ -56,10 +56,10 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.Linear(2 * gd, 4 * gd),
             nn.ReLU(),
-            nn.Linear(4 * gd, 2*d2),
+            nn.Linear(4 * gd, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2*gd, d2)
+            nn.Linear(2*d, d)
         )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
