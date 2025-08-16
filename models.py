@@ -163,6 +163,6 @@ class ReportModel(pl.LightningModule):
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.__lr, weight_decay=self.__weight_decay)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=self.__lr_patience)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.47, patience=self.__lr_patience)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20, T_mult=2)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
