@@ -44,9 +44,9 @@ class Trainer:
 
         # --- Disable Flash / MemEff / Triton SDP on Hopper (use math/efficient fallback)
         if hasattr(torch.backends.cuda, "sdp_kernel"):
-            torch.backends.cuda.sdp_kernel.enable_flash_sdp(False)
-            torch.backends.cuda.sdp_kernel.enable_mem_efficient_sdp(False)
-            torch.backends.cuda.sdp_kernel.enable_math_sdp(True)
+            torch.backends.cuda.enable_flash_sdp(False)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)
+            torch.backends.cuda.enable_math_sdp(True)
 
         # --- cuBLAS determinism (important for FP32 GEMMs on Hopper)
         os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # or ":16:8"
