@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
+import numpy as np
 
 from modules.loss import LanguageModelCriterion
 from modules.metrics import REG_Evaluator
@@ -163,6 +164,18 @@ class ReportModel(pl.LightningModule):
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.__lr, weight_decay=self.__weight_decay, eps=1e-7)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.47, patience=self.__lr_patience)
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.47, patience=self.__lr_patience)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20, T_mult=2)
+
+        total_epochs = 50
+        warmup_epochs = 5
+
+        def lr_lambda(epoch):
+            if epoch < warmup_epochs:
+                return float(epoch + 1) / float(warmup_epochs)
+            # cosine from 1.0 -> ~0.0
+            progress = (epoch - warmup_epochs) / max(1, (total_epochs - warmup_epochs))
+            return 0.5 * (1.0 + np.cos(np.pi * progress))
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
