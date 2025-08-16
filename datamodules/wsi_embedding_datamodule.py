@@ -22,10 +22,11 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         self.split_frac = split_frac
         self.tokenizer = tokenizer
         self.embeddings_path_2 = args.embeddings_path_2
+        self.gecko_emb_path = args.gecko_emb_path
 
     def setup(self, stage=None):
         dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
-                              self.max_seq_length, self.embeddings_path_2)
+                              self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path)
         # print(dataset[0][1])
         self.train_ds, self.val_ds, self.test_ds = random_split(dataset, self.split_frac)
 
@@ -40,9 +41,10 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
-        slide_ids, patch_feats_1,patch_feats_2, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
-        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True).to(device)
-        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True).to(device)
+        slide_ids, feats_1,emb_g, emb_gc, coord_feats, report_ids, report_masks, seq_length = zip(*batch)
+        feats1_pad = pad_sequence(feats_1, batch_first=True).to(device)
+        emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
+        emb_gc_pad = pad_sequence(emb_gc, batch_first=True).to(device)
         report_ids = torch.LongTensor(report_ids).to(device)
         # dummy_feat = torch.randn(patch_feats_pad.shape)
         # coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
@@ -50,7 +52,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         # for i, p in enumerate(patch_feats):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
-        return (slide_ids, patch_feats1_pad, patch_feats2_pad, report_ids,
+        return (slide_ids, feats1_pad, emb_g_pad, emb_gc_pad, report_ids,
                 torch.FloatTensor(report_masks), seq_length)
 
 
@@ -66,7 +68,7 @@ class EmbeddingDataModule(PatchEmbeddingDataModule):
 
     def setup(self, stage=None):
         dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
-                                   self.max_seq_length, self.embeddings_path_2)
+                                   self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path)
         self.train_ds, self.val_ds = random_split(Subset(dataset, self.train_idx), self.split_frac)
         self.test_ds = Subset(dataset, self.test_idx)
 
@@ -83,11 +85,12 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
         self.__max_seq_length = args.max_seq_length
         self.__tokenizer = tokenizer
         self.__embeddings_path_2 = args.predict_embeddings_path_2
+        self.__gecko_emb_path = args.gecko_emb_path
         self.__slide_ids = slide_ids
 
     def setup(self, stage=None):
         self.predict_ds = EmbeddingPredictDataset(self.__embeddings_path, self.__tokenizer,
-                              self.__max_seq_length, self.__embeddings_path_2, self.__slide_ids)
+                              self.__max_seq_length, self.__embeddings_path_2, self.__gecko_emb_path, self.__slide_ids)
         print(f'predict ds: {len(self.predict_ds)}')
 
 
@@ -97,8 +100,9 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
-        slide_ids, patch_feats_1,patch_feats_2 = zip(*batch)
-        patch_feats1_pad = pad_sequence(patch_feats_1, batch_first=True).to(device)
-        patch_feats2_pad = pad_sequence(patch_feats_2, batch_first=True).to(device)
+        slide_ids, feats_1,emb_g,emb_gc = zip(*batch)
+        feats1_pad = pad_sequence(feats_1, batch_first=True).to(device)
+        emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
+        emb_gc_pad = pad_sequence(emb_gc, batch_first=True).to(device)
 
-        return slide_ids, patch_feats1_pad, patch_feats2_pad
+        return slide_ids, feats1_pad, emb_g_pad, emb_gc_pad

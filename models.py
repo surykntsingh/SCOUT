@@ -45,8 +45,8 @@ class ReportModel(pl.LightningModule):
 
     def training_step(self, batch):
         # print('train ---------->')
-        _, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
-        output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='train')
+        _, feats1, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
+        output = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss = self.loss_fn(output, report_ids, report_masks)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -55,17 +55,17 @@ class ReportModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         # print('val ---------->')
 
-        slide_ids, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
+        slide_ids, feats1, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
 
-        output_ = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='train')
-        # print(f'val output: {output_}')
+        output_ = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
         if batch_idx % 20==0:
-            output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
+            output = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
 
@@ -88,13 +88,13 @@ class ReportModel(pl.LightningModule):
             # print('val step end')
 
     def test_step(self, batch, batch_idx):
-        slide_ids, patch_feats, pos_feats, report_ids, report_masks, patch_masks = batch
+        slide_ids, feats1, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
 
-        output_ = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='train')
+        output_ = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        output = self.model(patch_feats, pos_feats, report_ids, patch_masks, mode='sample')
+        output = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
         # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
         # print(f'pred_texts: {pred_texts},\n target_texts: {target_texts}')
@@ -123,8 +123,8 @@ class ReportModel(pl.LightningModule):
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
     def predict_step(self, batch):
-        slide_id, patch_feats, pos_feats = batch
-        output = self.model(patch_feats, pos_feats, mode='sample')
+        slide_id, feats1, gecko_feats, gecko_concepts = batch
+        output = self.model(feats1, gecko_feats, gecko_concepts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
 
         RED = '\033[91m'

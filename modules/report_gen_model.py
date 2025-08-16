@@ -21,11 +21,11 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.Linear(4 * d, 2 * d),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
             nn.Linear(2 * d, d),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
-            nn.Linear(d, d)
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(d, d),
+            nn.LayerNorm(d)
         )
         d1 = args.d1
         d2 = args.d2
@@ -36,17 +36,42 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.Linear(2 * d2, d2),
             nn.ReLU(),
-            nn.Dropout(args.dropout),
+            nn.Dropout(args.dropout_mlp),
             nn.Linear(d2, d)
+        )
+
+        gd = args.gd1
+        gcd =args.gd2
+        self.gecko_mlp = nn.Sequential(
+            nn.Linear(gcd, 2 * gcd),
+            nn.ReLU(),
+            nn.Linear(2 * gcd, 4 * gcd),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(4 * gcd, gd)
+        )
+
+        self.gecko_encoder = nn.Sequential(
+            nn.Linear(gd, 2 * gd),
+            nn.ReLU(),
+            nn.Linear(2 * gd, 4 * gd),
+            nn.ReLU(),
+            nn.Linear(4 * gd, 2*d2),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(2*gd, d2)
         )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
-    def forward(self, image_embeddings1, image_embeddings2, report_ids=None, patch_masks=None, mode='train'):
+    def forward(self, image_embeddings1, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
         image_embeddings1 = self.adapter_mlp(image_embeddings1)
+        emb_gc = self.gecko_mlp(emb_gc)
+        image_embeddings2 = self.gecko_encoder(torch.cat([emb_g, emb_gc], dim=1))
+
         patch_feats = torch.cat([image_embeddings1, image_embeddings2], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
