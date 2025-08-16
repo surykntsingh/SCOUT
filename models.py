@@ -168,14 +168,14 @@ class ReportModel(pl.LightningModule):
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20, T_mult=2)
 
         total_epochs = 50
-        warmup_epochs = 5
+        warmup_epochs = 2
 
         def lr_lambda(epoch):
             if epoch < warmup_epochs:
                 return float(epoch + 1) / float(warmup_epochs)
             # cosine from 1.0 -> ~0.0
             progress = (epoch - warmup_epochs) / max(1, (total_epochs - warmup_epochs))
-            return 0.5 * (1.0 + np.cos(np.pi * progress))
+            return 0.0005 * (1.0 + np.cos(np.pi * progress))
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
