@@ -26,7 +26,7 @@ class Trainer:
         pl.seed_everything(42)
         # torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
-        self.h200_init()
+        # self.h200_init()
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
         self.args = args
