@@ -85,12 +85,12 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
         self.__max_seq_length = args.max_seq_length
         self.__tokenizer = tokenizer
         self.__embeddings_path_2 = args.predict_embeddings_path_2
-        self.__gecko_emb_path = args.gecko_emb_path
+        self.__gecko_emb_predict_path = args.gecko_predict_emb_path
         self.__slide_ids = slide_ids
 
     def setup(self, stage=None):
         self.predict_ds = EmbeddingPredictDataset(self.__embeddings_path, self.__tokenizer,
-                              self.__max_seq_length, self.__embeddings_path_2, self.__gecko_emb_path, self.__slide_ids)
+                              self.__max_seq_length, self.__embeddings_path_2, self.__gecko_emb_predict_path, self.__slide_ids)
         print(f'predict ds: {len(self.predict_ds)}')
 
 
