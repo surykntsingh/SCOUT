@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from modules.attention_model import AttModel
-from modules.common import subsequent_mask
+from modules.common import subsequent_mask, LayerNorm
 from modules.decoder import DecoderLayer, Decoder
 from modules.encoder import Encoder, EncoderLayer
 from utils.utils import pad_tokens, pack_wrapper, clones
@@ -152,7 +152,7 @@ class EncoderDecoder(AttModel):
             Decoder(
                 DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn), deepcopy(ff), self.dropout),
                 self.num_layers),
-            lambda x: x,
+            LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position))
         )
         return model
