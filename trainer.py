@@ -12,7 +12,7 @@ from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, Embed
 from sklearn.model_selection import KFold
 
 from models import ReportModel
-# import torch
+import torch
 
 class Trainer:
 
@@ -26,10 +26,31 @@ class Trainer:
         pl.seed_everything(42)
         # torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
+        self.h200_init()
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
         self.args = args
         self.tokenizer = tokenizer
+
+    def h200_init(self):
+        # --- Deterministic + conservative kernels
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+        # --- Kill TF32 everywhere
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.set_float32_matmul_precision("high")  # avoids "prefer tf32" mode
+
+        # --- Disable Flash / MemEff / Triton SDP on Hopper (use math/efficient fallback)
+        if hasattr(torch.backends.cuda, "sdp_kernel"):
+            torch.backends.cuda.sdp_kernel.enable_flash_sdp(False)
+            torch.backends.cuda.sdp_kernel.enable_mem_efficient_sdp(False)
+            torch.backends.cuda.sdp_kernel.enable_math_sdp(True)
+
+        # --- cuBLAS determinism (important for FP32 GEMMs on Hopper)
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # or ":16:8"
+        torch.use_deterministic_algorithms(True)
 
     def train(self, model, datamodule, fast_dev_run=False):
         # datamodule = PatchEmbeddingDataModule(self.args, self.tokenizer, self.split_frac)
