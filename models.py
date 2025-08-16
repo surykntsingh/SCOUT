@@ -100,7 +100,7 @@ class ReportModel(pl.LightningModule):
         # print(f'pred_texts: {pred_texts},\n target_texts: {target_texts}')
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-        if batch_idx % 100 == 0:
+        if batch_idx % 10 == 0:
             RED = '\033[91m'
             BLUE = '\033[94m'
             RESET = '\033[0m'
