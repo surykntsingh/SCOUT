@@ -129,7 +129,7 @@ class ReportModel(pl.LightningModule):
                 'reg_score': reg_score
             }
         )
-        self.reg_scores.append(reg_score)
+        self.test_results.append(reg_score)
         self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
