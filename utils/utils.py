@@ -3,6 +3,7 @@ import json
 import re
 import yaml
 from types import SimpleNamespace
+import os
 
 import numpy as np
 import torch
@@ -216,3 +217,8 @@ def copy_yaml(source_path, target_dir, file_name='config.yaml'):
 
     with open(target_path, 'w') as destination_file:
         yaml.dump(params, destination_file, default_flow_style=False, sort_keys=False)
+
+def save_results(results, results_dir):
+    os.makedirs(results_dir, exist_ok=True)
+    results_path = f'{results_dir}/predictions.json'
+    write_json_file(results, results_path)

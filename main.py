@@ -5,7 +5,7 @@ from models import ReportModel
 from report_tokenizers import Tokenizer
 from trainer import Trainer, KFoldTrainer
 import pandas as pd
-from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_file
+from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_file, save_results
 from datetime import datetime
 
 app = typer.Typer()
@@ -18,12 +18,13 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.7, 0.15, 0.15]
     tokenizer = Tokenizer(args.reports_json_path)
-    model = ReportModel(args, tokenizer)
+
 
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     date = datetime.now()
     args.ckpt_path +=  f'/{date.strftime("%Y%m%d")}/{date.strftime("%H%M%S")}'
     os.makedirs(args.ckpt_path, exist_ok=True)
+    model = ReportModel(args, tokenizer)
     trainer = Trainer(args, tokenizer, split_frac)
     train_metrics, _ = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
@@ -124,10 +125,7 @@ def write_metrics(results_path, metrics, date):
 
     metrics_df.to_csv(f'{results_path}/results.csv',mode='a')
 
-def save_results(results, results_dir):
-    os.makedirs(results_dir, exist_ok=True)
-    results_path = f'{results_dir}/predictions.json'
-    write_json_file(results, results_path)
+
 
 
 

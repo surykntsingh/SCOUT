@@ -9,7 +9,7 @@ import evaluate
 from modules.loss import LanguageModelCriterion
 from modules.metrics import REG_Evaluator
 from modules.report_gen_model import ReportGenModel
-from utils.utils import extract_fields, read_json_file
+from utils.utils import extract_fields, read_json_file, save_results
 
 
 class ReportModel(pl.LightningModule):
@@ -33,6 +33,8 @@ class ReportModel(pl.LightningModule):
         self.meteor_scores = []
         self.reg_evaluator = REG_Evaluator()
         self.reg_scores = []
+        self.test_results = []
+        self.test_results_path = f'{args.ckpt_path}/test_results'
         reports = read_json_file(args.reports_json_path)
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
 
@@ -118,7 +120,16 @@ class ReportModel(pl.LightningModule):
         rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
         bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
         self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-        self.reg_scores.append(self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts))))
+        reg_score = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
+        self.test_results.append(
+            {
+                'slide_id': slide_ids[0],
+                'pred': pred_texts[0],
+                'ground_truth': target_texts[0],
+                'reg_score': reg_score
+            }
+        )
+        self.reg_scores.append(reg_score)
         self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
@@ -158,7 +169,9 @@ class ReportModel(pl.LightningModule):
 
         reg_score = sum(self.reg_scores) / len(self.reg_scores)
         self.log('test_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        save_results(self.test_results, self.test_results_path)
         self.reg_scores.clear()
+        self.test_results_path.clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.model.parameters())
