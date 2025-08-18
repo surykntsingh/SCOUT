@@ -12,19 +12,20 @@ from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, Embed
 from sklearn.model_selection import KFold
 
 from models import ReportModel
-# import torch
+import torch
 
 class Trainer:
 
     def __init__(self, args, tokenizer, split_frac):
         self.best_model_path = None
+        self.best=1000
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
         self.datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
         # self.model = ReportModel(args, tokenizer)
         pl.seed_everything(42)
-        # torch.set_float32_matmul_precision('high')
+        torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
         self.trainer = None
         self.devices = list(map(int, args.devices.split(',')))
@@ -58,9 +59,10 @@ class Trainer:
         self.trainer.fit(
             model, datamodule=datamodule
         )
-        self.best_model_path = checkpoint_callback.best_model_path
-        train_metrics = self.trainer.logged_metrics
 
+        train_metrics = self.trainer.logged_metrics
+        self.best_model_path = checkpoint_callback.best_model_path
+        self.best = train_metrics['val_loss']
         return train_metrics, self.trainer
 
 
@@ -93,9 +95,11 @@ class Trainer:
         self.trainer.fit(
             model, datamodule=datamodule
         )
-        self.best_model_path = checkpoint_callback.best_model_path
+
         tune_metrics = self.trainer.logged_metrics
 
+        if tune_metrics['val_loss']<self.best:
+            self.best_model_path = checkpoint_callback.best_model_path
         return tune_metrics, self.trainer
 
     def test(self, model, datamodule, fast_dev_run=False):
