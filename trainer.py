@@ -81,9 +81,9 @@ class Trainer:
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=3, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=9, verbose=True, mode="min")
         self.trainer = pl.Trainer(
-            max_epochs=15,
+            max_epochs=50,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
@@ -98,8 +98,7 @@ class Trainer:
 
         tune_metrics = self.trainer.logged_metrics
 
-        if tune_metrics['val_loss']<self.best:
-            self.best_model_path = checkpoint_callback.best_model_path
+        self.best_model_path = checkpoint_callback.best_model_path
         return tune_metrics, self.trainer
 
     def test(self, model, datamodule, fast_dev_run=False):

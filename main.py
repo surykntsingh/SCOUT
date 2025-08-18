@@ -28,18 +28,16 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     train_metrics, _ = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
 
-    # print('tuning on concept features')
-    # model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
-    # tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
-    #
-    # print(f'tune_metrics: {tune_metrics}')
+    best_model_path = trainer.best_model_path
     # if not args.fast_dev_run:
-    print(f'loading best model from {trainer.best_model_path}')
-    best_model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
+    print(f'loading best model from {best_model_path}')
+    best_model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
     test_metrics, tr = trainer.test(best_model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
     # save_model(args, trainer)
-    metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
+
+
+    metrics = {**train_metrics, **test_metrics, 'best_model_path': best_model_path}
     print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics})') #, tune_metrics: {tune_metrics}')
 
     copy_yaml(config_file_path, args.ckpt_path)
@@ -47,6 +45,44 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     write_metrics(f'{args.ckpt_path}/results', metrics, date)
 
     os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
+    write_metrics(f'{args.results_path}/experiments', metrics, date)
+
+    if test_metrics['test_reg'].item() > reg_threshold:
+        print(f'Generating predictions since reg_score > {reg_threshold}')
+        results = predict(best_model, trainer, args, tokenizer)
+        results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
+        print(f'Saving predictions at {results_dir}')
+        save_results(results, results_dir)
+        print(f'Predictions saved at {results_dir}')
+        # os.makedirs(f'{args.ckpt_path}/saved_models', exist_ok=True)
+        # save_model_path = f'{args.ckpt_path}/saved_models/reg_{test_metrics["test_reg"]}.ckpt'
+        # trainer.save_model(tr, save_model_path)
+    else:
+        print(f'Not generating predictions since reg_score < {reg_threshold}')
+
+    tune_gecko_features(args, tokenizer, best_model_path, trainer, datamodule, reg_threshold, date)
+
+
+
+def tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule, reg_threshold, date):
+    # gecko tuning
+    print('tuning on gecko concept features')
+    model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
+    tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
+    print('model tuning finished')
+    print(f'tune_metrics: {tune_metrics}')
+
+    best_model_path = trainer.best_model_path
+    # if not args.fast_dev_run:
+    print(f'loading best model from {best_model_path}')
+    best_model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
+    test_metrics, tr = trainer.test(best_model, datamodule, fast_dev_run=args.fast_dev_run)
+    print('model testing finished')
+    # save_model(args, trainer)
+
+    metrics = {**tune_metrics, **test_metrics, 'best_model_path': best_model_path}
+    print(f'tune_metrics: {tune_metrics}, test_metrics: {test_metrics})')
+    write_metrics(f'{args.ckpt_path}/results', metrics, date)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
     if test_metrics['test_reg'].item() > reg_threshold:
