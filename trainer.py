@@ -62,7 +62,7 @@ class Trainer:
 
         train_metrics = self.trainer.logged_metrics
         self.best_model_path = checkpoint_callback.best_model_path
-        self.best = train_metrics['val_loss']
+        self.best = train_metrics['val_reg']
         return train_metrics, self.trainer
 
 
@@ -76,14 +76,14 @@ class Trainer:
         checkpoint_callback = ModelCheckpoint(
             dirpath=self.args.ckpt_path,  # Directory to save checkpoints
             filename="model_tune_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
-            monitor="val_loss",  # Metric to monitor for saving best checkpoints
-            mode="min",  # Whether to minimize or maximize the monitored metric
+            monitor="val_reg",  # Metric to monitor for saving best checkpoints
+            mode="max",  # Whether to minimize or maximize the monitored metric
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=3, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_reg", min_delta=1e-5, patience=5, verbose=True, mode="max")
         self.trainer = pl.Trainer(
-            max_epochs=10,
+            max_epochs=20,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
@@ -98,7 +98,7 @@ class Trainer:
 
         tune_metrics = self.trainer.logged_metrics
 
-        if tune_metrics['val_loss']<self.best:
+        if tune_metrics['val_reg']>self.best:
             self.best_model_path = checkpoint_callback.best_model_path
         return tune_metrics, self.trainer
 
