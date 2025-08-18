@@ -81,9 +81,9 @@ class Trainer:
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_reg", min_delta=1e-5, patience=5, verbose=True, mode="max")
+        early_stop_callback = EarlyStopping(monitor="val_reg", min_delta=1e-5, patience=3, verbose=True, mode="max")
         self.trainer = pl.Trainer(
-            max_epochs=20,
+            max_epochs=15,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
