@@ -18,7 +18,7 @@ class Trainer:
 
     def __init__(self, args, tokenizer, split_frac):
         self.best_model_path = None
-        self.best=0
+        self.best=1000
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
@@ -62,7 +62,7 @@ class Trainer:
 
         train_metrics = self.trainer.logged_metrics
         self.best_model_path = checkpoint_callback.best_model_path
-        self.best = train_metrics['val_reg']
+        self.best = train_metrics['val_loss']
         return train_metrics, self.trainer
 
 
@@ -98,7 +98,9 @@ class Trainer:
 
         tune_metrics = self.trainer.logged_metrics
 
-        if tune_metrics['val_reg']>self.best:
+        if tune_metrics['val_loss']<self.best:
+            print(f'model imroved on tuning: {tune_metrics["val_loss"]} < {self.best}')
+            print(f'setting new best path: {self.best_model_path}')
             self.best_model_path = checkpoint_callback.best_model_path
         return tune_metrics, self.trainer
 
