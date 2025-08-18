@@ -29,15 +29,26 @@ class ReportGenModel(nn.Module):
         )
         d1 = args.d1
         d2 = args.d2
-        self.adapter_mlp = nn.Sequential(
+        self.adapter_mlp_1 = nn.Sequential(
             nn.Linear(d1, 2 * d1),
             nn.ReLU(),
-            nn.Linear(2 * d1, 2 * d2),
+            nn.Linear(2 * d1, 4 * d1),
             nn.ReLU(),
-            nn.Linear(2 * d2, d2),
+            nn.Linear(4 * d1, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(d2, d)
+            nn.Linear(2*d, d)
+        )
+
+        self.adapter_mlp_2 = nn.Sequential(
+            nn.Linear(d2, 2 * d2),
+            nn.ReLU(),
+            nn.Linear(2 * d2, 4 * d2),
+            nn.ReLU(),
+            nn.Linear(4 * d2, 2 * d),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(2 * d, d)
         )
 
         gd = args.gd
@@ -75,15 +86,16 @@ class ReportGenModel(nn.Module):
             param.requires_grad = True
 
 
-    def forward(self, image_embeddings1, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
+    def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
-        image_embeddings1 = self.adapter_mlp(image_embeddings1)
+        image_embeddings1 = self.adapter_mlp_1(image_embeddings1)
+        image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
         emb_gc = self.gecko_mlp(emb_gc)
-        image_embeddings2 = self.gecko_encoder(torch.cat([emb_g, emb_gc], dim=1))
+        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g, emb_gc], dim=1))
 
-        patch_feats = torch.cat([image_embeddings1, image_embeddings2], dim=1)
+        patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)

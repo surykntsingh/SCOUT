@@ -44,9 +44,9 @@ class EmbeddingDataset(Dataset):
             report_masks = [1] * len(report_ids)
             seq_length = len(report_ids)
 
-        # with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
-        #     embeddings_np = h5_file["features"][:]
-        #     embedding2 = torch.tensor(embeddings_np)
+        with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
+            embeddings_np = h5_file["features"][:]
+            embedding2 = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
@@ -56,7 +56,7 @@ class EmbeddingDataset(Dataset):
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
             emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
 
-        return slide_id, embedding1, emb_g, emb_gc, coords, report_ids, report_masks, seq_length
+        return slide_id, embedding1, embedding2, emb_g, emb_gc, coords, report_ids, report_masks, seq_length
 
 
 class EmbeddingPredictDataset(Dataset):
@@ -92,9 +92,9 @@ class EmbeddingPredictDataset(Dataset):
             coords = torch.tensor(coords_np).float()
             embedding1 = torch.tensor(embeddings_np).unsqueeze(0)
 
-        # with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
-        #     embeddings_np = h5_file["features"][:]
-        #     embedding2 = torch.tensor(embeddings_np)
+        with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
+            embeddings_np = h5_file["features"][:]
+            embedding2 = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
@@ -104,7 +104,7 @@ class EmbeddingPredictDataset(Dataset):
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
             emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
 
-        return slide_id, embedding1, emb_g, emb_gc
+        return slide_id, embedding1, embedding2, emb_g, emb_gc
 
 
 
