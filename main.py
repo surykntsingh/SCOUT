@@ -16,7 +16,7 @@ app = typer.Typer()
 @app.command()
 def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.76, 0.14, 0.1]
+    split_frac = [0.9, 0.05, 0.05]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
 
@@ -30,7 +30,7 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
 
     print('tuning on concept features')
     tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
-    
+
     print(f'tune_metrics: {tune_metrics}')
     # if not args.fast_dev_run:
     print(f'loading best model from {trainer.best_model_path}')

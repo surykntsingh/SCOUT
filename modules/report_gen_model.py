@@ -48,7 +48,9 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * gcd, 4 * gcd),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(4 * gcd, gd)
+            nn.Linear(4 * gcd, 2*gd),
+            nn.ReLU(),
+            nn.Linear(2 * gd, gd),
         )
 
         self.gecko_encoder = nn.Sequential(
