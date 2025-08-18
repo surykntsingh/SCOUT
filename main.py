@@ -28,6 +28,10 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     train_metrics, _ = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
 
+    print('tuning on concept features')
+    tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
+    
+    print(f'tune_metrics: {tune_metrics}')
     # if not args.fast_dev_run:
     print(f'loading best model from {trainer.best_model_path}')
     best_model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
@@ -35,7 +39,7 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     print('model testing finished')
     # save_model(args, trainer)
     metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
-    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}')
+    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}, tune_metrics: {tune_metrics}')
 
     copy_yaml(config_file_path, args.ckpt_path)
     os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)

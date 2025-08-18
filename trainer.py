@@ -63,6 +63,41 @@ class Trainer:
 
         return train_metrics, self.trainer
 
+
+    def tune(self, model, datamodule, fast_dev_run=False):
+        # datamodule = PatchEmbeddingDataModule(self.args, self.tokenizer, self.split_frac)
+        # ts = datetime.now().strftime("%Y%m%d")
+        # ckpt_path = f'{self.ckpt_path}/{ts}'
+
+        model.model.freeze_deep_features()
+
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=self.args.ckpt_path,  # Directory to save checkpoints
+            filename="model_tune_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
+            monitor="val_loss",  # Metric to monitor for saving best checkpoints
+            mode="min",  # Whether to minimize or maximize the monitored metric
+            save_top_k=1,  # Number of best checkpoints to keep
+            save_last=True  # Save the last checkpoint regardless of the monitored metric
+        )
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=3, verbose=True, mode="min")
+        self.trainer = pl.Trainer(
+            max_epochs=10,
+            callbacks=[checkpoint_callback, early_stop_callback],
+            accelerator='gpu',
+            devices=self.devices,
+            strategy='ddp_find_unused_parameters_true',
+            enable_progress_bar=True,
+            log_every_n_steps=1,
+            fast_dev_run=fast_dev_run
+        )
+        self.trainer.fit(
+            model, datamodule=datamodule
+        )
+        self.best_model_path = checkpoint_callback.best_model_path
+        tune_metrics = self.trainer.logged_metrics
+
+        return tune_metrics, self.trainer
+
     def test(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(

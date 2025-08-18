@@ -64,6 +64,17 @@ class ReportGenModel(nn.Module):
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
+
+    def freeze_deep_features(self):
+        for param in self.adapter_mlp.parameters():
+            param.requires_grad = False
+
+        for param in self.gecko_encoder.parameters():
+            param.requires_grad = False
+
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
     def forward(self, image_embeddings1, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
