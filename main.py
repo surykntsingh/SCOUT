@@ -56,9 +56,9 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
         print(f'Saving predictions at {results_dir}')
         save_results(results, results_dir)
         print(f'Predictions saved at {results_dir}')
-        os.makedirs(f'{args.ckpt_path}/saved_models', exist_ok=True)
-        save_model_path = f'{args.ckpt_path}/saved_models/reg_{test_metrics["test_reg"]}.ckpt'
-        trainer.save_model(tr, save_model_path)
+        # os.makedirs(f'{args.ckpt_path}/saved_models', exist_ok=True)
+        # save_model_path = f'{args.ckpt_path}/saved_models/reg_{test_metrics["test_reg"]}.ckpt'
+        # trainer.save_model(tr, save_model_path)
     else:
         print(f'Not generating predictions since reg_score < {reg_threshold}')
 
