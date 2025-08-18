@@ -28,7 +28,7 @@ class Trainer:
         # torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
         self.trainer = None
-        self.devices = args.devices #list(map(int, args.devices.split(',')))
+        self.devices = args.devices if type(args.devices)==int else list(map(int, args.devices.split(',')))
         self.args = args
         self.tokenizer = tokenizer
 
