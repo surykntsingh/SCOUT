@@ -18,7 +18,7 @@ class Trainer:
 
     def __init__(self, args, tokenizer, split_frac):
         self.best_model_path = None
-        self.best=1000
+        self.best=0
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
         self.split_frac = split_frac
@@ -28,7 +28,7 @@ class Trainer:
         torch.set_float32_matmul_precision('high')
         # torch.use_deterministic_algorithms(True)
         self.trainer = None
-        self.devices = list(map(int, args.devices.split(',')))
+        self.devices = args.devices #list(map(int, args.devices.split(',')))
         self.args = args
         self.tokenizer = tokenizer
 
