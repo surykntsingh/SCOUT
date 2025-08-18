@@ -65,28 +65,28 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 10==0:
-            output = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-            pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
-            # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+        # if batch_idx % 10==0:
+        output = self.model(feats1, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+        pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
+        # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
 
-            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
+        target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-            rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
-            bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
-            # bleu_score2 = self.bleu_2(pred_texts, target_texts)
-            # bleu_score3 = self.bleu_3(pred_texts, target_texts)
-            # bleu_score4 = self.bleu_4(pred_texts, target_texts)
-            reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
-            self.meteor_scores.append(
-                self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            self.reg_scores.append(reg)
+        rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
+        bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
+        # bleu_score2 = self.bleu_2(pred_texts, target_texts)
+        # bleu_score3 = self.bleu_3(pred_texts, target_texts)
+        # bleu_score4 = self.bleu_4(pred_texts, target_texts)
+        reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
+        self.meteor_scores.append(
+            self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+        self.reg_scores.append(reg)
 
-            self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
-            beacon = loss - 0.001*reg
-            self.beacon.append(beacon)
+        beacon = loss - 0.001*reg
+        self.beacon.append(beacon)
 
             # self.log('val_bleu2', bleu_score2, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_bleu3', bleu_score3, on_epoch=True, prog_bar=True, sync_dist=True)

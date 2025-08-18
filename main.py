@@ -28,10 +28,10 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     train_metrics, _ = trainer.train(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model training finished')
 
-    if not args.fast_dev_run:
-        print(f'loading best model from {trainer.best_model_path}')
-        model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
-    test_metrics, tr = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
+    # if not args.fast_dev_run:
+    print(f'loading best model from {trainer.best_model_path}')
+    best_model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
+    test_metrics, tr = trainer.test(best_model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
     # save_model(args, trainer)
     metrics = {**train_metrics, **test_metrics, 'best_model_path': trainer.best_model_path}
@@ -46,7 +46,7 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
 
     if test_metrics['test_reg'].item() > reg_threshold:
         print(f'Generating predictions since reg_score > {reg_threshold}')
-        results = predict(model, trainer, args, tokenizer)
+        results = predict(best_model, trainer, args, tokenizer)
         results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
         print(f'Saving predictions at {results_dir}')
         save_results(results, results_dir)
