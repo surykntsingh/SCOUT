@@ -36,7 +36,7 @@ class ReportModel(pl.LightningModule):
         self.beacon = []
         reports = read_json_file(args.reports_json_path)
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
-        torch.cuda.set_device(self.trainer.local_rank)
+        # torch.cuda.set_device(self.trainer.local_rank)
 
         # print(f'self.reports: {self.reports.keys()}')
 
