@@ -39,12 +39,12 @@ class Trainer:
         checkpoint_callback = ModelCheckpoint(
             dirpath=self.args.ckpt_path,  # Directory to save checkpoints
             filename="model_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
-            monitor="val_beacon",  # Metric to monitor for saving best checkpoints
+            monitor="val_loss",  # Metric to monitor for saving best checkpoints
             mode="min",  # Whether to minimize or maximize the monitored metric
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_beacon", min_delta=1e-5, patience=11, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=11, verbose=True, mode="min")
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
