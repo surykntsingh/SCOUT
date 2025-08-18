@@ -29,6 +29,7 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     print('model training finished')
 
     print('tuning on concept features')
+    model = ReportModel.load_from_checkpoint(trainer.best_model_path, args=args, tokenizer=tokenizer)
     tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
 
     print(f'tune_metrics: {tune_metrics}')

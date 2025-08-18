@@ -76,12 +76,12 @@ class Trainer:
         checkpoint_callback = ModelCheckpoint(
             dirpath=self.args.ckpt_path,  # Directory to save checkpoints
             filename="model_tune_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
-            monitor="val_reg",  # Metric to monitor for saving best checkpoints
-            mode="max",  # Whether to minimize or maximize the monitored metric
+            monitor="val_loss",  # Metric to monitor for saving best checkpoints
+            mode="min",  # Whether to minimize or maximize the monitored metric
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_reg", min_delta=1e-5, patience=3, verbose=True, mode="max")
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=3, verbose=True, mode="min")
         self.trainer = pl.Trainer(
             max_epochs=15,
             callbacks=[checkpoint_callback, early_stop_callback],

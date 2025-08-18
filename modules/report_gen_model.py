@@ -85,7 +85,7 @@ class ReportGenModel(nn.Module):
         for param in self.gecko_mlp.parameters():
             param.requires_grad = True
 
-        for param in self.encoder_decoder.parameters():
+        for param in self.gecko_encoder.parameters():
             param.requires_grad = True
 
 
