@@ -62,7 +62,7 @@ class Trainer:
 
         train_metrics = self.trainer.logged_metrics
         self.best_model_path = checkpoint_callback.best_model_path
-        self.best = train_metrics['val_reg']
+        self.best = train_metrics['val_loss']
         return train_metrics, self.trainer
 
 
@@ -98,7 +98,7 @@ class Trainer:
 
         tune_metrics = self.trainer.logged_metrics
 
-        if tune_metrics['val_reg']>self.best:
+        if tune_metrics['val_loss']<self.best:
             self.best_model_path = checkpoint_callback.best_model_path
         return tune_metrics, self.trainer
 
