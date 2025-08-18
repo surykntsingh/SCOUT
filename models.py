@@ -121,8 +121,8 @@ class ReportModel(pl.LightningModule):
             print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
             print('*' * 100)
 
-        rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
-        bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
+        rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
+        bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
         self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
         reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
         self.reg_scores.append(reg)
