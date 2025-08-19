@@ -132,9 +132,9 @@ class Trainer:
         preds = trainer.predict(
             model, datamodule=datamodule
         )
-        print(f'leng preds: {len(preds)}')
-        flat_preds = [p for sublist in preds for p in sublist]
-        return flat_preds
+        # print(f'leng preds: {len(preds)}')
+        # flat_preds = [p for sublist in preds for p in sublist]
+        return preds
 
     @rank_zero_only
     def save_model(self,trainer, model_path):
