@@ -122,7 +122,7 @@ class Trainer:
 
         trainer = pl.Trainer(
             accelerator='gpu',
-            devices=1,
+            devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True,
             log_every_n_steps=1,
@@ -132,7 +132,9 @@ class Trainer:
         preds = trainer.predict(
             model, datamodule=datamodule
         )
-        return preds
+        print(f'leng preds: {len(preds)}')
+        flat_preds = [p for sublist in preds for p in sublist]
+        return flat_preds
 
     @rank_zero_only
     def save_model(self,trainer, model_path):
