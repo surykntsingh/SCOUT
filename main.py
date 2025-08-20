@@ -60,7 +60,7 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     else:
         print(f'Not generating predictions since reg_score < {reg_threshold}')
 
-    # tune_gecko_features(args, tokenizer, best_model_path, trainer, datamodule, reg_threshold, date)
+    tune_gecko_features(args, tokenizer, best_model_path, trainer, datamodule, reg_threshold, date)
 
 
 
