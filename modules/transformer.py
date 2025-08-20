@@ -30,7 +30,7 @@ class Transformer(nn.Module):
         return self.encoder(self.src_embed(src), src_mask)
 
     def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), hidden_states, concepts, src_mask, tgt_mask)
+        return self.decoder(self.tgt_embed(tgt), hidden_states, self.concept_embed(concepts), src_mask, tgt_mask)
 
 
 class MultiHeadedAttention(nn.Module):
