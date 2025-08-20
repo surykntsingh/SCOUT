@@ -79,17 +79,10 @@ class ReportGenModel(nn.Module):
 
 
     def freeze_deep_features(self):
-        for param in self.parameters():
+        for param in self.encoder_decoder.parameters():
             param.requires_grad = False
 
-        for param in self.gecko_mlp.parameters():
-            param.requires_grad = True
 
-        for param in self.gecko_encoder.parameters():
-            param.requires_grad = True
-
-        for param in self.encoder.parameters():
-            param.requires_grad = True
 
 
     def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
