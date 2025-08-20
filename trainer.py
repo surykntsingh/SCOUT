@@ -93,8 +93,8 @@ class Trainer:
             fast_dev_run=fast_dev_run
         )
 
-        for p in self.trainer.optimizer.param_groups:
-            p['lr'] = 1e-6
+        # for p in self.trainer.optimizer.param_groups:
+        #     p['lr'] = 1e-6
         self.trainer.fit(
             model, datamodule=datamodule
         )
