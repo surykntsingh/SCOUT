@@ -122,7 +122,7 @@ class AttModel(CaptionModel):
         # return the samples and their log likelihoods
         return seq, seqLogprobs
 
-    def _sample(self, fc_feats, att_feats, meshes=None, att_masks=None):
+    def _sample(self, fc_feats, att_feats,emb_gc, meshes=None, att_masks=None):
         opt = self.args.__dict__
         sample_method = opt.get('sample_method', 'greedy')
         beam_size = opt.get('beam_size', 1)

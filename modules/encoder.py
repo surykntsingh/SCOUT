@@ -31,9 +31,16 @@ class EncoderLayer(nn.Module):
         super(EncoderLayer, self).__init__()
         self.self_attn = self_attn
         self.feed_forward = feed_forward
-        self.sublayer = clones(SublayerConnection(d_model, dropout), 4)
+        self.n = 2
+        self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
         self.d_model = d_model
 
+
     def forward(self, x, mask):
+        # x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
+        # for i in range(1, self.n):
+        #     x = self.sublayer[i-1](x, lambda x: self.self_attn(x, x, x, mask))
+        #
+        # return x
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
         return self.sublayer[1](x, self.feed_forward)

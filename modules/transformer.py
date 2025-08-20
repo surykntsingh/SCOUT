@@ -146,9 +146,9 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        pp = PAM(self.d_model)
+        # pp = PAM(self.d_model)
         model = Transformer(
-            Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
+            Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, lambda x:x),
             Decoder(
                 DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn), deepcopy(ff), self.dropout),
                 self.num_layers),
@@ -228,10 +228,10 @@ class EncoderDecoder(AttModel):
 
         return att_feats, seq, meshes, att_masks, seq_mask, meshes_mask
 
-    def _forward(self, fc_feats, att_feats, report_ids, att_masks=None):
+    def _forward(self, fc_feats, att_feats, emb_gc, report_ids, att_masks=None):
         # log_message(fc_feats, att_feats, report_ids, att_masks)
         att_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, att_masks, report_ids)
-        out = self.model(att_feats, report_ids, att_masks, report_mask)
+        out = self.model(att_feats, emb_gc, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
@@ -248,7 +248,7 @@ class EncoderDecoder(AttModel):
         out = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
         return out[:, -1], [ys.unsqueeze(0)]
 
-    def _encode(self, fc_feats, att_feats, att_masks=None):
+    def _encode(self, fc_feats, att_feats, emb_gc, att_masks=None):
 
         att_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, att_masks)
         out = self.model.encode(att_feats, att_masks)
