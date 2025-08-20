@@ -10,14 +10,15 @@ class Encoder(nn.Module):
         super().__init__()
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
-        self.PAM = clones(PAM, N)
+        # self.PAM = clones(PAM, N)
         self.N = N
 
     def forward(self, x, mask):
         s=[]
         for i,layer in enumerate(self.layers):
             x = layer(x, mask)
-            s.append(self.PAM[i](x))
+            s.append(x)
+            # s.append(self.PAM[i](x))
 
 
         o = s[0]
