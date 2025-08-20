@@ -21,7 +21,7 @@ class Transformer(nn.Module):
         self.tgt_embed = tgt_embed
 
 
-    def forward(self, src, tgt, src_mask, tgt_mask):
+    def forward(self, src, concepts, tgt, src_mask, tgt_mask):
         return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
 
     def encode(self, src, src_mask):
