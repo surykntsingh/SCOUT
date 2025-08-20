@@ -70,7 +70,7 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
-        
+
         self.trainer.fit(
             model, datamodule=datamodule
         )
@@ -85,6 +85,7 @@ class Trainer:
         trainer = pl.Trainer(
             accelerator='gpu',
             devices=self.devices,
+            strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True
         )
         tuner = Tuner(trainer)
