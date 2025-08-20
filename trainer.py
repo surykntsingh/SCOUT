@@ -45,17 +45,19 @@ class Trainer:
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=9, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="train_loss", min_delta=1e-5, patience=9, verbose=True, mode="min")
 
-        lr_finder = LearningRateFinder(
-            min_lr=1e-8,  # Minimum learning rate to test
-            max_lr=1e-4,  # Maximum learning rate to test
-            num_training_steps=100,  # Number of learning rates to test
-            mode='exponential'  # or 'linear'
-        )
+        # lr_finder = LearningRateFinder(
+        #     min_lr=1e-8,  # Minimum learning rate to test
+        #     max_lr=1e-4,  # Maximum learning rate to test
+        #     num_training_steps=100,  # Number of learning rates to test
+        #     mode='exponential'  # or 'linear'
+        # )
+
+
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
-            callbacks=[lr_finder, checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -63,7 +65,13 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
+        lr_finder = self.trainer.tuner.lr_find(model, datamodule=datamodule)
 
+        suggested_lr = lr_finder.suggestion()
+        print(f'setting lr: {suggested_lr}')
+
+        # Set suggested LR
+        model.hparams.lr = suggested_lr
         self.trainer.fit(
             model, datamodule=datamodule
         )
@@ -90,15 +98,15 @@ class Trainer:
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
-        lr_finder = LearningRateFinder(
-            min_lr=1e-8,  # Minimum learning rate to test
-            max_lr=1e-5,  # Maximum learning rate to test
-            num_training_steps=50,  # Number of learning rates to test
-            mode='exponential'  # or 'linear'
-        )
+        # lr_finder = LearningRateFinder(
+        #     min_lr=1e-8,  # Minimum learning rate to test
+        #     max_lr=1e-5,  # Maximum learning rate to test
+        #     num_training_steps=50,  # Number of learning rates to test
+        #     mode='exponential'  # or 'linear'
+        # )
         self.trainer = pl.Trainer(
             max_epochs=30,
-            callbacks=[lr_finder, checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -106,9 +114,12 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
+        lr_finder = self.trainer.tuner.lr_find(model, datamodule=datamodule)
+        suggested_lr = lr_finder.suggestion()
+        print(f'setting lr: {suggested_lr}')
 
-        # for p in self.trainer.optimizer.param_groups:
-        #     p['lr'] = 1e-6
+        # Set suggested LR
+        model.hparams.lr = suggested_lr
         self.trainer.fit(
             model, datamodule=datamodule
         )
