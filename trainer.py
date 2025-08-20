@@ -54,7 +54,6 @@ class Trainer:
             strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True,
             log_every_n_steps=1,
-            auto_lr_find=True,
             fast_dev_run=fast_dev_run
         )
         self.trainer.tune(model)
@@ -86,7 +85,6 @@ class Trainer:
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
         self.trainer = pl.Trainer(
             max_epochs=30,
-            auto_lr_find=True,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
