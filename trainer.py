@@ -55,7 +55,7 @@ class Trainer:
         )
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
-            callbacks=[checkpoint_callback, early_stop_callback, lr_finder],
+            callbacks=[lr_finder, checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -98,7 +98,7 @@ class Trainer:
         )
         self.trainer = pl.Trainer(
             max_epochs=30,
-            callbacks=[checkpoint_callback, early_stop_callback, lr_finder],
+            callbacks=[lr_finder, checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
