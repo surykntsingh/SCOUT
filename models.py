@@ -180,7 +180,7 @@ class ReportModel(pl.LightningModule):
         self.beacon.clear()
 
     def configure_optimizers(self):
-        d_params = filter(lambda p: p.requires_grad, self.model.parameters())
+        d_params = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.__lr, weight_decay=self.__weight_decay)
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=self.__lr_patience)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
