@@ -13,12 +13,13 @@ from utils.utils import pad_tokens, pack_wrapper, clones
 
 
 class Transformer(nn.Module):
-    def __init__(self, encoder, decoder, src_embed, tgt_embed):
+    def __init__(self, encoder, decoder, src_embed, tgt_embed, concept_embed):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.src_embed = src_embed
         self.tgt_embed = tgt_embed
+        self.concept_embed = concept_embed
 
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
@@ -153,7 +154,8 @@ class EncoderDecoder(AttModel):
                 DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn), deepcopy(attn), deepcopy(ff), self.dropout),
                 self.num_layers),
             LayerNorm(self.d_model),
-            nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position))
+            nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
+            nn.Sequential(Embeddings(tgt_vocab, tgt_vocab), deepcopy(position))
         )
         return model
 
