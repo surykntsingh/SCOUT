@@ -241,7 +241,7 @@ class EncoderDecoder(AttModel):
 
         return outputs
 
-    def core(self, it, fc_feats_ph, att_feats_ph, memory, state, mask):
+    def core(self, it, fc_feats_ph, att_feats_ph,memory, gc_emb, state, mask):
 
         if len(state) == 0:
             ys = it.long().unsqueeze(1)
@@ -250,7 +250,7 @@ class EncoderDecoder(AttModel):
         out = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
         return out[:, -1], [ys.unsqueeze(0)]
 
-    def _encode(self, fc_feats, att_feats, emb_gc, att_masks=None):
+    def _encode(self, fc_feats,gc_emb, att_feats, emb_gc, att_masks=None):
 
         att_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, att_masks)
         out = self.model.encode(att_feats, emb_gc, att_masks)

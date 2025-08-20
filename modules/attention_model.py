@@ -69,11 +69,11 @@ class AttModel(CaptionModel):
 
         return fc_feats, att_feats, p_att_feats, att_masks
 
-    def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, att_masks, state, output_logsoftmax=1):
+    def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, gc_emb, att_masks, state, output_logsoftmax=1):
         # 'it' contains a word index
         xt = self.embed(it)
 
-        output, state = self.core(xt, fc_feats, att_feats, p_att_feats, state, att_masks)
+        output, state = self.core(xt, fc_feats, att_feats, p_att_feats, gc_emb, state, att_masks)
         if output_logsoftmax:
             logprobs = F.log_softmax(self.logit(output), dim=1)
         else:
