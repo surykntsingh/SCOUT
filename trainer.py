@@ -8,6 +8,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateFinder
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, EmbeddingDataModule
+from pytorch_lightning.tuner.tuning import Tuner
 
 from sklearn.model_selection import KFold
 
@@ -54,6 +55,10 @@ class Trainer:
         #     mode='exponential'  # or 'linear'
         # )
 
+        suggested_lr = self.find_lr(model, datamodule)
+        print(f'setting lr: {suggested_lr}')
+        # Set suggested LR
+        model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
@@ -65,13 +70,7 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
-        lr_finder = self.trainer.tuner.lr_find(model, datamodule=datamodule)
-
-        suggested_lr = lr_finder.suggestion()
-        print(f'setting lr: {suggested_lr}')
-
-        # Set suggested LR
-        model.hparams.lr = suggested_lr
+        
         self.trainer.fit(
             model, datamodule=datamodule
         )
@@ -81,6 +80,20 @@ class Trainer:
         self.best = train_metrics['val_loss']
         return train_metrics, self.trainer
 
+
+    def find_lr(self, model, datamodule):
+        trainer = pl.Trainer(
+            accelerator='gpu',
+            devices=self.devices,
+            enable_progress_bar=True
+        )
+        tuner = Tuner(trainer)
+        lr_finder = tuner.lr_find(model, datamodule=datamodule)
+
+        suggested_lr = lr_finder.suggestion()
+        print(f'suggested lr: {suggested_lr}')
+
+        return suggested_lr
 
     def tune(self, model, datamodule, fast_dev_run=False):
         # datamodule = PatchEmbeddingDataModule(self.args, self.tokenizer, self.split_frac)
@@ -104,6 +117,10 @@ class Trainer:
         #     num_training_steps=50,  # Number of learning rates to test
         #     mode='exponential'  # or 'linear'
         # )
+        suggested_lr = self.find_lr(model, datamodule)
+        print(f'setting lr: {suggested_lr}')
+        # Set suggested LR
+        model.hparams.lr = suggested_lr
         self.trainer = pl.Trainer(
             max_epochs=30,
             callbacks=[checkpoint_callback, early_stop_callback],
@@ -114,12 +131,7 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
-        lr_finder = self.trainer.tuner.lr_find(model, datamodule=datamodule)
-        suggested_lr = lr_finder.suggestion()
-        print(f'setting lr: {suggested_lr}')
 
-        # Set suggested LR
-        model.hparams.lr = suggested_lr
         self.trainer.fit(
             model, datamodule=datamodule
         )
