@@ -8,7 +8,7 @@ import pandas as pd
 from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_file
 from datetime import datetime
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 
