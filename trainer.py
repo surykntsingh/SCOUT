@@ -4,7 +4,7 @@ from datetime import datetime
 
 import numpy as np
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateFinder
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 from datamodules.wsi_embedding_datamodule import PatchEmbeddingDataModule, EmbeddingDataModule
@@ -46,9 +46,16 @@ class Trainer:
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=9, verbose=True, mode="min")
+
+        lr_finder = LearningRateFinder(
+            min_lr=1e-8,  # Minimum learning rate to test
+            max_lr=1e-4,  # Maximum learning rate to test
+            num_training_steps=100,  # Number of learning rates to test
+            mode='exponential'  # or 'linear'
+        )
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
-            callbacks=[checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, early_stop_callback, lr_finder],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -56,7 +63,7 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
-        self.trainer.tune(model)
+
         self.trainer.fit(
             model, datamodule=datamodule
         )
@@ -83,9 +90,15 @@ class Trainer:
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
+        lr_finder = LearningRateFinder(
+            min_lr=1e-8,  # Minimum learning rate to test
+            max_lr=1e-5,  # Maximum learning rate to test
+            num_training_steps=50,  # Number of learning rates to test
+            mode='exponential'  # or 'linear'
+        )
         self.trainer = pl.Trainer(
             max_epochs=30,
-            callbacks=[checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, early_stop_callback, lr_finder],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -96,8 +109,6 @@ class Trainer:
 
         # for p in self.trainer.optimizer.param_groups:
         #     p['lr'] = 1e-6
-
-        self.trainer.tune(model)
         self.trainer.fit(
             model, datamodule=datamodule
         )
