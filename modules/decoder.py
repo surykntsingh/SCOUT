@@ -7,21 +7,23 @@ from utils.utils import clones
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, src_attn, feed_forward, dropout):
+    def __init__(self, d_model, self_attn, src_attn, concept_attn, feed_forward, dropout):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
         self.src_attn = src_attn
+        self.concept_attn = concept_attn
         self.feed_forward = feed_forward
-        self.n = 3
+        self.n = 4
         self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
 
 
-    def forward(self, x, hidden_states, src_mask, tgt_mask):
+    def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         m = hidden_states
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
-        return self.sublayer[2](x, self.feed_forward)
+        x = self.sublayer[2](x, lambda x: self.src_attn(x, concepts, concepts, src_mask))
+        return self.sublayer[3](x, self.feed_forward)
 
 
 class Decoder(nn.Module):
@@ -30,7 +32,7 @@ class Decoder(nn.Module):
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
 
-    def forward(self, x, hidden_states, src_mask, tgt_mask):
+    def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         for layer in self.layers:
-            x = layer(x, hidden_states, src_mask, tgt_mask)
+            x = layer(x, hidden_states, concepts, src_mask, tgt_mask)
         return self.norm(x)

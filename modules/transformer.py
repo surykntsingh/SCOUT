@@ -22,14 +22,14 @@ class Transformer(nn.Module):
 
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
+        return self.decode(self.encode(src, src_mask), concepts, src_mask, tgt, tgt_mask)
 
     def encode(self, src, src_mask):
         # print(f'src: {src.shape}')
         return self.encoder(self.src_embed(src), src_mask)
 
-    def decode(self, hidden_states, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), hidden_states, src_mask, tgt_mask)
+    def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
+        return self.decoder(self.tgt_embed(tgt), hidden_states, concepts, src_mask, tgt_mask)
 
 
 class MultiHeadedAttention(nn.Module):
@@ -146,9 +146,9 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        # pp = PAM(self.d_model)
+        pp = PAM(self.d_model)
         model = Transformer(
-            Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, lambda x:x),
+            Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
                 DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn), deepcopy(ff), self.dropout),
                 self.num_layers),
@@ -251,5 +251,5 @@ class EncoderDecoder(AttModel):
     def _encode(self, fc_feats, att_feats, emb_gc, att_masks=None):
 
         att_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, att_masks)
-        out = self.model.encode(att_feats, att_masks)
+        out = self.model.encode(att_feats, emb_gc, att_masks)
         return out
