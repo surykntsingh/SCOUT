@@ -24,7 +24,7 @@ class CaptionModel(nn.Module):
 
     def beam_search(self, init_state, init_logprobs, *args, **kwargs):
 
-        emb_gc = kwargs['gc_emb']
+        # emb_gc = kwargs['gc_emb']
         # function computes the similarity score to be augmented
         def add_diversity(beam_seq_table, logprobs, t, divm, diversity_lambda, bdash):
             local_time = t - divm
@@ -107,6 +107,7 @@ class CaptionModel(nn.Module):
 
         # Start diverse_beam_search
         opt = kwargs['opt']
+        emb_gc = kwargs['gc_emb']
         temperature = opt.get('temperature', 1)  # This should not affect beam search, but will affect dbs
         beam_size = opt.get('beam_size', 10)
         group_size = opt.get('group_size', 1)
