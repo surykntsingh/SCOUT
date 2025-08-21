@@ -29,9 +29,7 @@ class ReportGenModel(nn.Module):
         self.adapter_mlp_1 = nn.Sequential(
             nn.Linear(d1, 2 * d1),
             nn.ReLU(),
-            nn.Linear(2 * d1, 4 * d1),
-            nn.ReLU(),
-            nn.Linear(4 * d1, 2*d),
+            nn.Linear(2 * d1, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2*d, d)
@@ -40,9 +38,7 @@ class ReportGenModel(nn.Module):
         self.adapter_mlp_2 = nn.Sequential(
             nn.Linear(d2, 2 * d2),
             nn.ReLU(),
-            nn.Linear(2 * d2, 4 * d2),
-            nn.ReLU(),
-            nn.Linear(4 * d2, 2 * d),
+            nn.Linear(2 * d2, 2 * d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2 * d, d)
