@@ -160,7 +160,8 @@ class EncoderDecoder(AttModel):
             ),
             LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
-            nn.Sequential(Embeddings(66, tgt_vocab),deepcopy(pgc))
+            # nn.Sequential(Embeddings(66, tgt_vocab),deepcopy(pgc)
+            lambda x:x
         )
         return model
 
