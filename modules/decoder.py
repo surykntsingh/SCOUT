@@ -24,8 +24,8 @@ class DecoderLayer(nn.Module):
 
         # print(f'x: {x.shape}')
 
-        x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
-        x = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, tgt_mask))
+        x1 = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
+        x2 = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts))
         return self.sublayer[3](x, self.feed_forward)
 
 
