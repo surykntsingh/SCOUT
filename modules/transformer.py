@@ -159,7 +159,7 @@ class EncoderDecoder(AttModel):
             ),
             LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
-            nn.Sequential(nn.Linear(66,256),nn.ReLU(),nn.Linear(256,self.d_model),deepcopy(position))
+            nn.Sequential(nn.Linear(66,256),nn.ReLU(),nn.Linear(256,self.tgt_vocab),deepcopy(position))
         )
         return model
 
@@ -205,7 +205,7 @@ class EncoderDecoder(AttModel):
 
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-        gc_feats = pack_wrapper(self.gc_embed,gc_emb)
+        gc_feats = pack_wrapper(self.gc_embed, gc_emb)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
