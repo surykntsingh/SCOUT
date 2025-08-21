@@ -150,6 +150,7 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
+        pgc = PositionalEncoding(66, self.dropout)
         pp = PAM(self.d_model)
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
@@ -159,7 +160,7 @@ class EncoderDecoder(AttModel):
             ),
             LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
-            nn.Sequential(nn.Linear(66,256),nn.ReLU(),nn.Linear(256,tgt_vocab),deepcopy(position))
+            nn.Sequential(nn.Linear(66,256),nn.ReLU(),nn.Linear(256,tgt_vocab),deepcopy(pgc))
         )
         return model
 
