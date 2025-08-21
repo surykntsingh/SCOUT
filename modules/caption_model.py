@@ -22,8 +22,9 @@ class CaptionModel(nn.Module):
             del kwargs['mode']
         return getattr(self, '_' + mode)(*args, **kwargs)
 
-    def beam_search(self, init_state, init_logprobs, emb_gc, *args, **kwargs):
+    def beam_search(self, init_state, init_logprobs, *args, **kwargs):
 
+        emb_gc = kwargs['gc_emb']
         # function computes the similarity score to be augmented
         def add_diversity(beam_seq_table, logprobs, t, divm, diversity_lambda, bdash):
             local_time = t - divm

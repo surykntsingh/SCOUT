@@ -104,11 +104,13 @@ class AttModel(CaptionModel):
         it = fc_feats.new_full([batch_size], self.bos_idx, dtype=torch.long)
         logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state, gc_emb=gc_emb)
 
+        opt['gc_emb'] = gc_emb
+
         p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
                                                                                    pp_att_feats, p_att_masks]
                                                                                   )
-        self.done_beams = self.beam_search(state, logprobs, gc_emb, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
+        self.done_beams = self.beam_search(state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
         for k in range(batch_size):
             if sample_n == beam_size:
                 for _n in range(sample_n):
