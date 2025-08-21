@@ -181,10 +181,11 @@ class EncoderDecoder(AttModel):
 
         return fc_feats[..., :1], att_feats[..., :1], memory, gc_feats, att_masks
 
-    def _prepare_feature_mesh(self, att_feats, att_masks=None, meshes=None):
+    def _prepare_feature_mesh(self, att_feats, gc_feats, att_masks=None, meshes=None):
         att_feats = pad_tokens(att_feats)
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
+        gc_feats = pack_wrapper(gc_feats)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
@@ -201,7 +202,7 @@ class EncoderDecoder(AttModel):
         else:
             meshes_mask = None
 
-        return att_feats, meshes, att_masks, meshes_mask
+        return att_feats, gc_feats, meshes, att_masks, meshes_mask
 
     def _prepare_feature_forward(self, att_feats, gc_emb, att_masks=None, meshes=None, seq=None):
 
@@ -239,8 +240,8 @@ class EncoderDecoder(AttModel):
 
     def _forward(self, fc_feats, att_feats, emb_gc, report_ids, att_masks=None):
         # log_message(fc_feats, att_feats, report_ids, att_masks)
-        att_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, att_masks, report_ids)
-        out = self.model(att_feats, emb_gc, report_ids, att_masks, report_mask)
+        att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, emb_gc, att_masks, report_ids)
+        out = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
