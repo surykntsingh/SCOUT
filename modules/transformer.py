@@ -47,6 +47,8 @@ class MultiHeadedAttention(nn.Module):
         if mask is not None:
             mask = mask.unsqueeze(1)
         nbatches = query.size(0)
+
+        print(f'nbatches: {nbatches}')
         query, key, value = [
             l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2).contiguous()
              for l, x in zip(self.linears, (query, key, value))
