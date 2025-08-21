@@ -20,6 +20,8 @@ class AttModel(CaptionModel):
         self.att_feat_size = args.d_vf
         self.att_hid_size = args.d_model
 
+        self.gc_feat_size = 66
+
         self.bos_idx = args.bos_idx
         self.eos_idx = args.eos_idx
         self.pad_idx = args.pad_idx
@@ -36,8 +38,8 @@ class AttModel(CaptionModel):
                 ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
 
         self.gc_embed = nn.Sequential(*(
-                ((nn.BatchNorm1d(self.att_feat_size),) if self.use_bn else ()) +
-                (nn.Linear(self.att_feat_size, self.input_encoding_size),
+                ((nn.BatchNorm1d(self.gc_feat_size),) if self.use_bn else ()) +
+                (nn.Linear(self.gc_feat_size, self.input_encoding_size),
                  nn.ReLU(),
                  nn.Dropout(self.drop_prob_lm)) +
                 ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
