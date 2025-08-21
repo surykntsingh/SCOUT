@@ -57,7 +57,7 @@ class AttModel(CaptionModel):
         return torch.cat((self.ln(att_feats),self.ln(meshes)),dim=1)
         # return torch.cat((self.ln(self.out1(att_feats)),self.ln(self.out2(meshes))),dim=1)
 
-    def _prepare_feature(self, fc_feats, att_feats, att_masks):
+    def _prepare_feature(self, fc_feats, att_feats, att_masks, gc_emb):
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
 
         # embed fc and att feats
@@ -66,8 +66,9 @@ class AttModel(CaptionModel):
 
         # Project the attention feats first to reduce memory and computation comsumptions.
         p_att_feats = self.ctx2att(att_feats)
+        gc_emb = self.ctx2att(gc_emb)
 
-        return fc_feats, att_feats, p_att_feats, att_masks
+        return fc_feats, att_feats, p_att_feats, gc_emb, att_masks
 
     def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, att_masks, state,gc_emb, output_logsoftmax=1):
         # 'it' contains a word index
@@ -89,7 +90,7 @@ class AttModel(CaptionModel):
         assert sample_n == 1 or sample_n == beam_size // group_size, 'when beam search, sample_n == 1 or beam search'
         batch_size = fc_feats.size(0)
 
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks)
+        p_fc_feats, p_att_feats, pp_att_feats, gc_emb, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks, gc_emb)
 
         assert beam_size <= self.vocab_size + 1, 'lets assume this for now, otherwise this corner case causes a few headaches down the road. can be dealt with in future if needed'
         seq = fc_feats.new_full((batch_size * sample_n, self.max_seq_length), self.pad_idx, dtype=torch.long)
@@ -145,7 +146,7 @@ class AttModel(CaptionModel):
         batch_size = fc_feats.size(0)
         state = self.init_hidden(batch_size * sample_n)
 
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks, meshes)
+        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_emb = self._prepare_feature(fc_feats, att_feats, att_masks, meshes)
 
         if sample_n > 1:
             p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(sample_n,
