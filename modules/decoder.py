@@ -18,15 +18,15 @@ class DecoderLayer(nn.Module):
         self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
 
 
-    def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
+    def forward(self, feats, hidden_states, concepts, src_mask, tgt_mask):
         m = hidden_states
-        x0 = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x0 = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
         # print(f'**************x: {x.shape},  m: {m.shape}')
 
         x1 = self.sublayer[1](x0, lambda x: self.src_attn(x, m, m, src_mask))
         # print(f'x: {x.shape}, m: {m.shape}, concepts: {concepts.shape}')
-        x2 = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts))
+        x2 = self.sublayer[2](feats, lambda x: self.concept_attn(x, concepts, concepts))
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
         return self.sublayer[3](x1+x2, self.feed_forward)
 
