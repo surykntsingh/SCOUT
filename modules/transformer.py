@@ -249,7 +249,7 @@ class EncoderDecoder(AttModel):
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        print(f'gc_emb: {gc_emb.shape}')
+        print(f'gc_emb: {gc_emb.shape}, memory: {memory.shape}')
         out = self.model.decode(memory, gc_emb, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
         print(f'out: {out.shape}')
         return out[:, -1], [ys.unsqueeze(0)]
