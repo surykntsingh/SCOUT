@@ -205,7 +205,7 @@ class EncoderDecoder(AttModel):
 
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-        gc_feats = pack_wrapper(gc_emb)
+        gc_feats = pack_wrapper(self.gc_embed,gc_emb)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)

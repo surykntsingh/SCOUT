@@ -35,6 +35,13 @@ class AttModel(CaptionModel):
                  nn.Dropout(self.drop_prob_lm)) +
                 ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
 
+        self.gc_embed = nn.Sequential(*(
+                ((nn.BatchNorm1d(self.att_feat_size),) if self.use_bn else ()) +
+                (nn.Linear(self.att_feat_size, self.input_encoding_size),
+                 nn.ReLU(),
+                 nn.Dropout(self.drop_prob_lm)) +
+                ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
+
         self.out1 = nn.Sequential(
             nn.Linear(self.att_feat_size, 1024),
             nn.Tanh()
