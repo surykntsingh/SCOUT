@@ -177,7 +177,7 @@ class EncoderDecoder(AttModel):
         att_feats, seq, _, att_masks, seq_mask, _ = self._prepare_feature_forward(att_feats, att_masks, meshes)
         memory = self.model.encode(att_feats, att_masks)
 
-        return fc_feats[..., :1], att_feats[..., :1], memory, att_masks
+        return fc_feats[..., :1], att_feats[..., :1], memory, gc_emb, att_masks
 
     def _prepare_feature_mesh(self, att_feats, att_masks=None, meshes=None):
         att_feats = pad_tokens(att_feats)
