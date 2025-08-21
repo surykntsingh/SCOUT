@@ -134,6 +134,9 @@ class AttModel(CaptionModel):
         output_logsoftmax = opt.get('output_logsoftmax', 1)
         decoding_constraint = opt.get('decoding_constraint', 0)
         block_trigrams = opt.get('block_trigrams', 0)
+
+        opt['gc_emb'] = emb_gc
+
         if beam_size > 1 and sample_method in ['greedy', 'beam_search']:
             return self._sample_beam(fc_feats, att_feats, emb_gc, att_masks, meshes, opt)
         if group_size > 1:
