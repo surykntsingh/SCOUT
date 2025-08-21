@@ -69,7 +69,7 @@ class AttModel(CaptionModel):
 
         return fc_feats, att_feats, p_att_feats, att_masks
 
-    def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, gc_emb, att_masks, state, output_logsoftmax=1):
+    def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, att_masks, state,gc_emb, output_logsoftmax=1):
         # 'it' contains a word index
         xt = self.embed(it)
 
@@ -102,13 +102,13 @@ class AttModel(CaptionModel):
 
         # first step, feed bos
         it = fc_feats.new_full([batch_size], self.bos_idx, dtype=torch.long)
-        logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, gc_emb, p_att_masks, state)
+        logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state, gc_emb=gc_emb)
 
         p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
                                                                                    pp_att_feats, p_att_masks]
                                                                                   )
-        self.done_beams = self.beam_search(state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
+        self.done_beams = self.beam_search(state, logprobs, gc_emb, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
         for k in range(batch_size):
             if sample_n == beam_size:
                 for _n in range(sample_n):

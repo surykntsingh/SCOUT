@@ -22,7 +22,7 @@ class CaptionModel(nn.Module):
             del kwargs['mode']
         return getattr(self, '_' + mode)(*args, **kwargs)
 
-    def beam_search(self, init_state, init_logprobs, *args, **kwargs):
+    def beam_search(self, init_state, init_logprobs, emb_gc, *args, **kwargs):
 
         # function computes the similarity score to be augmented
         def add_diversity(beam_seq_table, logprobs, t, divm, diversity_lambda, bdash):
@@ -196,7 +196,7 @@ class CaptionModel(nn.Module):
 
                     it = beam_seq_table[divm][:, :, t - divm].reshape(-1)
                     logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it.cuda(), *(
-                            args[divm] + [state_table[divm]]))
+                            args[divm] + [state_table[divm]]), emb_gc =emb_gc)
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
 
         # all beams are sorted by their log-probabilities
