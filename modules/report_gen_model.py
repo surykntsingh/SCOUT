@@ -17,15 +17,12 @@ class ReportGenModel(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(d, 2 * d),
             nn.ReLU(),
-            nn.Linear(2 * d, 4 * d),
-            nn.ReLU(),
-            nn.Linear(4 * d, 2 * d),
-            nn.ReLU(),
+            nn.LayerNorm(2*d),
             nn.Linear(2 * d, d),
+            nn.LayerNorm(d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(d, d),
-            nn.LayerNorm(d)
+            nn.Linear(d, d)
         )
         d1 = args.d1
         d2 = args.d2
