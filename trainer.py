@@ -46,7 +46,7 @@ class Trainer:
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=7, verbose=True, mode="min")
 
         # lr_finder = LearningRateFinder(
         #     min_lr=1e-8,  # Minimum learning rate to test
