@@ -110,18 +110,18 @@ def test(config_file_path: str='config.yaml', reg_threshold: float=0.8):
 
     print(f'loading best model from {args.model_load_path}')
     model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
-    test_metrics, tr = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
-    print(f'test_metrics: {test_metrics}')
+    # test_metrics, tr = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
+    # print(f'test_metrics: {test_metrics}')
     print('model testing finished')
 
-    if test_metrics['test_reg'].item() > reg_threshold:
-        print(f'Generating predictions since reg_score > {reg_threshold}')
-        results = predict(model, trainer, args, tokenizer)
-        results_dir = f'{args.results_path}/results_{test_metrics["test_reg"]}'
-        print(f'Saving predictions at {results_dir}')
-        save_results(results, results_dir)
-    else:
-        print(f'Not generating predictions since reg_score < {reg_threshold}')
+    # if test_metrics['test_reg'].item() > reg_threshold:
+    print(f'Generating predictions since reg_score > {reg_threshold}')
+    results = predict(model, trainer, args, tokenizer)
+    results_dir = f'{args.results_path}/results_last'
+    print(f'Saving predictions at {results_dir}')
+    save_results(results, results_dir)
+    # else:
+    #     print(f'Not generating predictions since reg_score < {reg_threshold}')
 
 
 @app.command()
