@@ -241,6 +241,7 @@ class EncoderDecoder(AttModel):
     def _forward(self, fc_feats, att_feats, emb_gc, report_ids, att_masks=None):
         # log_message(fc_feats, att_feats, report_ids, att_masks)
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, emb_gc, att_masks, report_ids)
+        print(f'_forward gc_feats: {gc_feats.shape}')
         out = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
