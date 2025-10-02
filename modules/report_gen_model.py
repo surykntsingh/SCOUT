@@ -98,6 +98,7 @@ class ReportGenModel(nn.Module):
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
+        emb_gc = emb_gc.view(1,66,1)
         print(f'ReportGenModel emb_gc:: {emb_gc.shape}')
         if mode == 'train':
             output = self.encoder_decoder(fc_feats, att_feats, emb_gc, report_ids, mode='forward')
