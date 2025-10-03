@@ -161,7 +161,7 @@ class EncoderDecoder(AttModel):
             LayerNorm(self.d_model),
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # nn.Sequential(Embeddings(66, tgt_vocab),deepcopy(pgc)
-            nn.Sequential(nn.Linear(1, 1), nn.ReLU(), deepcopy(position))
+            nn.Sequential(nn.Linear(1, 8), nn.ReLU(), deepcopy(position))
         )
         return model
 
@@ -185,9 +185,9 @@ class EncoderDecoder(AttModel):
         att_feats = pad_tokens(att_feats)
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-        print(f'_prepare_feature_mesh gc_feats before: {gc_feats.shape}')
+        # print(f'_prepare_feature_mesh gc_feats before: {gc_feats.shape}')
         gc_feats = pack_wrapper(self.gc_embed, gc_feats)
-        print(f'_prepare_feature_mesh gc_feats: {gc_feats.shape}')
+        # print(f'_prepare_feature_mesh gc_feats: {gc_feats.shape}')
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
         att_masks = att_masks.unsqueeze(-2)
@@ -242,7 +242,7 @@ class EncoderDecoder(AttModel):
     def _forward(self, fc_feats, att_feats, emb_gc, report_ids, att_masks=None):
         # log_message(fc_feats, att_feats, report_ids, att_masks)
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(att_feats, emb_gc, att_masks, report_ids)
-        print(f'_forward gc_feats: {gc_feats.shape}')
+        # print(f'_forward gc_feats: {gc_feats.shape}')
         out = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
@@ -257,9 +257,9 @@ class EncoderDecoder(AttModel):
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        print(f'gc_emb: {gc_emb.shape}, memory: {memory.shape}')
+        # print(f'gc_emb: {gc_emb.shape}, memory: {memory.shape}')
         out = self.model.decode(memory, gc_emb, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
-        print(f'out: {out.shape}')
+        # print(f'out: {out.shape}')
         return out[:, -1], [ys.unsqueeze(0)]
 
     def _encode(self, fc_feats,gc_emb, att_feats, emb_gc, att_masks=None):
