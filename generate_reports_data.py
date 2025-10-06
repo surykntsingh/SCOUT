@@ -20,6 +20,7 @@ def get_file_paths(patient_id, tcga_dir):
                 slide = openslide.OpenSlide(full_path)
                 magnification = slide.properties.get(openslide.PROPERTY_NAME_OBJECTIVE_POWER, "Unknown")
                 slide_paths[slide_type] = {'file_name':file, 'file_path':full_path, 'mag':magnification}
+                slide.close()
     return slide_paths
 
 if __name__ == "__main__":
