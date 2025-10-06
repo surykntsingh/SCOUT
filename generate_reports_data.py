@@ -3,6 +3,7 @@ import json
 import pandas as pd
 from tqdm.auto import tqdm
 import argparse
+import openslide
 
 def read_json_file(json_path):
     with open(json_path) as f:
@@ -16,7 +17,9 @@ def get_file_paths(patient_id, tcga_dir):
             if file.endswith(".svs") and patient_id in file:
                 full_path = os.path.join(root, file)
                 slide_type = file.split('.')[0].split('-')[-1][:2]
-                slide_paths[slide_type] = {'file_name':file, 'file_path':full_path}
+                slide = openslide.OpenSlide(full_path)
+                magnification = slide.properties.get(openslide.PROPERTY_NAME_OBJECTIVE_POWER, "Unknown")
+                slide_paths[slide_type] = {'file_name':file, 'file_path':full_path, 'mag':magnification}
     return slide_paths
 
 if __name__ == "__main__":
