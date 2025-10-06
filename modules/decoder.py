@@ -30,7 +30,7 @@ class DecoderLayer(nn.Module):
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         # x =
 
-        return self.sublayer[3](x1, self.feed_forward)
+        return self.sublayer[3](x1+x2, self.feed_forward)
 
 
 class Decoder(nn.Module):
