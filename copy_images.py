@@ -46,5 +46,5 @@ if __name__ == "__main__":
         # os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)
 
 
-    print()
+    print(mags)
     print('Finished!')
