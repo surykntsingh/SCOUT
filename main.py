@@ -47,18 +47,18 @@ def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
     os.makedirs(f'{args.results_path}/experiments', exist_ok=True)
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
-    if test_metrics['test_reg'].item() > reg_threshold:
-        print(f'Generating predictions since reg_score > {reg_threshold}')
-        results = predict(best_model, trainer, args, tokenizer)
-        results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
-        print(f'Saving predictions at {results_dir}')
-        save_results(results, results_dir)
-        print(f'Predictions saved at {results_dir}')
-        # os.makedirs(f'{args.ckpt_path}/saved_models', exist_ok=True)
-        # save_model_path = f'{args.ckpt_path}/saved_models/reg_{test_metrics["test_reg"]}.ckpt'
-        # trainer.save_model(tr, save_model_path)
-    else:
-        print(f'Not generating predictions since reg_score < {reg_threshold}')
+    # if test_metrics['test_reg'].item() > reg_threshold:
+    #     print(f'Generating predictions since reg_score > {reg_threshold}')
+    #     results = predict(best_model, trainer, args, tokenizer)
+    #     results_dir = f'{args.ckpt_path}/results_{test_metrics["test_reg"]}'
+    #     print(f'Saving predictions at {results_dir}')
+    #     save_results(results, results_dir)
+    #     print(f'Predictions saved at {results_dir}')
+    #     # os.makedirs(f'{args.ckpt_path}/saved_models', exist_ok=True)
+    #     # save_model_path = f'{args.ckpt_path}/saved_models/reg_{test_metrics["test_reg"]}.ckpt'
+    #     # trainer.save_model(tr, save_model_path)
+    # else:
+    #     print(f'Not generating predictions since reg_score < {reg_threshold}')
 
     # tune_gecko_features(args, tokenizer, best_model_path, trainer, datamodule, reg_threshold, date)
 
