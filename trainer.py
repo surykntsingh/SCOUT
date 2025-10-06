@@ -55,10 +55,10 @@ class Trainer:
         #     mode='exponential'  # or 'linear'
         # )
 
-        # suggested_lr = self.find_lr(model, datamodule)
-        # print(f'setting lr: {suggested_lr}')
+        suggested_lr = self.find_lr(model, datamodule)
+        print(f'setting lr: {suggested_lr}')
         # Set suggested LR
-        # model.hparams.lr = suggested_lr
+        model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
             max_epochs=self.max_epochs,
