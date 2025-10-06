@@ -40,7 +40,7 @@ if __name__ == "__main__":
         report['paths'] = file_paths
         reports_data.append(report)
 
-    with open(f'{args.tcga_path}/tcga_reports.json', 'w') as fp:
+    with open(f'{args.reports_save_path}/tcga_reports.json', 'w') as fp:
         json.dump(reports_data, fp)
 
     print('Finished!')
