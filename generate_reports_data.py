@@ -17,10 +17,14 @@ def get_file_paths(patient_id, tcga_dir):
             if file.endswith(".svs") and patient_id in file:
                 full_path = os.path.join(root, file)
                 slide_type = file.split('.')[0].split('-')[-1][:2]
-                slide = openslide.OpenSlide(full_path)
-                magnification = slide.properties.get(openslide.PROPERTY_NAME_OBJECTIVE_POWER, "Unknown")
-                slide_paths[slide_type] = {'file_name':file, 'file_path':full_path, 'mag':magnification}
-                slide.close()
+                try:
+                    slide = openslide.OpenSlide(full_path)
+                    magnification = slide.properties.get(openslide.PROPERTY_NAME_OBJECTIVE_POWER, "Unknown")
+                    slide_paths[slide_type] = {'file_name': file, 'file_path': full_path, 'mag': magnification}
+                    slide.close()
+                except Exception as e:
+                    print(f'full_path: {full_path} e: {e}')
+                    slide_paths[slide_type] = {'file_name': file, 'file_path': full_path, 'mag': 'Unknown'}
     return slide_paths
 
 if __name__ == "__main__":
