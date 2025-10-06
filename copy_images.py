@@ -41,10 +41,10 @@ if __name__ == "__main__":
     pbar = tqdm(pathtext, total=len(pathtext))
     mags = set()
     for i, p in enumerate(pbar):
-        mag = p['paths']['DX']
+        mag = p['paths']['DX']['mag']
         mags.add(mag)
         # os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)
 
 
-    print(mags)
+    print()
     print('Finished!')
