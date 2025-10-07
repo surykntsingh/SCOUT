@@ -103,9 +103,9 @@ class ReportGenModel(nn.Module):
         if mode == 'train':
             output = self.encoder_decoder(fc_feats, att_feats, emb_gc, report_ids, mode='forward')
         elif mode == 'sample':
-            output, _ = self.encoder_decoder(fc_feats, att_feats, emb_gc, mode='sample')
+            output, _ = self.encoder_decoder(fc_feats, att_feats, emb_gc_, mode='sample')
         elif mode == 'encode':
-            output = self.encoder_decoder(fc_feats, att_feats, emb_gc, mode='encode')
+            output = self.encoder_decoder(fc_feats, att_feats, emb_gc_, mode='encode')
 
             logits = self.fc(output[0, 0, :]).unsqueeze(0)
             Y_hat = torch.argmax(logits, dim=1)
