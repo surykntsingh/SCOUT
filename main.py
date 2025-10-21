@@ -14,7 +14,7 @@ app = typer.Typer()
 
 
 @app.command()
-def train(config_file_path: str='config.yaml', reg_threshold: float=0.8):
+def train(config_file_path: str='tcga_config.yaml', reg_threshold: float=0.8):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.83, 0.08, 0.09]
     tokenizer = Tokenizer(args.reports_json_path)
@@ -100,7 +100,7 @@ def tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule, re
 
 
 @app.command()
-def test(config_file_path: str='config.yaml', reg_threshold: float=0.8):
+def test(config_file_path: str='tcga_config.yaml', reg_threshold: float=0.8):
 
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.7, 0.10, 0.20]
@@ -125,7 +125,7 @@ def test(config_file_path: str='config.yaml', reg_threshold: float=0.8):
 
 
 @app.command()
-def trainkfold(config_file_path='config.yaml'):
+def trainkfold(config_file_path='tcga_config.yaml'):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.85, 0.15]
     tokenizer = Tokenizer(args.reports_json_path)
