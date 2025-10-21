@@ -22,9 +22,9 @@ class ReportModel(pl.LightningModule):
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
         self.val_rouge = ROUGEScore()
-        self.val_bleu = BLEUScore(n_gram=4)
+        self.val_bleu = BLEUScore(n_gram=4, smooth=True)
         self.test_rouge = ROUGEScore()
-        self.test_bleu = BLEUScore(n_gram=4)
+        self.test_bleu = BLEUScore(n_gram=4, smooth=True)
         # self.bleu_2 = BLEUScore(n_gram=2)
         # self.bleu_3 = BLEUScore(n_gram=3)
         # self.bleu_4 = BLEUScore(n_gram=4)
@@ -75,9 +75,6 @@ class ReportModel(pl.LightningModule):
 
             rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
-            # bleu_score2 = self.bleu_2(pred_texts, target_texts)
-            # bleu_score3 = self.bleu_3(pred_texts, target_texts)
-            # bleu_score4 = self.bleu_4(pred_texts, target_texts)
             reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
             self.meteor_scores.append(
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
@@ -160,8 +157,6 @@ class ReportModel(pl.LightningModule):
         reg_score = sum(self.reg_scores) / len(self.reg_scores)
         self.log('val_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        beacon_score = sum(self.beacon) / len(self.beacon)
-        self.log('val_beacon', beacon_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.reg_scores.clear()
         self.beacon.clear()
 
@@ -174,8 +169,6 @@ class ReportModel(pl.LightningModule):
         reg_score = sum(self.reg_scores) / len(self.reg_scores)
         self.log('test_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        beacon_score = sum(self.beacon) / len(self.beacon)
-        self.log('test_beacon', beacon_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.reg_scores.clear()
         self.beacon.clear()
 
