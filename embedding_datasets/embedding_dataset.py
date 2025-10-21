@@ -57,7 +57,7 @@ class EmbeddingDataset(Dataset):
             emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
 
         coords = None
-        return slide_id, embedding1.half(), embedding2.half(), emb_g, emb_gc, coords, report_ids, report_masks, seq_length
+        return slide_id, embedding1[::2,:], embedding2[::2,:], emb_g, emb_gc, coords, report_ids, report_masks, seq_length
 
 
 class EmbeddingPredictDataset(Dataset):
