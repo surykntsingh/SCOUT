@@ -61,7 +61,7 @@ class Trainer:
         # model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
-            precision="16-mixed",
+            precision="bf16-mixed",
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
@@ -147,7 +147,7 @@ class Trainer:
     def test(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(
-            precision="16-mixed",
+            precision="bf16-mixed",
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
