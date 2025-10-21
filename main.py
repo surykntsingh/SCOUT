@@ -7,11 +7,12 @@ from trainer import Trainer, KFoldTrainer
 import pandas as pd
 from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_file
 from datetime import datetime
+import torch
 
 app = typer.Typer()
 
 
-
+torch.cuda.empty_cache()
 
 @app.command()
 def train(config_file_path: str='tcga_config.yaml', reg_threshold: float=0.8):
