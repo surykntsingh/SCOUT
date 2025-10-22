@@ -61,7 +61,7 @@ class Trainer:
         # model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
-            # precision="bf16-mixed",
+            precision="bf16-mixed",
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
