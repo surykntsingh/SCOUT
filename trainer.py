@@ -55,13 +55,13 @@ class Trainer:
         #     mode='exponential'  # or 'linear'
         # )
 
-        # suggested_lr = self.find_lr(model, datamodule)
-        # print(f'setting lr: {suggested_lr}')
-        # # Set suggested LR
-        # model.hparams.lr = suggested_lr
+        suggested_lr = self.find_lr(model, datamodule)
+        print(f'setting lr: {suggested_lr}')
+        # Set suggested LR
+        model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
-            precision="bf16-mixed",
+            # precision="bf16-mixed",
             max_epochs=self.max_epochs,
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
@@ -84,7 +84,7 @@ class Trainer:
 
     def find_lr(self, model, datamodule):
         trainer = pl.Trainer(
-            precision="16-mixed",
+            # precision="16-mixed",
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
@@ -147,7 +147,7 @@ class Trainer:
     def test(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(
-            precision="bf16-mixed",
+            # precision="bf16-mixed",
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
