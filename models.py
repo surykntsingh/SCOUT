@@ -51,13 +51,17 @@ class ReportModel(pl.LightningModule):
         loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         return loss
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         # print('train ---------->')
         _, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss = self.loss_fn(output, report_ids, report_masks)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+        if batch_idx %100==0:
+            print(
+                f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
+
         return loss
 
     def validation_step(self, batch, batch_idx):
