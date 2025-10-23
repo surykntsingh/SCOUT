@@ -30,11 +30,11 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         slide_id = self.__slides[idx]
         with h5py.File(f'{self.__embeddings_path}/{slide_id}.h5', "r") as h5_file:
-            coords_np = h5_file["coords"][:]
+            # coords_np = h5_file["coords"][:]
             embeddings_np = h5_file["features"][:]
 
-            coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np).unsqueeze(0)
+            # coords = torch.tensor(coords_np).float()
+            embedding1 = torch.tensor(embeddings_np, dtype=torch.bfloat16).unsqueeze(0)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 
@@ -47,18 +47,18 @@ class EmbeddingDataset(Dataset):
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
             embeddings_np = h5_file["features"][:]
-            embedding2 = torch.tensor(embeddings_np)
+            embedding2 = torch.tensor(embeddings_np, dtype=torch.bfloat16)
 
         with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
 
-            emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
-            emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
+            emb_g = torch.tensor(bag_feats_deep_np, dtype=torch.bfloat16).unsqueeze(0)
+            emb_gc = torch.tensor(bag_feats_np, dtype=torch.bfloat16).unsqueeze(0)
 
-        coords = None
-        return slide_id, embedding1, embedding2, emb_g, emb_gc, coords, report_ids, report_masks, seq_length
+        # coords = None
+        return slide_id, embedding1, embedding2, emb_g, emb_gc, None, report_ids, report_masks, seq_length
 
 
 class EmbeddingPredictDataset(Dataset):
