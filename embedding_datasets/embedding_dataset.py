@@ -20,10 +20,10 @@ class EmbeddingDataset(Dataset):
         files = os.listdir(embeddings_path)
         files_1 = os.listdir(embeddings_path_2)
         files_2 = os.listdir(gecko_emb_path)
-        slides = self.__reports.keys()
-        print(slides)
-        self.__slides = [file.split('.')[0] for file in files if file in files_1 and file in files_2 and file in slides]
-
+        # slides = self.__reports.keys()
+        # print(slides)
+        # self.__slides = [file.split('.')[0] for file in files if file in files_1 and file in files_2 and file.split('.')[0] in slides]
+        self.__slides = list(self.__reports.keys())
         print(f'files: {len(files)}, files_1: {len(files_1)}, files_2: {len(files_2)} slides: {len(self.__slides)}')
 
     def __len__(self):
