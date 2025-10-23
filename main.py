@@ -9,7 +9,7 @@ from utils.utils import save_model, get_params_for_key, copy_yaml, write_json_fi
 from datetime import datetime
 import torch
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 torch.cuda.empty_cache()
