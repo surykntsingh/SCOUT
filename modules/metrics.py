@@ -143,3 +143,23 @@ class REG_Evaluator:
             score += self.evaluate_text(ref_text, hyp_text)
         score /= len(eval_lists)
         return score
+
+    def get_metrices(self, ref_texts, hyp_texts):
+
+        # Since we are always using batch_size =1
+        ref_text = ref_texts[0]
+        hyp_text = hyp_texts[0]
+
+        emb_score = self.embedding_eval.get_score(ref_text, hyp_text)
+        key_score = self.key_eval.get_score(ref_text, hyp_text)
+        bleu_score = self.get_bleu4(ref_text, hyp_text)
+        rouge_score = self.get_rouge(ref_text, hyp_text)
+
+        ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
+        return {
+            'emb_score': emb_score,
+            'key_score': key_score,
+            'bleu_score': bleu_score,
+            'rouge_score': rouge_score,
+            'weighted_score': ranking_score
+        }

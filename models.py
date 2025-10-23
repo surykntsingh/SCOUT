@@ -32,8 +32,14 @@ class ReportModel(pl.LightningModule):
         self.test_meteor = evaluate.load("meteor")
         self.meteor_scores = []
         self.reg_evaluator = REG_Evaluator()
-        self.reg_scores = []
-        self.beacon = []
+
+        self.more_metrics = {
+            'emb_score': [],
+            'key_score': [],
+            'bleu_score': [],
+            'rouge_score': [],
+            'weighted_score': []
+        }
         reports = read_json_file(args.reports_json_path)
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
         # torch.cuda.set_device(self.trainer.local_rank)
@@ -66,7 +72,7 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        if batch_idx % 10==0:
+        if batch_idx % 100==0:
             output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
             # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
@@ -75,21 +81,15 @@ class ReportModel(pl.LightningModule):
 
             rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
-            reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
+            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
             self.meteor_scores.append(
                 self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            self.reg_scores.append(reg)
-
+            # self.reg_scores.append(reg)
+            for metric in self.more_metrics:
+                self.more_metrics[metric].append(metrics[metric])
             self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
-            beacon = loss - 0.001*reg
-            self.beacon.append(beacon)
-
-            # self.log('val_bleu2', bleu_score2, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('val_bleu3', bleu_score3, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('val_bleu4', bleu_score4, on_epoch=True, prog_bar=True, sync_dist=True)
-            # print('val step end')
 
     def test_step(self, batch, batch_idx):
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
@@ -100,8 +100,7 @@ class ReportModel(pl.LightningModule):
 
         output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
-        # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-        # print(f'pred_texts: {pred_texts},\n target_texts: {target_texts}')
+
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
         if batch_idx % 100 == 0:
@@ -122,11 +121,10 @@ class ReportModel(pl.LightningModule):
         rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
         bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
         self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-        reg = self.reg_evaluator.evaluate_dummy(list(zip(pred_texts, target_texts)))
-        self.reg_scores.append(reg)
+        metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+        for metric in self.more_metrics:
+            self.more_metrics[metric].append(metrics[metric])
 
-        beacon = loss - 0.001 * reg
-        self.beacon.append(beacon)
         self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
@@ -154,11 +152,11 @@ class ReportModel(pl.LightningModule):
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
 
-        reg_score = sum(self.reg_scores) / len(self.reg_scores)
-        self.log('val_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        for metric in self.more_metrics:
+            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.more_metrics[metric].clear()
 
-        self.reg_scores.clear()
-        self.beacon.clear()
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
@@ -166,11 +164,10 @@ class ReportModel(pl.LightningModule):
         self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
 
-        reg_score = sum(self.reg_scores) / len(self.reg_scores)
-        self.log('test_reg', reg_score, on_epoch=True, prog_bar=True, sync_dist=True)
-
-        self.reg_scores.clear()
-        self.beacon.clear()
+        for metric in self.more_metrics:
+            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.more_metrics[metric].clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
