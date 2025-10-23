@@ -17,7 +17,7 @@ torch.cuda.empty_cache()
 @app.command()
 def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.83, 0.08, 0.09]
+    split_frac = [0.85, 0.07, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     model = ReportModel(args, tokenizer)
 
