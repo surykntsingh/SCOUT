@@ -49,7 +49,7 @@ class ReportModel(pl.LightningModule):
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()
         loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        return loss.item()
+        return loss
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
@@ -58,7 +58,7 @@ class ReportModel(pl.LightningModule):
         # print(f'train output: {output}')
         loss = self.loss_fn(output, report_ids, report_masks)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-        if batch_idx %100==0:
+        if batch_idx %10==0:
             print(
                 f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
 
