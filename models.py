@@ -49,7 +49,7 @@ class ReportModel(pl.LightningModule):
     def loss_fn(self, output, reports_ids, reports_masks):
         criterion = LanguageModelCriterion()
         loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        return loss
+        return loss.item()
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
