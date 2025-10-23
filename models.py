@@ -16,7 +16,7 @@ class ReportModel(pl.LightningModule):
 
     def __init__(self, args, tokenizer):
         super().__init__()
-        self.model = ReportGenModel(args, tokenizer)
+        self.model = ReportGenModel(args, tokenizer).to(torch.bfloat16)
         self.tokenizer = tokenizer
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
