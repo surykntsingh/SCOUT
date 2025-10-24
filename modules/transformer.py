@@ -52,7 +52,7 @@ class MultiHeadedAttention(nn.Module):
 
         x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
-        x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
+        x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k).contiguous()
         return self.linears[-1](x)
 
     def attention(self, query, key, value, mask=None, dropout=None):
@@ -135,12 +135,12 @@ class EncoderDecoder(AttModel):
 
         tgt_vocab = self.vocab_size + 1
 
-        self.embeded = Embeddings(args.d_vf, tgt_vocab)
+        # self.embeded = Embeddings(args.d_vf, tgt_vocab)
         self.model = self.__build_model(tgt_vocab)
         self.__init_model()
 
         self.logit = nn.Linear(args.d_model, tgt_vocab)
-        self.logit_mesh = nn.Linear(args.d_model, args.d_model)
+        # self.logit_mesh = nn.Linear(args.d_model, args.d_model)
 
     def __build_model(self, tgt_vocab):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)

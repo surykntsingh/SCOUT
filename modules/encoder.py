@@ -9,7 +9,7 @@ class Encoder(nn.Module):
     def __init__(self, layer, N, PAM):
         super().__init__()
         self.layers = clones(layer, N)
-        self.norm = LayerNorm(layer.d_model)
+        # self.norm = LayerNorm(layer.d_model)
         self.PAM = clones(PAM, N)
         self.N = N
 
