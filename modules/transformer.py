@@ -121,6 +121,23 @@ class PAM(nn.Module):
 
         return x
 
+class PAM_(nn.Module):
+    def __init__(self, dim=512):
+        pass
+        # self.proj = nn.Sequential(
+        #     nn.Linear(d1, 2 * d1),
+        #     nn.ReLU(),)
+
+    def forward(self, x):
+        # B, H, C = x.shape
+        # # print(f'B, H, C : {(B, H, C)}')
+        # assert int(math.sqrt(H))**2==H, f'{x.shape}'
+        # cnn_feat = x.transpose(1, 2).contiguous().view(B, C, int(math.sqrt(H)), int(math.sqrt(H))).contiguous()
+        # x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
+        # x = x.flatten(2).transpose(1, 2).contiguous()
+
+        return x
+
 
 class EncoderDecoder(AttModel):
 
@@ -146,7 +163,7 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        pp = PAM(self.d_model)
+        pp = PAM_(self.d_model)
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
