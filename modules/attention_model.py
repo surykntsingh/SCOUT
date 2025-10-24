@@ -299,7 +299,7 @@ class AttModel(CaptionModel):
                         it[~unfinished] = self.pad_idx
                         unfinished = unfinished & (it != self.eos_idx)  # changed
                     seq[:, t] = it
-                    seqLogprobs[:, t] = sampleLogprobs.view(-1)
+                    seqLogprobs[:, t] = sampleLogprobs.view(-1).contiguous()
 
         return torch.stack(seq_table, 1).reshape(batch_size * group_size, -1), torch.stack(seqLogprobs_table,
                                                                                            1).reshape(
