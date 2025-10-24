@@ -22,9 +22,9 @@ class ReportModel(pl.LightningModule):
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
         self.val_rouge = ROUGEScore()
-        self.val_bleu = BLEUScore(n_gram=4, smooth=True)
+        self.val_bleu = BLEUScore(n_gram=4)
         self.test_rouge = ROUGEScore()
-        self.test_bleu = BLEUScore(n_gram=4, smooth=True)
+        self.test_bleu = BLEUScore(n_gram=4)
         # self.bleu_2 = BLEUScore(n_gram=2)
         # self.bleu_3 = BLEUScore(n_gram=3)
         # self.bleu_4 = BLEUScore(n_gram=4)
@@ -58,9 +58,9 @@ class ReportModel(pl.LightningModule):
         # print(f'train output: {output}')
         loss = self.loss_fn(output, report_ids, report_masks)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-        if batch_idx %100==0:
-            print(
-                f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
+        # if batch_idx %1000==0:
+        #     print(
+        #         f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
 
         return loss
 
