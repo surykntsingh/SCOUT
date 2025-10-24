@@ -91,13 +91,13 @@ class ReportGenModel(nn.Module):
         patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
-        # fc_feats = torch.sum(att_feats, dim=1)
+        fc_feats = torch.sum(att_feats, dim=1)
         if mode == 'train':
-            output = self.encoder_decoder(None, att_feats, report_ids, mode='forward')
+            output = self.encoder_decoder(fc_feats, att_feats, report_ids, mode='forward')
         elif mode == 'sample':
-            output, _ = self.encoder_decoder(None, att_feats, mode='sample')
+            output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
         elif mode == 'encode':
-            output = self.encoder_decoder(None, att_feats, mode='encode')
+            output = self.encoder_decoder(fc_feats, att_feats, mode='encode')
 
             logits = self.fc(output[0, 0, :]).unsqueeze(0)
             Y_hat = torch.argmax(logits, dim=1)
