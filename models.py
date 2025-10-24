@@ -21,6 +21,7 @@ class ReportModel(pl.LightningModule):
         for p in self.model.parameters():
             if not p.is_contiguous():
                 p.data = p.contiguous()
+
         self.tokenizer = tokenizer
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
@@ -54,6 +55,11 @@ class ReportModel(pl.LightningModule):
         criterion = LanguageModelCriterion()
         loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         return loss
+
+    def on_after_backward(self):
+        unused = [n for n, p in self.named_parameters() if p.requires_grad and p.grad is None]
+        if unused:
+            print(f"[Rank {self.global_rank}] Unused params: {unused[:5]} ...")
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
