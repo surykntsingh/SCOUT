@@ -82,6 +82,7 @@ class ReportGenModel(nn.Module):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
+        patch_masks=None
         image_embeddings1 = self.adapter_mlp_1(image_embeddings1)
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
         emb_gc = self.gecko_mlp(emb_gc)

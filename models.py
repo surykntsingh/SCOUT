@@ -1,5 +1,5 @@
 import json
-
+import gc
 import torch
 import pytorch_lightning as pl
 from torchmetrics.text.rouge import ROUGEScore
@@ -53,6 +53,7 @@ class ReportModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
+        gc.collect()
         _, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
@@ -66,7 +67,7 @@ class ReportModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # print('val ---------->')
-
+        gc.collect()
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
@@ -96,6 +97,7 @@ class ReportModel(pl.LightningModule):
 
 
     def test_step(self, batch, batch_idx):
+        gc.collect()
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
 
         output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
