@@ -35,15 +35,15 @@ class AttModel(CaptionModel):
                  nn.Dropout(self.drop_prob_lm)) +
                 ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
 
-        self.out1 = nn.Sequential(
-            nn.Linear(self.att_feat_size, 1024),
-            nn.Tanh()
-        )
-        self.out2 = nn.Sequential(
-            nn.Linear(self.rnn_size, self.rnn_size),
-            nn.Tanh()
-        )
-        self.ln = nn.LayerNorm(self.att_feat_size)
+        # self.out1 = nn.Sequential(
+        #     nn.Linear(self.att_feat_size, 1024),
+        #     nn.Tanh()
+        # )
+        # self.out2 = nn.Sequential(
+        #     nn.Linear(self.rnn_size, self.rnn_size),
+        #     nn.Tanh()
+        # )
+        # self.ln = nn.LayerNorm(self.att_feat_size)
 
     def clip_att(self, att_feats, att_masks):
         # Clip the length of att_masks and att_feats to the maximum length
@@ -53,8 +53,8 @@ class AttModel(CaptionModel):
             att_masks = att_masks[:, :max_len].contiguous()
         return att_feats, att_masks
 
-    def multimodal_feat(self, att_feats, meshes):# Concate multimodal features
-        return torch.cat((self.ln(att_feats),self.ln(meshes)),dim=1)
+    # def multimodal_feat(self, att_feats, meshes):# Concate multimodal features
+    #     return torch.cat((self.ln(att_feats),self.ln(meshes)),dim=1)
         # return torch.cat((self.ln(self.out1(att_feats)),self.ln(self.out2(meshes))),dim=1)
 
     def _prepare_feature(self, fc_feats, att_feats, att_masks):
