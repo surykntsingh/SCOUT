@@ -57,9 +57,9 @@ class ReportModel(pl.LightningModule):
         return loss
 
     def on_after_backward(self):
-        unused = [n for n, p in self.named_parameters() if p.requires_grad and p.grad is None]
-        if unused:
-            print(f"[Rank {self.global_rank}] Unused params: {unused[:5]} ...")
+        for name, p in self.model.named_parameters():
+            if not p.data.is_contiguous():
+                print(f"NON-CONTIGUOUS PARAM: {name} shape={tuple(p.shape)} strides={p.data.stride()}")
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
