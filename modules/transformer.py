@@ -123,7 +123,7 @@ class PAM(nn.Module):
 
 class PAM_(nn.Module):
     def __init__(self, dim=512):
-        # pass
+        super().__init__()
         self.proj = nn.Sequential(
             nn.Linear(dim, dim),
             nn.ReLU(),)
