@@ -66,7 +66,7 @@ class Trainer:
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
-            strategy='ddp_find_unused_parameters_true',
+            strategy='ddp',
             enable_progress_bar=True,
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
@@ -87,7 +87,7 @@ class Trainer:
             # precision="16-mixed",
             accelerator='gpu',
             devices=self.devices,
-            strategy='ddp_find_unused_parameters_true',
+            strategy='ddp',
             enable_progress_bar=True
         )
         tuner = Tuner(trainer)

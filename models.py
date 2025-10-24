@@ -17,6 +17,10 @@ class ReportModel(pl.LightningModule):
     def __init__(self, args, tokenizer):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer).to(torch.bfloat16)
+
+        for p in self.model.parameters():
+            if not p.is_contiguous():
+                p.data = p.contiguous()
         self.tokenizer = tokenizer
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
