@@ -21,7 +21,7 @@ class LayerNorm(nn.Module):
 
 class SublayerConnection(nn.Module):
     def __init__(self, d_model, dropout):
-        super(SublayerConnection, self).__init__()
+        super().__init__()
         self.norm = LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
