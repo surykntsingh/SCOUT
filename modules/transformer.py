@@ -52,8 +52,8 @@ class MultiHeadedAttention(nn.Module):
 
         x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
-        x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k).contiguous()
-        return self.linears[-1](x)
+        xt = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k).contiguous()
+        return self.linears[-1](xt)
 
     def attention(self, query, key, value, mask=None, dropout=None):
         d_k = query.size(-1)
