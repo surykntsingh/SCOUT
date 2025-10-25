@@ -17,6 +17,7 @@ class ReportModel(pl.LightningModule):
     def __init__(self, args, tokenizer):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)#.to(torch.bfloat16)
+        self.model.tie_weights()
 
         for p in self.model.parameters():
             if not p.is_contiguous():
