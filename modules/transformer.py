@@ -52,12 +52,13 @@ class MultiHeadedAttention(nn.Module):
 
         x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
-        x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k).contiguous()
+        x = x.transpose(1, 2).view(nbatches, -1, self.h * self.d_k).contiguous()
         return self.linears[-1](x)
 
     def attention(self, query, key, value, mask=None, dropout=None):
         d_k = query.size(-1)
-        scores = torch.matmul(query, key.transpose(-2, -1).contiguous()) / math.sqrt(d_k)
+        kt = key.transpose(-2, -1).contiguous()
+        scores = torch.matmul(query, kt) / math.sqrt(d_k)
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)
         p_attn = F.softmax(scores, dim=-1)
