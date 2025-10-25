@@ -165,6 +165,7 @@ class ReportModel(pl.LightningModule):
     def on_validation_epoch_end(self):
         # print('on_validation_epoch_end start')
         # print(f'meteor_scores: {self.meteor_scores}')
+        torch.cuda.empty_cache()
         meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
         self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
         self.meteor_scores.clear()
