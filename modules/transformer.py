@@ -159,7 +159,7 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        pp = PAM_(self.d_model)
+        pp = PAM(self.d_model)
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
