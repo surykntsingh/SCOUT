@@ -13,6 +13,7 @@ app = typer.Typer(pretty_exceptions_enable=False)
 
 
 torch.cuda.empty_cache()
+torch.autograd.set_detect_anomaly(True)
 
 @app.command()
 def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
