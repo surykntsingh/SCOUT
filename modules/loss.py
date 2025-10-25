@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class LanguageModelCriterion(nn.Module):
     def __init__(self):
-        super(LanguageModelCriterion, self).__init__()
+        super().__init__()
 
     def forward(self, input, target, mask):
         # truncate to the same size

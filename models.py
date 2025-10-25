@@ -73,7 +73,7 @@ class ReportModel(pl.LightningModule):
         # if batch_idx %1000==0:
         #     print(
         #         f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
-
+        del output
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -89,23 +89,25 @@ class ReportModel(pl.LightningModule):
         self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
         if batch_idx % 50==0:
-            output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-            pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
-            # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+            with torch.no_grad():
+                output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+                pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
+                # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
 
-            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
+                target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-            rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
-            # bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
-            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            self.meteor_scores.append(
-                self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            # self.reg_scores.append(reg)
-            for metric in self.more_metrics:
-                self.more_metrics[metric].append(metrics[metric])
-            self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
-
+                rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
+                # bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
+                metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+                self.meteor_scores.append(
+                    float(self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor']))
+                # self.reg_scores.append(reg)
+                for metric in self.more_metrics:
+                    self.more_metrics[metric].append(float(metrics[metric]))
+                self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+        del output
+        del output_
 
     def test_step(self, batch, batch_idx):
         gc.collect()
@@ -115,40 +117,45 @@ class ReportModel(pl.LightningModule):
         loss = self.loss_fn(output_, report_ids, report_masks)
         self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-        pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
+        with torch.no_grad():
+            output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+            pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
 
-        target_texts = [self.reports[slide_id] for slide_id in slide_ids]
+            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-        if batch_idx % 100 == 0:
-            RED = '\033[91m'
-            BLUE = '\033[94m'
-            RESET = '\033[0m'
+            if batch_idx % 100 == 0:
+                RED = '\033[91m'
+                BLUE = '\033[94m'
+                RESET = '\033[0m'
 
-            print('*' * 100)
-            print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
-            print(f' {RED} Predicted synoptic report: \n {RESET}')
+                print('*' * 100)
+                print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
+                print(f' {RED} Predicted synoptic report: \n {RESET}')
 
-            json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
-            print(f'{RED} {json_string} {RESET}')
+                json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
+                print(f'{RED} {json_string} {RESET}')
 
-            print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
-            print('*' * 100)
+                print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
+                print('*' * 100)
 
-        rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
-        # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
-        self.meteor_scores.append(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-        metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-        for metric in self.more_metrics:
-            self.more_metrics[metric].append(metrics[metric])
+            rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
+            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
+            meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+            self.meteor_scores.append(meteor_score)
+            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+            for metric in self.more_metrics:
+                self.more_metrics[metric].append(float(metrics[metric]))
 
-        self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+        del output
+        del output_
 
     def predict_step(self, batch):
         slide_id, feats1, feats2, gecko_feats, gecko_concepts = batch
-        output = self.model(feats1, feats2, gecko_feats, gecko_concepts, mode='sample')
-        pred_texts = self.tokenizer.batch_decode(output.cpu().numpy())
+        with torch.no_grad():
+            output = self.model(feats1, feats2, gecko_feats, gecko_concepts, mode='sample')
+        pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
 
         RED = '\033[91m'
         RESET = '\033[0m'
@@ -160,6 +167,7 @@ class ReportModel(pl.LightningModule):
         json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
         print(f'{RED} {json_string} {RESET}')
         print('*' * 100)
+        del output
         return slide_id,pred_texts
 
     def on_validation_epoch_end(self):
