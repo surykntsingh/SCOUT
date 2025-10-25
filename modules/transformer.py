@@ -47,7 +47,7 @@ class MultiHeadedAttention(nn.Module):
             mask = mask.unsqueeze(1)
         nbatches = query.size(0)
         query, key, value = \
-            [l(x).view(nbatches, -1, self.h, self.d_k).contiguous().transpose(1, 2).contiguous()
+            [l(x).reshape(nbatches, -1, self.h, self.d_k).transpose(1, 2).contiguous()
              for l, x in zip(self.linears, (query, key, value))]
 
         x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
@@ -116,7 +116,7 @@ class PAM(nn.Module):
         B, H, C = x.shape
         # print(f'B, H, C : {(B, H, C)}')
         assert int(math.sqrt(H))**2==H, f'{x.shape}'
-        cnn_feat = x.transpose(1, 2).contiguous().view(B, C, int(math.sqrt(H)), int(math.sqrt(H))).contiguous()
+        cnn_feat = x.transpose(1, 2).contiguous().reshape(B, C, int(math.sqrt(H)), int(math.sqrt(H)))
         x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
         x = x.flatten(2).transpose(1, 2).contiguous()
 
