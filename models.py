@@ -16,7 +16,7 @@ class ReportModel(pl.LightningModule):
 
     def __init__(self, args, tokenizer):
         super().__init__()
-        self.model = ReportGenModel(args, tokenizer).to(torch.bfloat16)
+        self.model = ReportGenModel(args, tokenizer)#.to(torch.bfloat16)
 
         for p in self.model.parameters():
             if not p.is_contiguous():
@@ -56,10 +56,10 @@ class ReportModel(pl.LightningModule):
         loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         return loss
 
-    def on_after_backward(self):
-        for name, p in self.model.named_parameters():
-            if not p.data.is_contiguous():
-                print(f"NON-CONTIGUOUS PARAM: {name} shape={tuple(p.shape)} strides={p.data.stride()}")
+    # def on_after_backward(self):
+    #     for name, p in self.model.named_parameters():
+    #         if not p.data.is_contiguous():
+    #             print(f"NON-CONTIGUOUS PARAM: {name} shape={tuple(p.shape)} strides={p.data.stride()}")
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
