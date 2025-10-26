@@ -95,8 +95,7 @@ class ReportGenModel(nn.Module):
         if mode == 'train':
             output = self.encoder_decoder(fc_feats, att_feats, report_ids, mode='forward')
         elif mode == 'sample':
-            output, logprob = self.encoder_decoder(fc_feats, att_feats, mode='sample')
-            return output, logprob
+            output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
         elif mode == 'encode':
             output = self.encoder_decoder(fc_feats, att_feats, mode='encode')
 
