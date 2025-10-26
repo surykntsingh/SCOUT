@@ -85,8 +85,8 @@ class ReportModel(pl.LightningModule):
 
         with torch.no_grad():
             output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-
-            loss = self.loss_fn(output, report_ids, report_masks)
+            output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+            loss = self.loss_fn(output_, report_ids, report_masks)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
             if batch_idx % 50==0:
@@ -109,13 +109,15 @@ class ReportModel(pl.LightningModule):
                 # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
 
             del output
+            del output_
 
     def test_step(self, batch, batch_idx):
         gc.collect()
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         with torch.no_grad():
             output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-            loss = self.loss_fn(output, report_ids, report_masks)
+            output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+            loss = self.loss_fn(output_, report_ids, report_masks)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -146,6 +148,7 @@ class ReportModel(pl.LightningModule):
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
+            del output_
 
     def predict_step(self, batch):
         slide_id, feats1, feats2, gecko_feats, gecko_concepts = batch
