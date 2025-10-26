@@ -77,79 +77,93 @@ class ReportModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        # print('val ---------->')
-        gc.collect()
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
-        # print(
-        #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
 
-        output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+        # --- 1. Compute loss safely (no grad tracking) ---
+        with torch.no_grad():
+            output_ = self.model(
+                feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train'
+            )
+            loss = self.loss_fn(output_, report_ids, report_masks)
+            self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
-        loss = self.loss_fn(output_, report_ids, report_masks)
-        self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+        del output_
+        torch.cuda.empty_cache()
 
-        if batch_idx % 50==0:
+        # --- 2. Sample predictions periodically ---
+        if batch_idx % 50 == 0:
             with torch.no_grad():
                 output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+
+                # Detach + move to CPU immediately
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
-                # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+                del output
+                torch.cuda.empty_cache()
+
+                # Get ground truth reports (CPU only)
+                target_texts = [self.reports[slide_id] for slide_id in slide_ids]
+
+                # --- 3. Compute metrics safely on CPU ---
+                rouge_result = self.val_rouge(pred_texts, target_texts)
+                rouge_score = float(rouge_result['rouge1_fmeasure'].cpu().item())
+
+                meteor_result = self.val_meteor.compute(predictions=pred_texts, references=target_texts)
+                meteor_score = float(meteor_result['meteor'])
+
+                # Immediate logging; no accumulation in lists
+                self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+                self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
+
+        # Free everything ASAP
+        del feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    def test_step(self, batch, batch_idx):
+        slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
+
+        # --- 1. Compute loss safely ---
+        with torch.no_grad():
+            output_ = self.model(
+                feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train'
+            )
+            loss = self.loss_fn(output_, report_ids, report_masks)
+            self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            del output_
+
+        torch.cuda.empty_cache()
+
+        # --- 2. Sample and print every 100 batches ---
+        if batch_idx % 100 == 0:
+            with torch.no_grad():
+                output = self.model(
+                    feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample'
+                )
+                pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
+                del output
+                torch.cuda.empty_cache()
 
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-                rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                # bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
-                metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-                self.meteor_scores.append(
-                    float(self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor']))
-                # self.reg_scores.append(reg)
-                for metric in self.more_metrics:
-                    self.more_metrics[metric].append(metrics[metric])
-                self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
-                del output
-        del output_
+                print('*' * 100)
+                print(f'Predicted report: {pred_texts[0]}')
+                print(f'Ground truth: {target_texts[0]}')
+                print('*' * 100)
 
-    def test_step(self, batch, batch_idx):
+                # --- 3. Metrics on CPU ---
+                rouge_result = self.test_rouge(pred_texts, target_texts)
+                rouge_score = float(rouge_result['rouge1_fmeasure'].cpu().item())
+
+                meteor_result = self.test_meteor.compute(predictions=pred_texts, references=target_texts)
+                meteor_score = float(meteor_result['meteor'])
+
+                self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+                self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
+
+        # --- 4. Cleanup ---
+        del feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks
         gc.collect()
-        slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
-
-        output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
-        loss = self.loss_fn(output_, report_ids, report_masks)
-        self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-
-        with torch.no_grad():
-            output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
-            pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
-
-            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-
-            if batch_idx % 100 == 0:
-                RED = '\033[91m'
-                BLUE = '\033[94m'
-                RESET = '\033[0m'
-
-                print('*' * 100)
-                print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
-                print(f' {RED} Predicted synoptic report: \n {RESET}')
-
-                json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
-                print(f'{RED} {json_string} {RESET}')
-
-                print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
-                print('*' * 100)
-
-            rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
-            meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            self.meteor_scores.append(meteor_score)
-            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            for metric in self.more_metrics:
-                self.more_metrics[metric].append(float(metrics[metric]))
-
-            self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
-            del output
-        del output_
+        torch.cuda.empty_cache()
 
     def predict_step(self, batch):
         slide_id, feats1, feats2, gecko_feats, gecko_concepts = batch
