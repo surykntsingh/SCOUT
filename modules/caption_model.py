@@ -102,6 +102,7 @@ class CaptionModel(nn.Module):
                 #  copy over state in previous beam q to new beam at vix
                 new_state[_ix] = state[_ix][:, state_ix]
             state = new_state
+            del beam_seq_logprobs, state, new_state, logprobs
             return beam_seq, beam_seq_logprobs, beam_logprobs_sum, state
 
         # Start diverse_beam_search
