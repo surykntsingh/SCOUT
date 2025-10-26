@@ -134,7 +134,7 @@ class ReportModel(pl.LightningModule):
         torch.cuda.empty_cache()
 
         # --- 2. Sample and print every 100 batches ---
-        if batch_idx % 100 == 0:
+        if batch_idx % 1 == 0:
             with torch.no_grad():
                 output = self.model(
                     feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample'
