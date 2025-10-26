@@ -106,7 +106,7 @@ class ReportModel(pl.LightningModule):
                     self.more_metrics[metric].append(metrics[metric])
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
-        del output
+                del output
         del output_
 
     def test_step(self, batch, batch_idx):
@@ -148,7 +148,7 @@ class ReportModel(pl.LightningModule):
 
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
-        del output
+            del output
         del output_
 
     def predict_step(self, batch):
