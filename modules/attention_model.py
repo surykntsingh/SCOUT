@@ -96,7 +96,7 @@ class AttModel(CaptionModel):
         seqLogprobs = fc_feats.new_zeros(batch_size * sample_n, self.max_seq_length, self.vocab_size + 1)
         # lets process every image independently for now, for simplicity
 
-        self.done_beams = [[] for _ in range(batch_size)]
+        # self.done_beams = [[] for _ in range(batch_size)]
 
         state = self.init_hidden(batch_size)
 
@@ -108,17 +108,17 @@ class AttModel(CaptionModel):
                                                                                   [p_fc_feats, p_att_feats,
                                                                                    pp_att_feats, p_att_masks]
                                                                                   )
-        self.done_beams = self.beam_search(state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
+        done_beams = self.beam_search(state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt)
         for k in range(batch_size):
             if sample_n == beam_size:
                 for _n in range(sample_n):
-                    seq_len = self.done_beams[k][_n]['seq'].shape[0]
-                    seq[k * sample_n + _n, :seq_len] = self.done_beams[k][_n]['seq']
-                    seqLogprobs[k * sample_n + _n, :seq_len] = self.done_beams[k][_n]['logps']
+                    seq_len = done_beams[k][_n]['seq'].shape[0]
+                    seq[k * sample_n + _n, :seq_len] = done_beams[k][_n]['seq']
+                    seqLogprobs[k * sample_n + _n, :seq_len] = done_beams[k][_n]['logps']
             else:
-                seq_len = self.done_beams[k][0]['seq'].shape[0]
-                seq[k, :seq_len] = self.done_beams[k][0]['seq']  # the first beam has highest cumulative score
-                seqLogprobs[k, :seq_len] = self.done_beams[k][0]['logps']
+                seq_len = done_beams[k][0]['seq'].shape[0]
+                seq[k, :seq_len] = done_beams[k][0]['seq']  # the first beam has highest cumulative score
+                seqLogprobs[k, :seq_len] = done_beams[k][0]['logps']
         # return the samples and their log likelihoods
         return seq, seqLogprobs
 

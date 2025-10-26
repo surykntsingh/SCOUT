@@ -46,14 +46,7 @@ class Trainer:
             save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=7, verbose=True, mode="min")
-
-        # lr_finder = LearningRateFinder(
-        #     min_lr=1e-8,  # Minimum learning rate to test
-        #     max_lr=1e-4,  # Maximum learning rate to test
-        #     num_training_steps=100,  # Number of learning rates to test
-        #     mode='exponential'  # or 'linear'
-        # )
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
 
         suggested_lr = self.find_lr(model, datamodule)
         print(f'setting lr: {suggested_lr}')
@@ -99,10 +92,6 @@ class Trainer:
         return suggested_lr
 
     def tune(self, model, datamodule, fast_dev_run=False):
-        # datamodule = PatchEmbeddingDataModule(self.args, self.tokenizer, self.split_frac)
-        # ts = datetime.now().strftime("%Y%m%d")
-        # ckpt_path = f'{self.ckpt_path}/{ts}'
-
         model.model.freeze_deep_features()
 
         checkpoint_callback = ModelCheckpoint(
@@ -114,16 +103,7 @@ class Trainer:
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
-        # lr_finder = LearningRateFinder(
-        #     min_lr=1e-8,  # Minimum learning rate to test
-        #     max_lr=1e-5,  # Maximum learning rate to test
-        #     num_training_steps=50,  # Number of learning rates to test
-        #     mode='exponential'  # or 'linear'
-        # )
-        # suggested_lr = self.find_lr(model, datamodule)
-        # print(f'setting lr: {suggested_lr}')
-        # # Set suggested LR
-        # model.hparams.lr = suggested_lr
+
         self.trainer = pl.Trainer(
             max_epochs=30,
             callbacks=[checkpoint_callback, early_stop_callback],
@@ -177,8 +157,6 @@ class Trainer:
         preds = trainer.predict(
             model, datamodule=datamodule
         )
-        # print(f'leng preds: {len(preds)}')
-        # flat_preds = [p for sublist in preds for p in sublist]
         return preds
 
     @rank_zero_only
