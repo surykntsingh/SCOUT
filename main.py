@@ -21,7 +21,10 @@ def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.85, 0.07, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
-    model = ReportModel(args, tokenizer)
+    if args.resume:
+        model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
+    else:
+        model = ReportModel(args, tokenizer)
 
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     date = datetime.now()
@@ -34,6 +37,7 @@ def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
     best_model_path = trainer.best_model_path
     # if not args.fast_dev_run:
     print(f'loading best model from {best_model_path}')
+
     best_model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
     test_metrics, tr = trainer.test(best_model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
