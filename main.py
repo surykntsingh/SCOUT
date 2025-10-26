@@ -13,6 +13,7 @@ app = typer.Typer(pretty_exceptions_enable=False)
 
 
 torch.cuda.empty_cache()
+torch.set_float32_matmul_precision('medium')
 torch.autograd.set_detect_anomaly(True)
 
 @app.command()
