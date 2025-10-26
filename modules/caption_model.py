@@ -95,7 +95,7 @@ class CaptionModel(nn.Module):
             assert (_tmp_beam_logprobs == beam_logprobs).all()
             beam_seq_logprobs = torch.cat([
                 beam_seq_logprobs,
-                beam_logprobs.reshape(batch_size, -1, 1, vocab_size).contiguous()], 2)
+                beam_logprobs.reshape(batch_size, -1, 1, vocab_size)], 2)
 
             new_state = [None for _ in state]
             for _ix in range(len(new_state)):
