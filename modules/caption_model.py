@@ -195,7 +195,7 @@ class CaptionModel(nn.Module):
                     # move the current group one step forward in time
 
                     it = beam_seq_table[divm][:, :, t - divm].reshape(-1)
-                    logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it.cuda(), *(
+                    logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it, *(
                             args[divm] + [state_table[divm]]))
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
 
