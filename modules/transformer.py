@@ -39,7 +39,7 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = d_model // h
         self.h = h
         self.linears = clones(nn.Linear(d_model, d_model), 4)
-        self.attn = None
+        # self.attn = None
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, query, key, value, mask=None):
@@ -50,7 +50,7 @@ class MultiHeadedAttention(nn.Module):
             [l(x).reshape(nbatches, -1, self.h, self.d_k).transpose(1, 2).contiguous()
              for l, x in zip(self.linears, (query, key, value))]
 
-        x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
+        x, _ = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
         x = x.transpose(1, 2).reshape(nbatches, -1, self.h * self.d_k)
         return self.linears[-1](x)
