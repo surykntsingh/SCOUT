@@ -47,7 +47,7 @@ class MultiHeadedAttention(nn.Module):
             mask = mask.unsqueeze(1)
         nbatches = query.size(0)
         query, key, value = \
-            [l(x).reshape(nbatches, -1, self.h, self.d_k).transpose(1, 2).contiguous()
+            [l(x).reshape(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for l, x in zip(self.linears, (query, key, value))]
 
         x, _ = self.attention(query, key, value, mask=mask, dropout=self.dropout)
@@ -58,7 +58,7 @@ class MultiHeadedAttention(nn.Module):
     def attention(self, query, key, value, mask=None, dropout=None):
         d_k = query.size(-1)
         # kt =
-        scores = torch.matmul(query, key.transpose(-2, -1).contiguous()) / math.sqrt(d_k)
+        scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)
         p_attn = F.softmax(scores, dim=-1)
@@ -102,7 +102,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + self.pe[:, :x.size(1)].contiguous()
+        x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
 
 class PAM(nn.Module):
@@ -116,9 +116,9 @@ class PAM(nn.Module):
         B, H, C = x.shape
         # print(f'B, H, C : {(B, H, C)}')
         assert int(math.sqrt(H))**2==H, f'{x.shape}'
-        cnn_feat = x.transpose(1, 2).contiguous().reshape(B, C, int(math.sqrt(H)), int(math.sqrt(H)))
+        cnn_feat = x.transpose(1, 2).reshape(B, C, int(math.sqrt(H)), int(math.sqrt(H)))
         x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
-        x = x.flatten(2).transpose(1, 2).contiguous()
+        x = x.flatten(2).transpose(1, 2)
 
         return x
 

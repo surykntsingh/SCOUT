@@ -77,7 +77,7 @@ class CaptionModel(nn.Module):
             if t > 0:
                 # gather according to beam_ix
                 assert (beam_seq.gather(1, beam_ix.unsqueeze(-1).expand_as(beam_seq)) ==
-                        beam_seq.reshape(-1, beam_seq.shape[-1])[state_ix].view_as(beam_seq)).contiguous().all()
+                        beam_seq.reshape(-1, beam_seq.shape[-1])[state_ix].view_as(beam_seq)).all()
                 beam_seq = beam_seq.gather(1, beam_ix.unsqueeze(-1).expand_as(beam_seq))
 
                 beam_seq_logprobs = beam_seq_logprobs.gather(1, beam_ix.unsqueeze(-1).unsqueeze(-1).expand_as(
