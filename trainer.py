@@ -145,7 +145,7 @@ class Trainer:
     def predict(self, model, datamodule, fast_dev_run=False):
 
         trainer = pl.Trainer(
-            precision="16-mixed",
+            # precision="16-mixed",
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp_find_unused_parameters_true',
