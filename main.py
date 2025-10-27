@@ -148,10 +148,27 @@ def trainkfold(config_file_path='tcga_config.yaml'):
     print(f'metrics: {metrics}')
     write_metrics(f'{args.results_path}/experiments', metrics, date)
 
+@app.command()
+def predict(config_file_path='histai_config.yaml', pt=False):
+    args = get_params_for_key(config_file_path, "train")
+    tokenizer = Tokenizer(args.reports_json_path)
+    if pt:
+        model = ReportModel(args, tokenizer)
+        model.load_state_dict(torch.load(args.model_load_path))
+    else:
+        model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
 
+    split_frac = [0.85, 0.15]
+    trainer = Trainer(args, tokenizer, split_frac)
+    results = get_prediction(model, trainer, args, tokenizer)
+    results_dir = f'{args.results_path}/predicted_results'
+    os.makedirs(results_dir, exist_ok=True)
 
-def predict(model, trainer, args, tokenizer):
-    datamodule = PatchEmbeddingDataPredictModule(args, tokenizer)
+    save_results(results, results_dir)
+
+def get_prediction(model, trainer, args, tokenizer):
+    slides = ['HISTAI-mixed_case_20624_slide_H&E_0', 'HISTAI-mixed_case_18377_slide_H&E_0', 'HISTAI-mixed_case_06619_slide_H&E_0', 'HISTAI-mixed_case_14046_slide_H&E_0']
+    datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slides)
     predictions = trainer.predict(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model predictions finished')
     results = []
