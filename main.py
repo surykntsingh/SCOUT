@@ -167,7 +167,8 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     save_results(results, results_dir)
 
 def get_prediction(model, trainer, args, tokenizer):
-    slides = ['HISTAI-mixed_case_20624_slide_H&E_0', 'HISTAI-mixed_case_18377_slide_H&E_0', 'HISTAI-mixed_case_06619_slide_H&E_0', 'HISTAI-mixed_case_14046_slide_H&E_0']
+    slides = ['HISTAI-mixed_case_17034_slide_H&E_0', 'mixed_case_00551_slide_H&E_0', 'HISTAI-mixed_case_05801_slide_H&E_0', 'HISTAI-mixed_case_02921_slide_H&E_0', 'HISTAI-mixed_case_14446_slide_H&E_0',
+              'HISTAI-mixed_case_05479_slide_H&E_0', 'HISTAI-mixed_case_17914_slide_H&E_0']
     datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slides)
     predictions = trainer.predict(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model predictions finished')
