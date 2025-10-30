@@ -87,7 +87,7 @@ class ReportGenModel(nn.Module):
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
         emb_gc_ = emb_gc.view(1, 254, 1)
         emb_gc = self.gecko_mlp(emb_gc)
-        
+
         gecko_embeddings = self.gecko_encoder(torch.cat([emb_g, emb_gc], dim=1))
 
         patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
