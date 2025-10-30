@@ -14,7 +14,7 @@ class DecoderLayer(nn.Module):
         self.src_attn = src_attn
         self.concept_attn = concept_attn
         self.feed_forward = feed_forward
-        self.sublayer = clones(SublayerConnection(d_model, dropout), 3)
+        self.sublayer = clones(SublayerConnection(d_model, dropout), 4)
 
     def forward(self, feats, hidden_states, concepts, src_mask, tgt_mask):
         # m = hidden_states
