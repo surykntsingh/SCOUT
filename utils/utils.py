@@ -105,7 +105,7 @@ def pad_unsort_packed_sequence(input, inv_ix):
     return tmp
 
 
-def pack_wrapper(module, att_feats, att_masks):
+def pack_wrapper(module, att_feats, att_masks=None):
     # print(module, att_feats, att_masks)
     if att_masks is not None:
         packed, inv_ix = sort_pack_padded_sequence(att_feats, att_masks.data.long().sum(1))
