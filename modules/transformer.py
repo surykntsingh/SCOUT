@@ -273,6 +273,6 @@ class EncoderDecoder(AttModel):
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
 
-        att_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, att_masks)
-        out = self.model.encode(att_feats, gc_feats, att_masks)
+        att_feats, gc_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, gc_feats, att_masks)
+        out = self.model.encode(att_feats, att_masks)
         return out

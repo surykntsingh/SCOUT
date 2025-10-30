@@ -5,7 +5,6 @@ from modules.common import SublayerConnection, LayerNorm
 from utils import utils
 from utils.utils import clones
 
-
 class DecoderLayer(nn.Module):
     def __init__(self, d_model, self_attn, src_attn, concept_attn, feed_forward, dropout):
         super().__init__()
@@ -14,7 +13,9 @@ class DecoderLayer(nn.Module):
         self.src_attn = src_attn
         self.concept_attn = concept_attn
         self.feed_forward = feed_forward
-        self.sublayer = clones(SublayerConnection(d_model, dropout), 4)
+        self.n = 4
+        self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
+
 
     def forward(self, feats, hidden_states, concepts, src_mask, tgt_mask):
         # m = hidden_states
@@ -29,7 +30,6 @@ class DecoderLayer(nn.Module):
         # x =
 
         return self.sublayer[3](x2, self.feed_forward)
-
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
