@@ -92,12 +92,13 @@ class ReportGenModel(nn.Module):
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
+        emb_gc_ = emb_gc.view(1,254,1)
         if mode == 'train':
-            output = self.encoder_decoder(fc_feats, att_feats, report_ids, mode='forward')
+            output = self.encoder_decoder(fc_feats, att_feats, emb_gc_, report_ids, mode='forward')
         elif mode == 'sample':
-            output, _ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
+            output, _ = self.encoder_decoder(fc_feats, att_feats, emb_gc_, mode='sample')
         elif mode == 'encode':
-            output = self.encoder_decoder(fc_feats, att_feats, mode='encode')
+            output = self.encoder_decoder(fc_feats, att_feats, emb_gc_, mode='encode')
 
             logits = self.fc(output[0, 0, :]).unsqueeze(0)
             Y_hat = torch.argmax(logits, dim=1)

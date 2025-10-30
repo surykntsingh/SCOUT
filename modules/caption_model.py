@@ -107,6 +107,7 @@ class CaptionModel(nn.Module):
 
         # Start diverse_beam_search
         opt = kwargs['opt']
+        gc_feats = kwargs['gc_feats']
         temperature = opt.get('temperature', 1)  # This should not affect beam search, but will affect dbs
         beam_size = opt.get('beam_size', 10)
         group_size = opt.get('group_size', 1)
@@ -197,7 +198,7 @@ class CaptionModel(nn.Module):
 
                     it = beam_seq_table[divm][:, :, t - divm].reshape(-1)
                     logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it, *(
-                            args[divm] + [state_table[divm]]))
+                            args[divm] + [state_table[divm]]), gc_feats=gc_feats)
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
 
         # all beams are sorted by their log-probabilities
