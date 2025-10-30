@@ -99,7 +99,7 @@ class ReportModel(pl.LightningModule):
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                # bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
+                bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
                 self.meteor_scores.append(
                     float(self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor']))
@@ -107,7 +107,7 @@ class ReportModel(pl.LightningModule):
                 for metric in self.more_metrics:
                     self.more_metrics[metric].append(metrics[metric])
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+                self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks
                 gc.collect()
@@ -147,7 +147,7 @@ class ReportModel(pl.LightningModule):
                 print('*' * 100)
 
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
+            bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
             self.meteor_scores.append(meteor_score)
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
@@ -155,7 +155,7 @@ class ReportModel(pl.LightningModule):
                 self.more_metrics[metric].append(float(metrics[metric]))
 
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
             del feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks
             gc.collect()
