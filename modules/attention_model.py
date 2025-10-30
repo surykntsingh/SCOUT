@@ -62,7 +62,7 @@ class AttModel(CaptionModel):
     #     return torch.cat((self.ln(att_feats),self.ln(meshes)),dim=1)
         # return torch.cat((self.ln(self.out1(att_feats)),self.ln(self.out2(meshes))),dim=1)
 
-    def _prepare_feature(self, fc_feats, att_feats, att_masks, gc_feats):
+    def _prepare_feature(self, fc_feats, att_feats, att_masks, gc_feats, meshes=None):
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
 
         # embed fc and att feats
@@ -146,7 +146,7 @@ class AttModel(CaptionModel):
         state = self.init_hidden(batch_size * sample_n)
 
         #missing gc_feats
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = self._prepare_feature(fc_feats, att_feats, att_masks, meshes)
+        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = self._prepare_feature(fc_feats, att_feats, att_masks, gc_feats, meshes )
 
         if sample_n > 1:
             p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(sample_n,
