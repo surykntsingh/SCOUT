@@ -25,7 +25,8 @@ class AttModel(CaptionModel):
         self.pad_idx = args.pad_idx
 
         self.use_bn = args.use_bn
-
+        self.att_feat_size = 254
+        
         self.embed = lambda x: x
         self.fc_embed = lambda x: x
         self.att_embed = nn.Sequential(*(
