@@ -13,23 +13,24 @@ from utils.utils import pad_tokens, pack_wrapper, clones
 
 
 class Transformer(nn.Module):
-    def __init__(self, encoder, decoder, src_embed, tgt_embed):
+    def __init__(self, encoder, decoder, src_embed, tgt_embed, concept_embed):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.src_embed = src_embed
         self.tgt_embed = tgt_embed
+        self.concept_embed = concept_embed
 
 
-    def forward(self, src, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
+    def forward(self, src, concepts, tgt, src_mask, tgt_mask):
+        return self.decode(self.encode(src, src_mask), concepts, src_mask, tgt, tgt_mask)
 
     def encode(self, src, src_mask):
         # print(f'src: {src.shape}')
         return self.encoder(self.src_embed(src), src_mask)
 
-    def decode(self, hidden_states, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), hidden_states, src_mask, tgt_mask)
+    def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
+        return self.decoder(self.tgt_embed(tgt), hidden_states, self.concept_embed(concepts), src_mask, tgt_mask)
 
 
 class MultiHeadedAttention(nn.Module):

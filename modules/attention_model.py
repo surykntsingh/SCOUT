@@ -34,7 +34,7 @@ class AttModel(CaptionModel):
                  nn.ReLU(),
                  nn.Dropout(self.drop_prob_lm)) +
                 ((nn.BatchNorm1d(self.input_encoding_size),) if self.use_bn == 2 else ())))
-        
+
         self.gc_embed = nn.Sequential(
             nn.Linear(1, 1),
             nn.ReLU(),
