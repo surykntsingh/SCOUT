@@ -87,7 +87,7 @@ class AttModel(CaptionModel):
 
         return logprobs, state
 
-    def _sample_beam(self, fc_feats, att_feats, gc_feats, att_masks=None, meshes=None, opt={}):
+    def _sample_beam(self, fc_feats, att_feats, gc_feats, att_masks=None, meshes=None, opt=None):
         beam_size = opt.get('beam_size', 10)
         group_size = opt.get('group_size', 1)
         sample_n = opt.get('sample_n', 10)
@@ -95,7 +95,7 @@ class AttModel(CaptionModel):
         assert sample_n == 1 or sample_n == beam_size // group_size, 'when beam search, sample_n == 1 or beam search'
         batch_size = fc_feats.size(0)
 
-        p_fc_feats, p_att_feats, pp_att_feats, gc_feats, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks, gc_feats=gc_feats)
+        p_fc_feats, p_att_feats, pp_att_feats, gc_feats, p_att_masks = self._prepare_feature(fc_feats, att_feats, att_masks,gc_feats)
 
         assert beam_size <= self.vocab_size + 1, 'lets assume this for now, otherwise this corner case causes a few headaches down the road. can be dealt with in future if needed'
         seq = fc_feats.new_full((batch_size * sample_n, self.max_seq_length), self.pad_idx, dtype=torch.long)
@@ -110,9 +110,9 @@ class AttModel(CaptionModel):
         it = fc_feats.new_full([batch_size], self.bos_idx, dtype=torch.long)
         logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state, gc_feats=gc_feats)
 
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(beam_size,
+        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
-                                                                                   pp_att_feats, p_att_masks]
+                                                                                   pp_att_feats, p_att_masks, gc_feats]
                                                                                   )
         done_beams = self.beam_search(
             state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt, gc_feats=gc_feats
@@ -133,96 +133,11 @@ class AttModel(CaptionModel):
 
     def _sample(self, fc_feats, att_feats, gc_feats, meshes=None, att_masks=None):
         opt = self.args.__dict__
-        sample_method = opt.get('sample_method', 'greedy')
-        beam_size = opt.get('beam_size', 1)
-        temperature = opt.get('temperature', 1.0)
-        sample_n = int(opt.get('sample_n', 1))
-        group_size = opt.get('group_size', 1)
-        output_logsoftmax = opt.get('output_logsoftmax', 1)
-        decoding_constraint = opt.get('decoding_constraint', 0)
-        block_trigrams = opt.get('block_trigrams', 0)
 
         opt['gc_feats'] = gc_feats
-        if beam_size > 1 and sample_method in ['greedy', 'beam_search']:
-            return self._sample_beam(fc_feats, att_feats, gc_feats, att_masks, meshes, opt)
-        if group_size > 1:
-            return self._diverse_sample(fc_feats, att_feats, att_masks, meshes, opt)
+        # if beam_size > 1 and sample_method in ['greedy', 'beam_search']:
+        return self._sample_beam(fc_feats, att_feats, gc_feats, att_masks, meshes, opt)
 
-        batch_size = fc_feats.size(0)
-        state = self.init_hidden(batch_size * sample_n)
-
-        #missing gc_feats
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = self._prepare_feature(fc_feats, att_feats, att_masks, gc_feats, meshes )
-
-        if sample_n > 1:
-            p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(sample_n,
-                                                                                      [p_fc_feats, p_att_feats,
-                                                                                       pp_att_feats, p_att_masks]
-                                                                                      )
-
-        trigrams = []  # will be a list of batch_size dictionaries
-
-        seq = fc_feats.new_full((batch_size * sample_n, self.max_seq_length), self.pad_idx, dtype=torch.long)
-        seqLogprobs = fc_feats.new_zeros(batch_size * sample_n, self.max_seq_length, self.vocab_size + 1)
-        for t in range(self.max_seq_length + 1):
-            if t == 0:  # input <bos>
-                it = fc_feats.new_full([batch_size * sample_n], self.bos_idx, dtype=torch.long)
-
-            logprobs, state = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state,
-                                                      output_logsoftmax=output_logsoftmax)
-
-            if decoding_constraint and t > 0:
-                tmp = logprobs.new_zeros(logprobs.size())
-                tmp.scatter_(1, seq[:, t - 1].data.unsqueeze(1), float('-inf'))
-                logprobs = logprobs + tmp
-
-            # Mess with trigrams
-            # Copy from https://github.com/lukemelas/image-paragraph-captioning
-            if block_trigrams and t >= 3:
-                # Store trigram generated at last step
-                prev_two_batch = seq[:, t - 3:t - 1]
-                for i in range(batch_size):  # = seq.size(0)
-                    prev_two = (prev_two_batch[i][0].item(), prev_two_batch[i][1].item())
-                    current = seq[i][t - 1]
-                    if t == 3:  # initialize
-                        trigrams.append({prev_two: [current]})  # {LongTensor: list containing 1 int}
-                    elif t > 3:
-                        if prev_two in trigrams[i]:  # add to list
-                            trigrams[i][prev_two].append(current)
-                        else:  # create list
-                            trigrams[i][prev_two] = [current]
-                # Block used trigrams at next step
-                prev_two_batch = seq[:, t - 2:t]
-                mask = torch.zeros(logprobs.size(), requires_grad=False)  # batch_size x vocab_size
-                for i in range(batch_size):
-                    prev_two = (prev_two_batch[i][0].item(), prev_two_batch[i][1].item())
-                    if prev_two in trigrams[i]:
-                        for j in trigrams[i][prev_two]:
-                            mask[i, j] += 1
-                # Apply mask to log probs
-                # logprobs = logprobs - (mask * 1e9)
-                alpha = 2.0  # = 4
-                logprobs = logprobs + (mask * -0.693 * alpha)  # ln(1/2) * alpha (alpha -> infty works best)
-
-            # sample the next word
-            if t == self.max_seq_length:  # skip if we achieve maximum length
-                break
-            it, sampleLogprobs = self.sample_next_word(logprobs, sample_method, temperature)
-
-            # stop when all finished
-            if t == 0:
-                unfinished = it != self.eos_idx
-            else:
-                it[~unfinished] = self.pad_idx  # This allows eos_idx not being overwritten to 0
-                logprobs = logprobs * unfinished.unsqueeze(1).float()
-                unfinished = unfinished * (it != self.eos_idx)
-            seq[:, t] = it
-            seqLogprobs[:, t] = logprobs
-            # quit loop if all sequences have finished
-            if unfinished.sum() == 0:
-                break
-
-        return seq, seqLogprobs
 
     def _diverse_sample(self, fc_feats, att_feats, att_masks=None, opt={}):
 
