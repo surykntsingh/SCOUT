@@ -37,7 +37,7 @@ class Decoder(nn.Module):
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
 
-    def forward(self, x, hidden_states, src_mask, tgt_mask):
+    def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         for layer in self.layers:
-            x = layer(x, hidden_states, src_mask, tgt_mask)
+            x = layer(x, hidden_states, concepts, src_mask, tgt_mask)
         return self.norm(x)
