@@ -27,9 +27,9 @@ class DecoderLayer(nn.Module):
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
         x2 = self.sublayer[2](x1, lambda x: self.concept_attn(x, concepts, concepts))
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
-        x =torch.cat([x1,x2] , dim=1)
+        x = x1+x2
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
-        return self.sublayer[3](x2, self.feed_forward)
+        return self.sublayer[3](x, self.feed_forward)
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
