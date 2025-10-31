@@ -29,7 +29,7 @@ class DecoderLayer(nn.Module):
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         x =torch.cat([x1,x2] , dim=1)
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
-        return self.sublayer[3](x, self.feed_forward)
+        return self.sublayer[3](x1, self.feed_forward)
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
