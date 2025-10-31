@@ -24,11 +24,11 @@ class DecoderLayer(nn.Module):
         # print(f'**************x: {feats.shape},  hidden_states: {hidden_states.shape}. x0: {x0.shape}')
 
         x1 = self.sublayer[1](x0, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
-        print(f'x1: {x1.shape}, concepts: {concepts.shape}')
+        # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
         x2 = self.sublayer[2](x0, lambda x: self.concept_attn(x, concepts, concepts))
-        print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
+        # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         x =torch.cat([x1,x2] , dim=1)
-        print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
+        # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
         return self.sublayer[3](x, self.feed_forward)
 
 class Decoder(nn.Module):
