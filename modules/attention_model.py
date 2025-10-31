@@ -85,7 +85,7 @@ class AttModel(CaptionModel):
         else:
             logprobs = self.logit(output)
 
-        return logprobs, state
+        return logprobs.to(self.device), state.to(self.device)
 
     def _sample_beam(self, fc_feats, att_feats, gc_feats, att_masks=None, meshes=None, opt=None):
         beam_size = opt.get('beam_size', 10)
