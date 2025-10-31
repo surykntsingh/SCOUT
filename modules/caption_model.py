@@ -118,12 +118,12 @@ class CaptionModel(nn.Module):
         bdash = beam_size // group_size  # beam per group
 
         batch_size = init_logprobs.shape[0]
-        # device = init_logprobs.device
+        device = init_logprobs.device
         # INITIALIZATIONS
-        beam_seq_table = [torch.LongTensor(batch_size, bdash, 0) for _ in range(group_size)]
-        beam_seq_logprobs_table = [torch.FloatTensor(batch_size, bdash, 0, self.vocab_size + 1) for _ in
+        beam_seq_table = [torch.LongTensor(batch_size, bdash, 0).to(device) for _ in range(group_size)]
+        beam_seq_logprobs_table = [torch.FloatTensor(batch_size, bdash, 0, self.vocab_size + 1).to(device) for _ in
                                    range(group_size)]
-        beam_logprobs_sum_table = [torch.zeros(batch_size, bdash) for _ in range(group_size)]
+        beam_logprobs_sum_table = [torch.zeros(batch_size, bdash).to(device) for _ in range(group_size)]
 
         # logprobs # logprobs predicted in last time step, shape (beam_size, vocab_size+1)
         done_beams_table = [[[] for __ in range(group_size)] for _ in range(batch_size)]
@@ -147,7 +147,7 @@ class CaptionModel(nn.Module):
                     logprobs = logprobs_table[divm]
                     # suppress previous word
                     if decoding_constraint and t - divm > 0:
-                        logprobs.scatter_(1, beam_seq_table[divm][:, :, t - divm - 1].reshape(-1, 1),
+                        logprobs.scatter_(1, beam_seq_table[divm][:, :, t - divm - 1].reshape(-1, 1).to(device),
                                           float('-inf'))
                     # suppress UNK tokens in the decoding
                     if suppress_UNK:
