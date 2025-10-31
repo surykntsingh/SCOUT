@@ -128,6 +128,7 @@ class AttModel(CaptionModel):
                 seq_len = done_beams[k][0]['seq'].shape[0]
                 seq[k, :seq_len] = done_beams[k][0]['seq']  # the first beam has highest cumulative score
                 seqLogprobs[k, :seq_len] = done_beams[k][0]['logps']
+        del done_beams
         # return the samples and their log likelihoods
         return seq, seqLogprobs
 
