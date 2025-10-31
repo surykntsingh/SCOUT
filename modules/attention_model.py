@@ -132,7 +132,6 @@ class AttModel(CaptionModel):
         # return the samples and their log likelihoods
         return seq, seqLogprobs
 
-    @torch.no_grad()
     def _sample(self, fc_feats, att_feats, gc_feats, meshes=None, att_masks=None):
         opt = self.args.__dict__
 
