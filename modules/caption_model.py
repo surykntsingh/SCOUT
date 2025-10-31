@@ -171,7 +171,7 @@ class CaptionModel(nn.Module):
                                                       beam_seq_logprobs_table[divm],
                                                       beam_logprobs_sum_table[divm],
                                                       state_table[divm])
-
+                    del logprobs, unaug_logprobs
                     # log_message(f' t: {t}, divm: {divm}, beam_seq_table[divm]: {beam_seq_table[divm]}, beam_logprobs_sum_table: {beam_logprobs_sum_table}')
                     # if time's up... or if end token is reached then copy beams
                     for b in range(batch_size):
@@ -200,9 +200,7 @@ class CaptionModel(nn.Module):
                     logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it, *(
                             args[divm] + [state_table[divm]]), gc_feats=gc_feats)
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
-            if t%100==0:
-                
-                torch.cuda.empty_cache()
+
 
         # all beams are sorted by their log-probabilities
         done_beams_table = [[sorted(done_beams_table[b][i], key=lambda x: -x['p'])[:bdash] for i in range(group_size)]
