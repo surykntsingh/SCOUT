@@ -200,6 +200,9 @@ class CaptionModel(nn.Module):
                     logprobs_table[divm], state_table[divm] = self.get_logprobs_state(it, *(
                             args[divm] + [state_table[divm]]), gc_feats=gc_feats)
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
+            if t%100==0:
+                
+                torch.cuda.empty_cache()
 
         # all beams are sorted by their log-probabilities
         done_beams_table = [[sorted(done_beams_table[b][i], key=lambda x: -x['p'])[:bdash] for i in range(group_size)]
