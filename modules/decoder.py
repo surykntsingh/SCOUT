@@ -25,7 +25,7 @@ class DecoderLayer(nn.Module):
 
         x1 = self.sublayer[1](x0, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
-        x2 = self.sublayer[2](x1, lambda x: self.concept_attn(x, concepts, concepts))
+        x2 = self.sublayer[2](x0, lambda x: self.concept_attn(x, concepts, concepts))
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         x = x1+x2
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
