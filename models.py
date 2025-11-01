@@ -7,7 +7,7 @@ from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
 from modules.loss import LanguageModelCriterion
-from modules.metrics import REG_Evaluator
+from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
 
@@ -110,14 +110,15 @@ class ReportModel(pl.LightningModule):
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
                 bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+                coco_metrics = compute_coco_scores(pred_texts, target_texts)
                 self.meteor_scores.append(
                     float(self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor']))
                 # self.reg_scores.append(reg)
                 for metric in self.more_metrics:
-                    self.more_metrics[metric].append(metrics[metric])
+                    self.more_metrics[metric].append(float(metrics[metric]))
 
                 for metric in self.coco_metrics:
-                    self.coco_metrics[metric].append(metrics[metric])
+                    self.coco_metrics[metric].append(float(coco_metrics[metric]))
 
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -164,11 +165,12 @@ class ReportModel(pl.LightningModule):
             meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
             self.meteor_scores.append(meteor_score)
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+            coco_metrics = compute_coco_scores(pred_texts, target_texts)
             for metric in self.more_metrics:
                 self.more_metrics[metric].append(float(metrics[metric]))
 
             for metric in self.coco_metrics:
-                self.coco_metrics[metric].append(metrics[metric])
+                self.coco_metrics[metric].append(float(coco_metrics[metric]))
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
