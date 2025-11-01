@@ -86,11 +86,11 @@ class ReportGenModel(nn.Module):
         image_embeddings1 = self.adapter_mlp_1(image_embeddings1)
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
 
-        emb_gc_proj = self.gecko_mlp(emb_gc)
+        # emb_gc_proj = self.gecko_mlp(emb_gc)
 
-        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g, emb_gc_proj], dim=1))
+        # gecko_embeddings = self.gecko_encoder(torch.cat([emb_g, emb_gc_proj], dim=1))
 
-        patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
+        patch_feats = torch.cat([image_embeddings1, image_embeddings2, emb_g], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
