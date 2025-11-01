@@ -46,6 +46,15 @@ class ReportModel(pl.LightningModule):
             'rouge_score': [],
             'weighted_score': []
         }
+
+        self.coco_metrics = {
+            'BLEU_1': [],
+            'BLEU_2': [],
+            'BLEU_3': [],
+            'BLEU_4': [],
+            'METEOR': [],
+            'ROUGE_L': []
+        }
         reports = read_json_file(args.reports_json_path)
         self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
         # torch.cuda.set_device(self.trainer.local_rank)
@@ -106,6 +115,10 @@ class ReportModel(pl.LightningModule):
                 # self.reg_scores.append(reg)
                 for metric in self.more_metrics:
                     self.more_metrics[metric].append(metrics[metric])
+
+                for metric in self.coco_metrics:
+                    self.coco_metrics[metric].append(metrics[metric])
+
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
@@ -154,6 +167,8 @@ class ReportModel(pl.LightningModule):
             for metric in self.more_metrics:
                 self.more_metrics[metric].append(float(metrics[metric]))
 
+            for metric in self.coco_metrics:
+                self.coco_metrics[metric].append(metrics[metric])
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
@@ -194,6 +209,11 @@ class ReportModel(pl.LightningModule):
             self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.more_metrics[metric].clear()
 
+        for metric in self.coco_metrics:
+            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+            self.log(f'val_coco_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
+
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
@@ -205,6 +225,11 @@ class ReportModel(pl.LightningModule):
             metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
             self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.more_metrics[metric].clear()
+
+        for metric in self.coco_metrics:
+            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+            self.log(f'test_coco_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())

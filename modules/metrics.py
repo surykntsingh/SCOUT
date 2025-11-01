@@ -1,12 +1,11 @@
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
-import numpy as np
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
-from tqdm.auto import tqdm
-
+from pycocoevalcap.bleu.bleu import Bleu
+from pycocoevalcap.meteor.meteor import Meteor
+from pycocoevalcap.rouge.rouge import Rouge
 import spacy
-import scispacy
-from spacy.tokens import Doc
+
 from typing import List, Tuple
 
 class EmbeddingEvaluator:
@@ -163,3 +162,35 @@ class REG_Evaluator:
             'rouge_score': rouge_score,
             'weighted_score': ranking_score
         }
+
+
+def compute_coco_scores(ref_texts, hyp_texts):
+    """
+    Performs the MS COCO evaluation using the Python 3 implementation (https://github.com/salaniz/pycocoevalcap)
+
+    :param gts: Dictionary with the image ids and their gold captions,
+    :param res: Dictionary with the image ids ant their generated captions
+    :print: Evaluation score (the mean of the scores of all the instances) for each measure
+    """
+    # Since we are always using batch_size =1
+    gts = ref_texts[0]
+    res = hyp_texts[0]
+    # Set up scorers
+    scorers = [
+        (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
+        (Meteor(), "METEOR"),
+        (Rouge(), "ROUGE_L")
+    ]
+    eval_res = {}
+    # Compute score for each metric
+    for scorer, method in scorers:
+        try:
+            score, scores = scorer.compute_score(gts, res)
+        except TypeError:
+            score, scores = scorer.compute_score(gts, res)
+        if type(method) == list:
+            for sc, m in zip(score, method):
+                eval_res[m] = sc
+        else:
+            eval_res[method] = score
+    return eval_res
