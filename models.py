@@ -40,7 +40,7 @@ class ReportModel(pl.LightningModule):
         bleu = evaluate.load("bleu")
         rouge = evaluate.load("rouge")
         meteor = evaluate.load("meteor")
-        bertscore = evaluate.load("bertscore")
+        # bertscore = evaluate.load("bertscore")
 
         self.evaluate_metrics = {
             'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
@@ -53,7 +53,7 @@ class ReportModel(pl.LightningModule):
             'bleu': [],
             'rouge': [],
             'meteor': [],
-            'bertscore': []
+            # 'bertscore': []
         }
 
         self.reg_evaluator = REG_Evaluator()
