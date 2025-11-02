@@ -44,8 +44,8 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
 
-        # gd = args.gd
-        # gcd =args.gcd
+        gd = args.gd
+        gcd =args.gcd
         # self.gecko_mlp = nn.Sequential(
         #     nn.Linear(gcd, 2 * gcd),
         #     nn.ReLU(),
@@ -56,17 +56,17 @@ class ReportGenModel(nn.Module):
         #     nn.ReLU(),
         #     nn.Linear(2 * gd, gd),
         # )
-        #
-        # self.gecko_encoder = nn.Sequential(
-        #     nn.Linear(gd, 2 * gd),
-        #     nn.ReLU(),
-        #     nn.Linear(2 * gd, 4 * gd),
-        #     nn.ReLU(),
-        #     nn.Linear(4 * gd, 2*d),
-        #     nn.ReLU(),
-        #     nn.Dropout(args.dropout_mlp),
-        #     nn.Linear(2*d, d)
-        # )
+
+        self.gecko_encoder = nn.Sequential(
+            nn.Linear(gd, 2 * gd),
+            nn.ReLU(),
+            nn.Linear(2 * gd, 4 * gd),
+            nn.ReLU(),
+            nn.Linear(4 * gd, 2*d),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(2*d, d)
+        )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
@@ -88,9 +88,9 @@ class ReportGenModel(nn.Module):
 
         # emb_gc_proj = self.gecko_mlp(emb_gc)
         #
-        # gecko_embeddings = self.gecko_encoder(torch.cat([emb_g, emb_gc_proj], dim=1))
+        gecko_embeddings = self.gecko_encoder(emb_g)
 
-        patch_feats = torch.cat([image_embeddings1, image_embeddings2, emb_g], dim=1)
+        patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
