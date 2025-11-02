@@ -57,7 +57,7 @@ class EmbeddingDataset(Dataset):
             bag_feats_np = h5_file["bag_feats"][:]
 
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
-            emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
+            emb_gc = torch.tensor(bag_feats_np)
 
         # coords = None
         return slide_id, embedding1, embedding2, emb_g, emb_gc, None, report_ids, report_masks, seq_length
@@ -106,7 +106,7 @@ class EmbeddingPredictDataset(Dataset):
             bag_feats_np = h5_file["bag_feats"][:]
 
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
-            emb_gc = torch.tensor(bag_feats_np).unsqueeze(0)
+            emb_gc = torch.tensor(bag_feats_np)
 
         return slide_id, embedding1, embedding2, emb_g, emb_gc
 

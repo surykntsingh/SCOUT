@@ -4,6 +4,26 @@ import torch.nn.functional as F
 
 from modules.transformer import EncoderDecoder
 
+class ConceptEncoder(nn.Module):
+    def __init__(self, n_concepts, d_model, hidden=256):
+        super().__init__()
+        # Option A: per-concept learned embedding table (concept id -> vector)
+        self.id_embed = nn.Embedding(n_concepts, d_model)
+        # Projection from scalar activation (score) to scale per concept
+        self.score_proj = nn.Sequential(nn.Linear(1, d_model), nn.ReLU(), nn.Linear(d_model, d_model))
+        self.layernorm = nn.LayerNorm(d_model)
+
+    def forward(self, scores):
+        # scores: [B, M] (float activations from GECKO)
+        B, M = scores.shape
+        ids = torch.arange(M, device=scores.device).unsqueeze(0).expand(B, M)  # [B, M]
+        base = self.id_embed(ids)  # [B, M, d_model]
+        # project scalar score per concept to a vector and use as multiplicative gating
+        scales = self.score_proj(scores.unsqueeze(-1))  # [B, M, d_model]
+        concept_tokens = base * (1 + scales)  # broadcast multiply
+        concept_tokens = self.layernorm(concept_tokens)
+        return concept_tokens  # [B, M, d_model]
+
 
 class ReportGenModel(nn.Module):
 
@@ -43,6 +63,8 @@ class ReportGenModel(nn.Module):
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2 * d, d)
         )
+
+        self.concept_encoder = ConceptEncoder(args.gcd, args.d_model)
 
         gd = args.gd
         gcd =args.gcd
@@ -90,11 +112,13 @@ class ReportGenModel(nn.Module):
         #
         # gecko_embeddings = self.gecko_encoder(emb_g)
 
+
+
         patch_feats = torch.cat([image_embeddings1, image_embeddings2, emb_g], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
-        emb_gc = emb_gc.view(1, 254, 1)
+        emb_gc = self.concept_encoder(emb_gc)
 
         if mode == 'train':
             output = self.encoder_decoder(fc_feats, att_feats, emb_gc, report_ids, mode='forward')

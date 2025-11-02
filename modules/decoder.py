@@ -6,41 +6,40 @@ from utils import utils
 from utils.utils import clones
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1, ff_2, dropout):
+    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1, dropout):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
         self.src_attn = src_attn
         self.concept_attn = concept_attn
         # self.feed_forward = feed_forward
-        self.ff_1 =ff_1
-        self.ff_2 = ff_2
-        self.n = 5
+        self.ff_1 = ff_1
+        # self.ff_2 = ff_2
+        self.n = 4
         self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
 
 
     def forward(self, feats, hidden_states, concepts, src_mask, tgt_mask):
         # m = hidden_states
-        x0 = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x_self = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
         # print(f'**************x: {feats.shape},  hidden_states: {hidden_states.shape}. x0: {x0.shape}')
 
-        x1 = self.sublayer[1](x0, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
+        x_cross = self.sublayer[1](x_self, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
-        x2 = self.sublayer[2](x0, lambda x: self.concept_attn(x, concepts, concepts))
+        x_concept = self.sublayer[2](x_cross, lambda x: self.concept_attn(x, concepts, concepts))
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         # x = self.sublayer[3](x1, self.ff_1) + self.sublayer[4](x2, self.ff_2)
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
-        return self.sublayer[3](x1, self.ff_1), self.sublayer[4](x2, self.ff_2)
+        return self.sublayer[3](x_self+x_concept, self.ff_1)
 
 class Decoder(nn.Module):
     def __init__(self, layer, feed_forward, N):
         super().__init__()
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
-        self.feed_forward = feed_forward
 
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         for layer in self.layers:
-            x,y = layer(x, hidden_states, concepts, src_mask, tgt_mask)
-        return self.norm(self.feed_forward(x+y))
+            x = layer(x, hidden_states, concepts, src_mask, tgt_mask)
+        return self.norm(x)
