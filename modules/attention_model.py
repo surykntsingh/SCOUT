@@ -41,15 +41,6 @@ class AttModel(CaptionModel):
             nn.ReLU(),
             nn.Dropout(self.drop_prob_lm)
         )
-        # self.out1 = nn.Sequential(
-        #     nn.Linear(self.att_feat_size, 1024),
-        #     nn.Tanh()
-        # )
-        # self.out2 = nn.Sequential(
-        #     nn.Linear(self.rnn_size, self.rnn_size),
-        #     nn.Tanh()
-        # )
-        # self.ln = nn.LayerNorm(self.att_feat_size)
 
     def clip_att(self, att_feats, att_masks):
         # Clip the length of att_masks and att_feats to the maximum length
