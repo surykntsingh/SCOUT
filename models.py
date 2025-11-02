@@ -148,6 +148,9 @@ class ReportModel(pl.LightningModule):
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
+            gts = [{slide_id: self.reports[slide_id]} for slide_id in slide_ids]
+            preds = [{slide_id: pred_texts[i]} for i, slide_id in enumerate(slide_ids)]
+
             if batch_idx % 100 == 0:
                 RED = '\033[91m'
                 BLUE = '\033[94m'
@@ -168,7 +171,7 @@ class ReportModel(pl.LightningModule):
             meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
             self.meteor_scores.append(meteor_score)
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            coco_metrics = compute_coco_scores(pred_texts, target_texts)
+            coco_metrics = compute_coco_scores(preds, gts)
             for metric in self.more_metrics:
                 self.more_metrics[metric].append(float(metrics[metric]))
 
