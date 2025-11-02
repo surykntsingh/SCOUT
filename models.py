@@ -46,7 +46,7 @@ class ReportModel(pl.LightningModule):
             'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
             'rouge': lambda x,y: rouge.compute(predictions=x,references=y)['rougeL'],
             'meteor': lambda x,y: meteor.compute(predictions=x,references=y)['meteor'],
-            'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
+            # 'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
         }
 
         self.evaluate_metric_scores = {
@@ -244,6 +244,7 @@ class ReportModel(pl.LightningModule):
             self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.reg_metrics[metric].clear()
 
+        print(self.evaluate_metric_scores)
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
             self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
