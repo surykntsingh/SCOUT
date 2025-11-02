@@ -1,5 +1,6 @@
 import json
 import gc
+import os
 import torch
 import pytorch_lightning as pl
 from torchmetrics.text.rouge import ROUGEScore
@@ -11,7 +12,7 @@ from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
 
-
+os.environ['LANG'] = 'C'
 class ReportModel(pl.LightningModule):
 
     def __init__(self, args, tokenizer):
