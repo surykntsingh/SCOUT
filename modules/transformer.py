@@ -166,13 +166,28 @@ class EncoderDecoder(AttModel):
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
-                DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn),  deepcopy(attn), deepcopy(ff), self.dropout),
+                DecoderLayer(
+                    self.d_model,
+                    deepcopy(attn),  # self-attn
+                    deepcopy(attn),  # cross-attn (visual)
+                    deepcopy(attn),  # cross-attn (concept)
+                    deepcopy(ff),  # feed-forward
+                    self.dropout
+                ),
                 deepcopy(ff),
                 self.num_layers
             ),
             LayerNorm(self.d_model),
+            # Target token embedding + position
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
-            nn.Sequential(nn.Linear(self.d_model, self.d_model), nn.ReLU(), deepcopy(position))
+            # Concept embedding module
+            nn.Sequential(
+                nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
+                nn.LayerNorm(self.d_model),
+                nn.ReLU(),
+                nn.Dropout(self.dropout)
+                # no positional encoding, concepts are unordered
+            )
         )
         return model
 
