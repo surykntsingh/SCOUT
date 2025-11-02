@@ -173,8 +173,8 @@ def compute_coco_scores(ref_texts, hyp_texts):
     :print: Evaluation score (the mean of the scores of all the instances) for each measure
     """
     # Since we are always using batch_size =1
-    # gts = ref_texts[0]
-    # res = hyp_texts[0]
+    gts = ref_texts[0]
+    res = hyp_texts[0]
     # Set up scorers
     scorers = [
         (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
@@ -185,9 +185,9 @@ def compute_coco_scores(ref_texts, hyp_texts):
     # Compute score for each metric
     for scorer, method in scorers:
         try:
-            score, scores = scorer.compute_score(ref_texts, hyp_texts)
+            score, scores = scorer.compute_score(gts, res)
         except TypeError:
-            score, scores = scorer.compute_score(ref_texts, hyp_texts)
+            score, scores = scorer.compute_score(gts, res)
         if type(method) == list:
             for sc, m in zip(score, method):
                 eval_res[m] = sc
