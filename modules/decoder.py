@@ -43,4 +43,4 @@ class Decoder(nn.Module):
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         for layer in self.layers:
             x,y = layer(x, hidden_states, concepts, src_mask, tgt_mask)
-        return self.norm(self.feed_forward(x,y))
+        return self.norm(self.feed_forward(torch.cat([x,y], dim=1)))
