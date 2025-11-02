@@ -193,4 +193,6 @@ def compute_coco_scores(ref_texts, hyp_texts):
                 eval_res[m] = sc
         else:
             eval_res[method] = score
+
+    print(f'eval_res: {eval_res}')
     return eval_res
