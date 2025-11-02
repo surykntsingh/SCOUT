@@ -166,7 +166,8 @@ class EncoderDecoder(AttModel):
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
-                DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn),  deepcopy(attn), deepcopy(ff), self.dropout),
+                DecoderLayer(self.d_model, deepcopy(attn), deepcopy(attn),  deepcopy(attn), deepcopy(ff), deepcopy(ff), self.dropout),
+                deepcopy(ff),
                 self.num_layers
             ),
             LayerNorm(self.d_model),
