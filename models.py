@@ -235,7 +235,7 @@ class ReportModel(pl.LightningModule):
             self.more_metrics[metric].clear()
 
         for metric in self.coco_metrics:
-            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
             self.log(f'test_coco_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.coco_metrics[metric].clear()
 
