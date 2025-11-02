@@ -12,7 +12,6 @@ from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
 
-os.environ['LANG'] = 'C'
 class ReportModel(pl.LightningModule):
 
     def __init__(self, args, tokenizer):
@@ -37,10 +36,29 @@ class ReportModel(pl.LightningModule):
         # self.bleu_4 = BLEUScore(n_gram=4)
         self.val_meteor = evaluate.load("meteor")
         self.test_meteor = evaluate.load("meteor")
-        self.meteor_scores = []
+
+        bleu = evaluate.load("bleu")
+        rouge = evaluate.load("rouge")
+        meteor = evaluate.load("meteor")
+        bertscore = evaluate.load("bertscore")
+
+        self.evaluate_metrics = {
+            'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
+            'rouge': lambda x,y: rouge.compute(predictions=x,references=y)['rougeL'],
+            'meteor': lambda x,y: meteor.compute(predictions=x,references=y)['meteor'],
+            'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
+        }
+
+        self.evaluate_metric_scores = {
+            'bleu': [],
+            'rouge': [],
+            'meteor': [],
+            'bertscore': []
+        }
+
         self.reg_evaluator = REG_Evaluator()
 
-        self.more_metrics = {
+        self.reg_metrics = {
             'emb_score': [],
             'key_score': [],
             'bleu_score': [],
@@ -108,21 +126,24 @@ class ReportModel(pl.LightningModule):
 
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-                gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-                preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
+                # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+                # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
 
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                bleu_score1 = self.val_bleu(pred_texts, target_texts).to(self.device)
+                bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-                coco_metrics = compute_coco_scores(preds, gts)
-                self.meteor_scores.append(
-                    float(self.val_meteor.compute(predictions=pred_texts, references=target_texts)['meteor']))
-                # self.reg_scores.append(reg)
-                for metric in self.more_metrics:
-                    self.more_metrics[metric].append(float(metrics[metric]))
+                # coco_metrics = compute_coco_scores(preds, gts)
 
-                for metric in self.coco_metrics:
-                    self.coco_metrics[metric].append(float(coco_metrics[metric]))
+                for metric in self.evaluate_metric_scores:
+                    self.evaluate_metric_scores[metric].append(
+                        float(self.evaluate_metrics[metric](pred_texts, target_texts))
+                    )
+                # self.reg_scores.append(reg)
+                for metric in self.reg_metrics:
+                    self.reg_metrics[metric].append(float(metrics[metric]))
+
+                # for metric in self.coco_metrics:
+                #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
 
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -149,8 +170,8 @@ class ReportModel(pl.LightningModule):
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-            gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-            preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
+            # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+            # preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
 
             if batch_idx % 100 == 0:
                 RED = '\033[91m'
@@ -170,14 +191,19 @@ class ReportModel(pl.LightningModule):
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
             bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-            self.meteor_scores.append(meteor_score)
-            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            coco_metrics = compute_coco_scores(gts, preds)
-            for metric in self.more_metrics:
-                self.more_metrics[metric].append(float(metrics[metric]))
 
-            for metric in self.coco_metrics:
-                self.coco_metrics[metric].append(float(coco_metrics[metric]))
+            for metric in self.evaluate_metric_scores:
+                self.evaluate_metric_scores[metric].append(
+                    float(self.evaluate_metrics[metric](pred_texts, target_texts))
+                )
+
+            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
+            # coco_metrics = compute_coco_scores(gts, preds)
+            for metric in self.reg_metrics:
+                self.reg_metrics[metric].append(float(metrics[metric]))
+
+            # for metric in self.coco_metrics:
+            #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
@@ -209,36 +235,36 @@ class ReportModel(pl.LightningModule):
         # print('on_validation_epoch_end start')
         # print(f'meteor_scores: {self.meteor_scores}')
         torch.cuda.empty_cache()
-        meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
-        self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.meteor_scores.clear()
+        # meteor_score = sum(self.evaluate_metric_scores) / len(self.evaluate_metric_scores)
+        # self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        # self.evaluate_metric_scores.clear()
 
-        for metric in self.more_metrics:
-            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+        for metric in self.reg_metrics:
+            metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
             self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.more_metrics[metric].clear()
+            self.reg_metrics[metric].clear()
 
-        for metric in self.coco_metrics:
-            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
-            self.log(f'val_coco_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.coco_metrics[metric].clear()
+        for metric in self.evaluate_metric_scores:
+            metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
+            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.evaluate_metric_scores[metric].clear()
 
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
-        meteor_score = sum(self.meteor_scores) / len(self.meteor_scores)
-        self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.meteor_scores.clear()
+        # meteor_score = sum(self.evaluate_metric_scores) / len(self.evaluate_metric_scores)
+        # self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
+        # self.evaluate_metric_scores.clear()
 
-        for metric in self.more_metrics:
-            metric_score = sum(self.more_metrics[metric]) / len(self.more_metrics[metric])
+        for metric in self.reg_metrics:
+            metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
             self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.more_metrics[metric].clear()
+            self.reg_metrics[metric].clear()
 
-        for metric in self.coco_metrics:
-            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
-            self.log(f'test_coco_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.coco_metrics[metric].clear()
+        for metric in self.evaluate_metric_scores:
+            metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
+            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.evaluate_metric_scores[metric].clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
