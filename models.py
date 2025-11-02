@@ -135,8 +135,8 @@ class ReportModel(pl.LightningModule):
                 # coco_metrics = compute_coco_scores(preds, gts)
 
                 for metric in self.evaluate_metric_scores:
-                    self.evaluate_metric_scores[metric].append(
-                        float(self.evaluate_metrics[metric](pred_texts, target_texts))
+                    self.evaluate_metric_scores[metric].extend(
+                        self.evaluate_metrics[metric](pred_texts, target_texts)
                     )
                 # self.reg_scores.append(reg)
                 for metric in self.reg_metrics:
@@ -190,11 +190,11 @@ class ReportModel(pl.LightningModule):
 
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
             bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
-            meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
+            # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
 
             for metric in self.evaluate_metric_scores:
-                self.evaluate_metric_scores[metric].append(
-                    float(self.evaluate_metrics[metric](pred_texts, target_texts))
+                self.evaluate_metric_scores[metric].extend(
+                    self.evaluate_metrics[metric](pred_texts, target_texts)
                 )
 
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
