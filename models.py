@@ -135,7 +135,7 @@ class ReportModel(pl.LightningModule):
                 # coco_metrics = compute_coco_scores(preds, gts)
 
                 for metric in self.evaluate_metric_scores:
-                    self.evaluate_metric_scores[metric].extend(
+                    self.evaluate_metric_scores[metric].append(
                         self.evaluate_metrics[metric](pred_texts, target_texts)
                     )
                 # self.reg_scores.append(reg)
@@ -193,7 +193,7 @@ class ReportModel(pl.LightningModule):
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
 
             for metric in self.evaluate_metric_scores:
-                self.evaluate_metric_scores[metric].extend(
+                self.evaluate_metric_scores[metric].append(
                     self.evaluate_metrics[metric](pred_texts, target_texts)
                 )
 
