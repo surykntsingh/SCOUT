@@ -6,13 +6,14 @@ from utils import utils
 from utils.utils import clones
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1, dropout):
+    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1,gate_fusion, dropout):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
         self.src_attn = src_attn
         self.concept_attn = concept_attn
         # self.feed_forward = feed_forward
+        self.gate_fusion = gate_fusion
         self.ff_1 = ff_1
         # self.ff_2 = ff_2
         self.n = 4
@@ -25,13 +26,18 @@ class DecoderLayer(nn.Module):
 
         # print(f'**************x: {feats.shape},  hidden_states: {hidden_states.shape}. x0: {x0.shape}')
 
-        x = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
+        x_img = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
-        x = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
+        x_con = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
+
+        x_img = x_img + 0.1 * x  # reinforce linguistic grounding
+        x_con = x_con + 0.1 * x
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         # x = self.sublayer[3](x1, self.ff_1) + self.sublayer[4](x2, self.ff_2)
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
-        return self.sublayer[3](x, self.ff_1)
+        x_fused, alpha = self.gate_fusion(x, x_img, x_con)
+        out = self.sublayer[3](x_fused, self.ff_1)
+        return out, alpha
 
 class Decoder(nn.Module):
     def __init__(self, layer, feed_forward, N):
@@ -41,5 +47,5 @@ class Decoder(nn.Module):
 
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         for layer in self.layers:
-            x = layer(x, hidden_states, concepts, src_mask, tgt_mask)
+            x, alpha = layer(x, hidden_states, concepts, src_mask, tgt_mask)
         return self.norm(x)

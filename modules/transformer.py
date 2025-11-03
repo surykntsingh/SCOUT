@@ -69,6 +69,50 @@ class MultiHeadedAttention(nn.Module):
         return torch.matmul(p_attn, value), p_attn
 
 
+class MultiHeadGatedFusion(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super().__init__()
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+
+        # gating network per head
+        self.gate_net = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Linear(d_model, d_model),
+            nn.Sigmoid()
+        )
+
+        self.out_proj = nn.Linear(d_model, d_model)
+
+    def forward(self, x, x_img, x_con):
+        """
+        x: [B, L, D] - decoder token
+        x_img: [B, L, D] - attended image features
+        x_con: [B, L, D] - attended concept features
+        """
+        B, L, D = x.shape
+        H = self.num_heads
+        d_h = self.head_dim
+
+        # compute per-head gating
+        alpha = self.gate_net(x).view(B, L, H, d_h)   # [B, L, H, d_h]
+
+        # reshape inputs to [B, L, H, d_h]
+        x_img = x_img.view(B, L, H, d_h)
+        x_con = x_con.view(B, L, H, d_h)
+
+        # fuse per head
+        fused = (1 - alpha) * x_img + alpha * x_con
+
+        # reshape back and project
+        fused = fused.view(B, L, D)
+        out = self.out_proj(fused + x)  # residual connection + projection
+        return out, alpha
+
+
+
 class PositionwiseFeedForward(nn.Module):
     def __init__(self, d_model, d_ff, dropout=0.1):
         super().__init__()
@@ -163,6 +207,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
+        mgf = MultiHeadGatedFusion(self.d_model, self.num_heads)
         model = Transformer(
             Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
             Decoder(
@@ -172,6 +217,7 @@ class EncoderDecoder(AttModel):
                     deepcopy(attn),  # cross-attn (visual)
                     deepcopy(attn),  # cross-attn (concept)
                     deepcopy(ff),  # feed-forward
+                    deepcopy(mgf), # multihead gate fusion
                     self.dropout
                 ),
                 deepcopy(ff),
