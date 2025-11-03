@@ -23,11 +23,11 @@ class Transformer(nn.Module):
 
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(src, src_mask), concepts, src_mask, tgt, tgt_mask)
+        return self.decode(self.encode(src,concepts, src_mask), concepts, src_mask, tgt, tgt_mask)
 
-    def encode(self, src, src_mask):
+    def encode(self, src,concepts, src_mask):
         # print(f'src: {src.shape}')
-        return self.encoder(self.src_embed(src), src_mask)
+        return self.encoder(self.src_embed(src), src_mask, self.concept_embed(concepts))
 
     def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
         return self.decoder(self.tgt_embed(tgt), hidden_states, self.concept_embed(concepts), src_mask, tgt_mask)
@@ -181,6 +181,18 @@ class PAM_(nn.Module):
 
         return x
 
+class CrossAttentionBlock(nn.Module):
+    def __init__(self, d_model, n_heads=8, dropout=0.1):
+        super().__init__()
+        self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+        self.norm = LayerNorm(d_model)
+        self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+
+    def forward(self, x, concepts):
+        x2 = self.cross_attn(x, concepts, concepts)
+        return self.norm(x + self.ff(x2))
+
+
 
 class EncoderDecoder(AttModel):
 
@@ -208,8 +220,17 @@ class EncoderDecoder(AttModel):
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
         mgf = MultiHeadGatedFusion(self.d_model, self.num_heads)
+        concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
         model = Transformer(
-            Encoder(EncoderLayer(self.d_model, deepcopy(attn), deepcopy(ff), self.dropout), self.num_layers, pp),
+            Encoder(
+                EncoderLayer(
+                    self.d_model,
+                    deepcopy(attn),
+                    deepcopy(ff),
+                    self.dropout
+                ),
+                self.num_layers, pp, concept_fusion
+            ),
             Decoder(
                 DecoderLayer(
                     self.d_model,
@@ -337,5 +358,5 @@ class EncoderDecoder(AttModel):
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
 
         att_feats, gc_feats, _, att_masks, _ = self._prepare_feature_mesh(att_feats, gc_feats, att_masks)
-        out = self.model.encode(att_feats, att_masks)
+        out = self.model.encode(att_feats,gc_feats, att_masks)
         return out
