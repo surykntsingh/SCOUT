@@ -273,7 +273,7 @@ class EncoderDecoder(AttModel):
             att_feats, gc_feats, att_masks, meshes
         )
 
-        memory = self.model.encode(att_feats, att_masks)
+        memory = self.model.encode(att_feats,gc_feats, att_masks)
 
         return fc_feats[..., :1], att_feats[..., :1], memory, gc_feats, att_masks
 
