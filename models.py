@@ -213,23 +213,26 @@ class ReportModel(pl.LightningModule):
 
 
     def predict_step(self, batch):
-        slide_id, feats1, feats2, gecko_feats, gecko_concepts = batch
+        slide_ids, feats1, feats2, gecko_feats, gecko_concepts = batch
         with torch.no_grad():
             output = self.model(feats1, feats2, gecko_feats, gecko_concepts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
-
+        target_texts = [self.reports[slide_id] for slide_id in slide_ids]
         RED = '\033[91m'
         RESET = '\033[0m'
+        BLUE = '\033[94m'
 
         print('*' * 100)
-        print(f'{RESET} Predicted report for slide: {slide_id[0]}: {pred_texts[0]} {RESET}')
-        print(f' {RED} Predicted synoptic report for slide: {slide_id[0]}: \n {RESET}')
+        print(f'{RESET} Predicted report for slide: {slide_ids[0]}: {pred_texts[0]} {RESET}')
+        print(f' {RED} Predicted synoptic report for slide: {slide_ids[0]}: \n {RESET}')
+
+        print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
 
         json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
         print(f'{RED} {json_string} {RESET}')
         print('*' * 100)
         del output
-        return slide_id,pred_texts
+        return slide_ids,pred_texts
 
     def on_validation_epoch_end(self):
         # print('on_validation_epoch_end start')
