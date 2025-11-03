@@ -182,7 +182,7 @@ class PAM_(nn.Module):
         return x
 
 class CrossAttentionBlock(nn.Module):
-    def __init__(self, d_model, n_heads=8, dropout=0.1):
+    def __init__(self, n_heads,d_model, dropout):
         super().__init__()
         self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
         self.norm = LayerNorm(d_model)
