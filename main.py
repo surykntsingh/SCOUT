@@ -111,7 +111,7 @@ def tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule, re
 def test(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
 
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0.85, 0.1, 0.05]
+    split_frac = [0.85, 0.07, 0.08]
     tokenizer = Tokenizer(args.reports_json_path)
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     trainer = Trainer(args, tokenizer, split_frac)
@@ -167,7 +167,7 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     save_results(results, results_dir)
 
 def get_prediction(model, trainer, args, tokenizer):
-    slides = ['HISTAI-mixed_case_06101_slide_H&E_0', 'HISTAI-mixed_case_17769_slide_H&E_0', 'HISTAI-mixed_case_00342_slide_H&E_0']
+    slides = ['TCGA-CH-5764', 'TCGA-V1-A8MM', 'TCGA-V1-A9Z7', 'TCGA-EJ-5518', 'TCGA-HC-7232']
     datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slides)
     predictions = trainer.predict(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model predictions finished')
