@@ -338,13 +338,13 @@ class EncoderDecoder(AttModel):
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
             att_feats, gc_feats, att_masks, report_ids
         )
-        out = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
+        out, concept_attn_maps = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
         # print(f'outputs: {outputs}')
 
-        return outputs
+        return outputs, concept_attn_maps
 
     def core(self, it, fc_feats_ph, att_feats_ph, memory, gc_feats, state, mask):
 
@@ -352,8 +352,8 @@ class EncoderDecoder(AttModel):
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        out = self.model.decode(memory, gc_feats, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
-        return out[:, -1], [ys.unsqueeze(0)]
+        out, concept_attn_maps = self.model.decode(memory, gc_feats, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
+        return out[:, -1], [ys.unsqueeze(0)], concept_attn_maps
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
 

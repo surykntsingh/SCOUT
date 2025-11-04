@@ -13,3 +13,18 @@ class LanguageModelCriterion(nn.Module):
         output = torch.sum(output) / torch.sum(mask)
 
         return output
+
+class ConceptSupervisionHead(nn.Module):
+    def __init__(self, d_model, concept_dim):
+        super().__init__()
+        self.proj = nn.Linear(d_model, concept_dim)
+        self.cosine = nn.CosineSimilarity(dim=-1)
+
+    def forward(self, decoder_out, gecko_concepts):
+        # decoder_out: (batch, seq_len, d_model)
+        # gecko_concepts: (batch, num_concepts, concept_dim)
+        pred = self.proj(decoder_out.mean(dim=1))  # mean over tokens
+        gecko_mean = gecko_concepts.mean(dim=1)
+        pred_norm = F.normalize(pred, dim=-1)
+        gecko_norm = F.normalize(gecko_mean, dim=-1)
+        return 1 - self.cosine(pred_norm, gecko_norm).mean()

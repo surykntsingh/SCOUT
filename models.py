@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
-from modules.loss import LanguageModelCriterion
+from modules.loss import LanguageModelCriterion, ConceptSupervisionHead
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
@@ -18,7 +18,7 @@ class ReportModel(pl.LightningModule):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)#.to(torch.bfloat16)
         # self.model.tie_weights()
-
+        self.concept_lambda = 1
         for p in self.model.parameters():
             if not p.is_contiguous():
                 p.data = p.data.contiguous()
@@ -27,6 +27,8 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
+        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd)
+
         self.val_rouge = ROUGEScore()
         self.val_bleu = BLEUScore(n_gram=4)
         self.test_rouge = ROUGEScore()
@@ -80,10 +82,20 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def loss_fn(self, output, reports_ids, reports_masks):
-        criterion = LanguageModelCriterion()
-        loss = criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        return loss
+    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts):
+        language_criterion = LanguageModelCriterion()
+        caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
+        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
+
+        caption_grad = torch.norm(
+            torch.autograd.grad(caption_loss, self.model.decoder.layers[-1].parameters(), retain_graph=True)[0])
+        concept_grad = torch.norm(
+            torch.autograd.grad(concept_loss, self.model.decoder.layers[-1].parameters(), retain_graph=True)[0])
+        scale = (caption_grad / (concept_grad + 1e-6)).clamp(0.1, 10)
+        total_loss = caption_loss + self.concept_lambda * scale * concept_loss
+        return total_loss
+
+
 
     # def on_after_backward(self):
     #     for name, p in self.model.named_parameters():
@@ -94,9 +106,9 @@ class ReportModel(pl.LightningModule):
         # print('train ---------->')
         gc.collect()
         _, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
-        output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+        output,_, concept_tokens = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
-        loss = self.loss_fn(output, report_ids, report_masks)
+        loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
         # if batch_idx %1000==0:
         #     print(
@@ -111,19 +123,19 @@ class ReportModel(pl.LightningModule):
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
         with torch.no_grad():
-            output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+            output_,_,concept_tokens = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
 
-            loss = self.loss_fn(output_, report_ids, report_masks)
+            loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
         if batch_idx % 50==0:
             with torch.no_grad():
-                output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-
+                print(f'concept_attn_maps:: {concept_attn_maps}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
                 # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
@@ -158,14 +170,14 @@ class ReportModel(pl.LightningModule):
         slide_ids, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
-            loss = self.loss_fn(output_, report_ids, report_masks)
+            output_,_,concept_tokens  = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
+            loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -187,7 +199,7 @@ class ReportModel(pl.LightningModule):
 
                 print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
                 print('*' * 100)
-
+                print(f'concept_attn_maps:: {concept_attn_maps}')
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
             bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])

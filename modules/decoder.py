@@ -46,6 +46,9 @@ class Decoder(nn.Module):
         self.norm = LayerNorm(layer.d_model)
 
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
+        attn_maps = []
         for layer in self.layers:
             x, alpha = layer(x, hidden_states, concepts, src_mask, tgt_mask)
-        return self.norm(x)
+            attn_maps.append(alpha)
+
+        return self.norm(x), attn_maps
