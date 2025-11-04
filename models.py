@@ -93,7 +93,7 @@ class ReportModel(pl.LightningModule):
         #     scale = (caption_magnitude / concept_magnitude).clamp(0.5, 2.0)
 
         total_loss = caption_loss + self.concept_lambda * concept_loss
-        return total_loss
+        return total_loss,concept_loss
 
 
     def training_step(self, batch, batch_idx):
@@ -102,8 +102,9 @@ class ReportModel(pl.LightningModule):
         _, feats1, feats2, gecko_feats, gecko_concepts, report_ids, report_masks, patch_masks = batch
         output,_, concept_tokens = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
-        loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts)
+        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
         # if batch_idx %1000==0:
         #     print(
         #         f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
@@ -119,8 +120,9 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output_,_,concept_tokens = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
 
-            loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
@@ -165,8 +167,9 @@ class ReportModel(pl.LightningModule):
 
         with torch.no_grad():
             output_,_,concept_tokens  = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='train')
-            loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
