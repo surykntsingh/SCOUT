@@ -30,7 +30,7 @@ class DecoderLayer(nn.Module):
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
         x_con = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        x_img = x_img + 0.1 * x  # reinforce linguistic grounding
+        # reinforce linguistic grounding
         x_con = x_con + 0.1 * x
         # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
         # x = self.sublayer[3](x1, self.ff_1) + self.sublayer[4](x2, self.ff_2)

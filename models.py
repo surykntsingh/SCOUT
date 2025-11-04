@@ -96,12 +96,6 @@ class ReportModel(pl.LightningModule):
         return total_loss
 
 
-
-    # def on_after_backward(self):
-    #     for name, p in self.model.named_parameters():
-    #         if not p.data.is_contiguous():
-    #             print(f"NON-CONTIGUOUS PARAM: {name} shape={tuple(p.shape)} strides={p.data.stride()}")
-
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
         gc.collect()
