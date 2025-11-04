@@ -132,7 +132,7 @@ class ReportModel(pl.LightningModule):
 
         if batch_idx % 50==0:
             with torch.no_grad():
-                output, concept_attn_maps_ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 print(f'concept_attn_maps:: {concept_attn_maps}')
