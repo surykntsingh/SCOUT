@@ -167,7 +167,8 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     # save_results(results, results_dir)
 
 def get_prediction(model, trainer, args, tokenizer):
-    slides = ['TCGA-YL-A8HJ', 'TCGA-YL-A9WH', 'TCGA-KK-A7AU', 'TCGA-EJ-A46F', 'TCGA-XK-AAJR', 'TCGA-EJ-7789']
+    slides = ['TCGA-G9-6373', 'TCGA-V1-A9ZK', 'TCGA-KK-A7AQ', 'TCGA-VP-A87K', 'TCGA-HC-A631', 'TCGA-KK-A8I5'
+              'TCGA-CH-5743', 'TCGA-EJ-7793', 'TCGA-V1-A9Z8', 'TCGA-J4-A67L', 'TCGA-XK-AAK1', 'TCGA-EJ-7331']
     datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slides)
     predictions = trainer.predict(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model predictions finished')
