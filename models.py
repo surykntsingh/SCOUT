@@ -135,7 +135,7 @@ class ReportModel(pl.LightningModule):
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_feats, gecko_concepts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-                print(f'concept_attn_maps:: {concept_attn_maps}')
+                print(f'concept_attn_maps:: {concept_attn_maps.shape}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
                 # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
@@ -199,7 +199,7 @@ class ReportModel(pl.LightningModule):
 
                 print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
                 print('*' * 100)
-                print(f'concept_attn_maps:: {concept_attn_maps}')
+                print(f'concept_attn_maps:: {concept_attn_maps.shape}')
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
             bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
