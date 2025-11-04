@@ -161,13 +161,13 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     split_frac = [0.85, 0.15]
     trainer = Trainer(args, tokenizer, split_frac)
     results = get_prediction(model, trainer, args, tokenizer)
-    results_dir = f'{args.results_path}/predicted_results'
-    os.makedirs(results_dir, exist_ok=True)
+    # results_dir = f'{args.results_path}/predicted_results'
+    # os.makedirs(results_dir, exist_ok=True)
 
-    save_results(results, results_dir)
+    # save_results(results, results_dir)
 
 def get_prediction(model, trainer, args, tokenizer):
-    slides = ['HISTAI-mixed_case_06101_slide_H&E_0', 'HISTAI-mixed_case_17769_slide_H&E_0', 'HISTAI-mixed_case_00342_slide_H&E_0']
+    slides = ['TCGA-YL-A8HJ', 'TCGA-YL-A9WH', 'TCGA-KK-A7AU', 'TCGA-EJ-A46F', 'TCGA-XK-AAJR', 'TCGA-EJ-7789']
     datamodule = PatchEmbeddingDataPredictModule(args, tokenizer, slide_ids=slides)
     predictions = trainer.predict(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model predictions finished')
