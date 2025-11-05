@@ -133,7 +133,7 @@ class ReportModel(pl.LightningModule):
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 print(f'concept_attn_maps:: {len(concept_attn_maps)}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-
+                self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
                 # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
 
@@ -183,20 +183,8 @@ class ReportModel(pl.LightningModule):
             # preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
 
             if batch_idx % 100 == 0:
-                RED = '\033[91m'
-                BLUE = '\033[94m'
-                RESET = '\033[0m'
-
-                print('*' * 100)
-                print(f'{RESET} Predicted report: {pred_texts[0]} {RESET}')
-                print(f' {RED} Predicted synoptic report: \n {RESET}')
-
-                json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
-                print(f'{RED} {json_string} {RESET}')
-
-                print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
-                print('*' * 100)
-                print(f'concept_attn_maps:: {len(concept_attn_maps)}')
+                self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
+                # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
             bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
@@ -227,19 +215,9 @@ class ReportModel(pl.LightningModule):
             output = self.model(feats1, feats2, gecko_feats, gecko_concepts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-        RED = '\033[91m'
-        RESET = '\033[0m'
-        BLUE = '\033[94m'
 
-        print('*' * 100)
-        print(f'{RESET} Predicted report for slide: {slide_ids[0]}: {pred_texts[0]} {RESET}')
-        print(f' {RED} Predicted synoptic report for slide: {slide_ids[0]}: \n {RESET}')
+        self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
 
-        print(f'{BLUE} Ground truth: {target_texts[0]} {RESET}')
-
-        json_string = json.dumps(extract_fields(pred_texts[0]), indent=4)
-        print(f'{RED} {json_string} {RESET}')
-        print('*' * 100)
         del output
         return slide_ids,pred_texts
 
@@ -285,3 +263,18 @@ class ReportModel(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=self.__lr_patience)
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
+
+    def __print_results(self, slide_id, pred_text, target_text):
+        RED = '\033[91m'
+        RESET = '\033[0m'
+        BLUE = '\033[94m'
+
+        print('*' * 100)
+        print(f'{RESET} Predicted report for slide: {slide_id}: {pred_text} {RESET}')
+        print(f' {RED} Predicted synoptic report for slide: {slide_id}: \n {RESET}')
+
+        print(f'{BLUE} Ground truth: {target_text} {RESET}')
+
+        json_string = json.dumps(extract_fields(pred_text), indent=4)
+        print(f'{RED} {json_string} {RESET}')
+        print('*' * 100)
