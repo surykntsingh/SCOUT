@@ -55,12 +55,14 @@ class EmbeddingDataset(Dataset):
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
+            bag_feat_attn_np = h5_file["attention_bag_feats"][:]
 
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
             emb_gc = torch.tensor(bag_feats_np)
+            attn_gc = torch.tensor(bag_feat_attn_np)
 
         # coords = None
-        return slide_id, embedding1, embedding2, emb_g, emb_gc, None, report_ids, report_masks, seq_length
+        return slide_id, embedding1, embedding2, emb_g, emb_gc, attn_gc, report_ids, report_masks, seq_length
 
 
 class EmbeddingPredictDataset(Dataset):
@@ -104,11 +106,13 @@ class EmbeddingPredictDataset(Dataset):
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
+            bag_feat_attn_np = h5_file["attention_bag_feats"][:]
 
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
             emb_gc = torch.tensor(bag_feats_np)
+            attn_gc = torch.tensor(bag_feat_attn_np)
 
-        return slide_id, embedding1, embedding2, emb_g, emb_gc
+        return slide_id, embedding1, embedding2, emb_g, emb_gc, attn_gc
 
 
 

@@ -100,7 +100,7 @@ class ReportGenModel(nn.Module):
 
 
 
-    def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, report_ids=None, patch_masks=None, mode='train'):
+    def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, attn_gc, report_ids=None, patch_masks=None, mode='train'):
         # coords_encoded = self.positional_encoder(pos_embeddings)
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
@@ -108,24 +108,24 @@ class ReportGenModel(nn.Module):
         image_embeddings1 = self.adapter_mlp_1(image_embeddings1)
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
 
-        # emb_gc_proj = self.gecko_mlp(emb_gc.unsqueeze(1))
-        #
-        # gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1))
+        emb_gc_proj = self.gecko_mlp(emb_gc.unsqueeze(1))
 
-        gecko_embeddings = self.gecko_encoder(emb_g)
+        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1))
+
+        # gecko_embeddings = self.gecko_encoder(emb_g)
 
         patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
-        emb_gc = self.concept_encoder(emb_gc)
+        attn_gc = self.concept_encoder(attn_gc)
 
         if mode == 'train':
-            output, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, emb_gc, report_ids, mode='forward')
+            output, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
         elif mode == 'sample':
-            output, _, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, emb_gc, mode='sample')
+            output, _, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
         elif mode == 'encode':
-            output = self.encoder_decoder(fc_feats, att_feats, emb_gc, mode='encode')
+            output = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='encode')
 
             logits = self.fc(output[0, 0, :]).unsqueeze(0)
             Y_hat = torch.argmax(logits, dim=1)

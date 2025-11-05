@@ -91,8 +91,8 @@ class ReportModel(pl.LightningModule):
             caption_magnitude = caption_loss.detach()
             concept_magnitude = concept_loss.detach() + 1e-8
             scale = (caption_magnitude / concept_magnitude)
-        concept_loss *= scale
-        total_loss = caption_loss + self.concept_lambda * concept_loss
+        # concept_loss *= scale
+        total_loss = caption_loss + self.concept_lambda * concept_loss * scale
         return total_loss,concept_loss
 
 
