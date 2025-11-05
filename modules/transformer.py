@@ -70,7 +70,7 @@ class MultiHeadedAttention(nn.Module):
 
 
 class MultiHeadGatedFusion(nn.Module):
-    def __init__(self, d_model, num_heads):
+    def __init__(self, d_model, num_heads, dropout):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
@@ -80,6 +80,7 @@ class MultiHeadGatedFusion(nn.Module):
         self.gate_net = nn.Sequential(
             nn.Linear(d_model, d_model),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(d_model, d_model),
             nn.Sigmoid()
         )
@@ -219,7 +220,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadGatedFusion(self.d_model, self.num_heads)
+        mgf = MultiHeadGatedFusion(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
         model = Transformer(
             Encoder(
