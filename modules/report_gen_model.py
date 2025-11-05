@@ -134,4 +134,4 @@ class ReportGenModel(nn.Module):
         else:
             raise ValueError
 
-        return output, concept_attn_maps, emb_gc
+        return output, concept_attn_maps, attn_gc
