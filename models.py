@@ -275,6 +275,6 @@ class ReportModel(pl.LightningModule):
 
         print(f'{BLUE} Ground truth: {target_text} {RESET}')
 
-        json_string = json.dumps(extract_fields(pred_text), indent=4)
-        print(f'{RED} {json_string} {RESET}')
+        # json_string = json.dumps(extract_fields(pred_text), indent=4)
+        # print(f'{RED} {json_string} {RESET}')
         print('*' * 100)
