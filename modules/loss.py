@@ -20,9 +20,9 @@ class ConceptSupervisionHead(nn.Module):
         super().__init__()
         self.proj = nn.Sequential(
             nn.Linear(d_model, concept_dim),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(concept_dim, concept_dim)
+            # nn.ReLU(),
+            # nn.Dropout(0.2),
+            # nn.Linear(concept_dim, concept_dim)
         )
 
         self.cosine = nn.CosineSimilarity(dim=-1)
