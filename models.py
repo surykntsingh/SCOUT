@@ -90,7 +90,7 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             caption_magnitude = caption_loss.detach()
             concept_magnitude = concept_loss.detach() + 1e-8
-            scale = (caption_magnitude / concept_magnitude).clamp(0.5,10)
+            scale = (caption_magnitude / concept_magnitude)
         concept_loss *= scale
         total_loss = caption_loss + self.concept_lambda * concept_loss
         return total_loss,concept_loss
