@@ -131,21 +131,18 @@ class ReportModel(pl.LightningModule):
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-                print(f'concept_attn_maps:: {len(concept_attn_maps)}')
+                # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
                 # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
-
+                self.__calculate_evaluate_metrics(pred_texts, target_texts)
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
                 bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
                 # coco_metrics = compute_coco_scores(preds, gts)
 
-                for metric in self.evaluate_metric_scores:
-                    self.evaluate_metric_scores[metric].append(
-                        self.evaluate_metrics[metric](pred_texts, target_texts)
-                    )
+
                 # self.reg_scores.append(reg)
                 for metric in self.reg_metrics:
                     self.reg_metrics[metric].append(float(metrics[metric]))
@@ -278,3 +275,10 @@ class ReportModel(pl.LightningModule):
         # json_string = json.dumps(extract_fields(pred_text), indent=4)
         # print(f'{RED} {json_string} {RESET}')
         print('*' * 100)
+
+    def __calculate_evaluate_metrics(self, pred_texts, target_texts):
+        pred_texts = list(map(lambda x: 'placeholder' if x.strip()=='' else x, pred_texts))
+        for metric in self.evaluate_metric_scores:
+            self.evaluate_metric_scores[metric].append(
+                self.evaluate_metrics[metric](pred_texts, target_texts)
+            )
