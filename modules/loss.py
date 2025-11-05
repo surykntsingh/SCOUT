@@ -35,5 +35,5 @@ class ConceptSupervisionHead(nn.Module):
         # gecko_mean = gecko_concepts.mean(dim=1)
         pred_norm = F.normalize(pred, dim=-1)
         gecko_norm = F.normalize(gecko_concepts, dim=-1)
-        print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
+        # print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
         return 1 - self.cosine(pred_norm, gecko_norm).mean()
