@@ -30,6 +30,7 @@ class ConceptSupervisionHead(nn.Module):
     def forward(self, decoder_out, gecko_concepts):
         # decoder_out: (batch, seq_len, d_model)
         # gecko_concepts: (batch, num_concepts, concept_dim)
+        print(f'decoder_out: {decoder_out.shape}, gecko_concepts: {gecko_concepts.shape}')
         pred = self.proj(decoder_out.mean(dim=1))  # mean over tokens
         gecko_mean = gecko_concepts.mean(dim=1)
         pred_norm = F.normalize(pred, dim=-1)
