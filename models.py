@@ -126,7 +126,7 @@ class ReportModel(pl.LightningModule):
             del output_
             torch.cuda.empty_cache()
 
-        if batch_idx % 50==0:
+        if batch_idx % 10==0:
             with torch.no_grad():
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
@@ -268,7 +268,7 @@ class ReportModel(pl.LightningModule):
 
         print('*' * 100)
         print(f'{RESET} Predicted report for slide: {slide_id}: {pred_text} {RESET}')
-        print(f' {RED} Predicted synoptic report for slide: {slide_id}: \n {RESET}')
+        # print(f' {RED} Predicted synoptic report for slide: {slide_id}: \n {RESET}')
 
         print(f'{BLUE} Ground truth: {target_text} {RESET}')
 
