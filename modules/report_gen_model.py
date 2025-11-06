@@ -71,7 +71,7 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
 
-        self.concept_encoder = ConceptEncoder(args.gcd, args.d_model)
+        self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
 
         gd = args.gd
         gcd =args.gcd
