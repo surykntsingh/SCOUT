@@ -190,7 +190,7 @@ class CrossAttentionBlock(nn.Module):
         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
 
     def forward(self, x, concepts):
-        x2 = self.cross_attn(x, concepts, concepts)
+        x2,_ = self.cross_attn(x, concepts, concepts)
         return self.norm(x + self.ff(x2))
 
 
