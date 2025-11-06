@@ -38,7 +38,7 @@ class AttModel(CaptionModel):
 
         self.gc_embed = nn.Sequential(
             nn.Linear(self.input_encoding_size, self.input_encoding_size),
-            nn.ReLU(),
+            # nn.ReLU(),
             nn.Dropout(self.drop_prob_lm)
         )
 
