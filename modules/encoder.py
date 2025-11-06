@@ -20,15 +20,11 @@ class Encoder(nn.Module):
     def forward(self, x, mask, concepts):
         s=[]
         for i,layer in enumerate(self.layers):
-            x = self.concept_fusion(x, concepts)
+            x = self.concept_fusion(self.norm(x), concepts)
             x = layer(x, mask)
 
             s.append(self.PAM[i](x))
 
-
-        # o = s[0]
-        # for i in range(1,len(s)):
-        #     o +=  s[i]
             # Weighted sum of layer outputs
         s = torch.stack(s, dim=0)  # [N, B, L, D]
         w = F.softmax(self.layer_weights, dim=0)  # [N]

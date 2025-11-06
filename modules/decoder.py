@@ -24,17 +24,10 @@ class DecoderLayer(nn.Module):
         # m = hidden_states
         x, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
-        # print(f'**************x: {feats.shape},  hidden_states: {hidden_states.shape}. x0: {x0.shape}')
-
         x_img, x_img_attn = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
-        # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
-        x_con, x_con_attn = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        # reinforce linguistic grounding
-        # x_con = x_con + 0.1 * x
-        # print(f'---->>x2: {x2.shape}, concepts: {concepts.shape}')
-        # x = self.sublayer[3](x1, self.ff_1) + self.sublayer[4](x2, self.ff_2)
-        # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
+        x_con, x_con_attn = self.sublayer[2](x_img, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
+
         x_fused, alpha = self.gate_fusion(x, x_img, x_con)
         out = self.sublayer[3](x_fused, self.ff_1)
         return out, (alpha, x_img_attn, x_con_attn)
@@ -54,7 +47,7 @@ class Decoder(nn.Module):
             attn_maps.append(alpha)
             attn_img_all.append(attn_img)
             attn_con_all.append(attn_con)
-            
+
         attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
         attn_con_all = torch.stack(attn_con_all)
         return self.norm(x), (attn_maps, attn_img_all, attn_con_all)
