@@ -52,10 +52,10 @@ class MultiHeadedAttention(nn.Module):
             for l, x in zip(self.linears, (query, key, value))
         ]
 
-        x, _ = self.attention(query, key, value, mask=mask, dropout=self.dropout)
+        x, attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
         x = x.transpose(1, 2).reshape(nbatches, -1, self.h * self.d_k)
-        return self.linears[-1](x)
+        return self.linears[-1](x),attn
 
     def attention(self, query, key, value, mask=None, dropout=None):
         d_k = query.size(-1)

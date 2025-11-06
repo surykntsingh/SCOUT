@@ -5,12 +5,19 @@ import torch.nn.functional as F
 from modules.transformer import EncoderDecoder
 
 class ConceptEncoder(nn.Module):
-    def __init__(self, n_concepts, d_model, hidden=256):
+    def __init__(self, n_concepts, d_model, dropout, hidden=256):
         super().__init__()
         # Option A: per-concept learned embedding table (concept id -> vector)
         self.id_embed = nn.Embedding(n_concepts, d_model)
         # Projection from scalar activation (score) to scale per concept
-        self.score_proj = nn.Sequential(nn.Linear(1, d_model), nn.ReLU(), nn.Linear(d_model, d_model))
+        self.score_proj = nn.Sequential(
+            nn.Linear(1, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, d_model),
+            nn.Dropout(dropout),
+            nn.ReLU(),
+            nn.Linear(d_model, d_model)
+        )
         self.layernorm = nn.LayerNorm(d_model)
 
     def forward(self, scores):

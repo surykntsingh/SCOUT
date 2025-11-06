@@ -82,17 +82,32 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts):
+    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
+        _, attn_img, attn_con= attns
 
+        # --- Attention Regularization ---
+        # Mean over layers and heads
+        attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
+        attn_img_mean = attn_img.mean(dim=(0, 1, 2))
+        # (a) Sparsity regularization (entropy)
+        entropy = - (attn_con_mean * torch.log(attn_con_mean + 1e-8)).sum(-1).mean()
+
+        # (b) Balance regularization
+        balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
+
+        # Combine
+        lambda_entropy = 1e-3
+        lambda_balance = 5e-2
+        attn_reg = lambda_entropy * entropy + lambda_balance * balance
         with torch.no_grad():
             caption_magnitude = caption_loss.detach()
             concept_magnitude = concept_loss.detach() + 1e-8
             scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss + self.concept_lambda * concept_loss * scale
+        total_loss = caption_loss + self.concept_lambda * concept_loss * scale + attn_reg
         return total_loss,concept_loss
 
 
@@ -100,9 +115,9 @@ class ReportModel(pl.LightningModule):
         # print('train ---------->')
         gc.collect()
         _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        output,_, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+        output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
-        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts)
+        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
         # if batch_idx %1000==0:
@@ -118,9 +133,9 @@ class ReportModel(pl.LightningModule):
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
         with torch.no_grad():
-            output_,_,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
 
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
@@ -163,8 +178,8 @@ class ReportModel(pl.LightningModule):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_,_,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts)
+            output_,attn,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_

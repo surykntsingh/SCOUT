@@ -26,9 +26,9 @@ class DecoderLayer(nn.Module):
 
         # print(f'**************x: {feats.shape},  hidden_states: {hidden_states.shape}. x0: {x0.shape}')
 
-        x_img = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
+        x_img, x_img_attn = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
         # print(f'x1: {x1.shape}, concepts: {concepts.shape}')
-        x_con = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
+        x_con, x_con_attn = self.sublayer[2](x, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
         # reinforce linguistic grounding
         # x_con = x_con + 0.1 * x
@@ -37,7 +37,7 @@ class DecoderLayer(nn.Module):
         # print(f'---->>x: {x.shape}, concepts: {concepts.shape}')
         x_fused, alpha = self.gate_fusion(x, x_img, x_con)
         out = self.sublayer[3](x_fused, self.ff_1)
-        return out, alpha
+        return out, (alpha, x_img_attn, x_con_attn)
 
 class Decoder(nn.Module):
     def __init__(self, layer, feed_forward, N):
@@ -47,8 +47,12 @@ class Decoder(nn.Module):
 
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
         attn_maps = []
+        attn_img_all = []
+        attn_con_all = []
         for layer in self.layers:
-            x, alpha = layer(x, hidden_states, concepts, src_mask, tgt_mask)
+            x, (alpha, attn_img, attn_con) = layer(x, hidden_states, concepts, src_mask, tgt_mask)
             attn_maps.append(alpha)
+            attn_img_all.append(attn_img)
+            attn_con_all.append(attn_con)
 
-        return self.norm(x), attn_maps
+        return self.norm(x), (attn_maps, attn_img_all, attn_con_all)
