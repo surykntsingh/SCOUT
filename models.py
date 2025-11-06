@@ -27,7 +27,7 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd)
+        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         self.val_rouge = ROUGEScore()
         self.val_bleu = BLEUScore(n_gram=4)
@@ -133,7 +133,7 @@ class ReportModel(pl.LightningModule):
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-                self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
+                # self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
                 # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
                 self.__calculate_evaluate_metrics(pred_texts, target_texts)

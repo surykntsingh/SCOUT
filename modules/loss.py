@@ -16,13 +16,13 @@ class LanguageModelCriterion(nn.Module):
         return output
 
 class ConceptSupervisionHead(nn.Module):
-    def __init__(self, d_model, concept_dim):
+    def __init__(self, d_model, concept_dim,dropout):
         super().__init__()
         self.proj = nn.Sequential(
             nn.Linear(d_model, concept_dim),
-            # nn.ReLU(),
-            # nn.Dropout(0.2),
-            # nn.Linear(concept_dim, concept_dim)
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(concept_dim, concept_dim)
         )
 
         self.cosine = nn.CosineSimilarity(dim=-1)
