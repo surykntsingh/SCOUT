@@ -54,5 +54,7 @@ class Decoder(nn.Module):
             attn_maps.append(alpha)
             attn_img_all.append(attn_img)
             attn_con_all.append(attn_con)
-
+            
+        attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
+        attn_con_all = torch.stack(attn_con_all)
         return self.norm(x), (attn_maps, attn_img_all, attn_con_all)
