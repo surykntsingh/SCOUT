@@ -55,7 +55,7 @@ class MultiHeadedAttention(nn.Module):
         x, attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
 
         x = x.transpose(1, 2).reshape(nbatches, -1, self.h * self.d_k)
-        return self.linears[-1](x),attn
+        return self.linears[-1](x), attn
 
     def attention(self, query, key, value, mask=None, dropout=None):
         d_k = query.size(-1)
@@ -190,7 +190,7 @@ class CrossAttentionBlock(nn.Module):
         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
 
     def forward(self, x, concepts):
-        x2,_ = self.cross_attn(x, concepts, concepts)
+        x2, _ = self.cross_attn(x, concepts, concepts)
         return self.norm(x + self.ff(x2))
 
 

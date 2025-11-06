@@ -27,7 +27,7 @@ class SublayerConnection(nn.Module):
 
     def forward(self, x, sublayer):
         y = sublayer(self.norm(x))
-        if len(y) == 2:
+        if type(y)==tuple:
             return x + self.dropout(y[0]), y[1]
         else:
             return x + self.dropout(y)
