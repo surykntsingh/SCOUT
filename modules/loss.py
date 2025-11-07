@@ -20,7 +20,7 @@ class ConceptSupervisionHead(nn.Module):
         super().__init__()
         self.proj = nn.Sequential(
             nn.Linear(d_model, concept_dim),
-            nn.ReLU(),
+            # nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(concept_dim, concept_dim)
         )
