@@ -219,7 +219,7 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        pp = PAM(self.d_model)
+        pp = lambda x:x #PAM(self.d_model)
         mgf = MultiHeadGatedFusion(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
         model = Transformer(
