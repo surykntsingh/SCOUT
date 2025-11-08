@@ -24,7 +24,8 @@ class Transformer(nn.Module):
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
         encoded_tokens = self.encode(src,concepts, src_mask)
-        return self.decode(encoded_tokens, concepts, src_mask, tgt, tgt_mask),encoded_tokens
+        # print(f'returning encoded_tokens: {encoded_tokens}' )
+        return self.decode(encoded_tokens, concepts, src_mask, tgt, tgt_mask), encoded_tokens
 
     def encode(self, src,concepts, src_mask):
         # print(f'src: {src.shape}')
@@ -342,7 +343,7 @@ class EncoderDecoder(AttModel):
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
             att_feats, gc_feats, att_masks, report_ids
         )
-        out, concept_attn_maps, encoded_tokens = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
+        (out, concept_attn_maps), encoded_tokens = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
