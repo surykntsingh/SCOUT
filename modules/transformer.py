@@ -349,7 +349,7 @@ class EncoderDecoder(AttModel):
         outputs = F.log_softmax(self.logit(out), dim=-1)
         # print(f'outputs: {outputs}')
 
-        return outputs, concept_attn_maps, encoded_tokens
+        return outputs, concept_attn_maps, fc_feats
 
     def core(self, it, fc_feats_ph, att_feats_ph, memory, gc_feats, state, mask):
 

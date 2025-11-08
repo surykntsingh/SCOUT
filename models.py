@@ -119,7 +119,7 @@ class ReportModel(pl.LightningModule):
         _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
         output,attn, concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
-        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, enc_mm_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
         # if batch_idx %1000==0:
@@ -137,7 +137,7 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output_,attn,concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
 
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, enc_mm_tokens,gecko_concepts_acts, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
@@ -181,7 +181,7 @@ class ReportModel(pl.LightningModule):
 
         with torch.no_grad():
             output_,attn,concept_tokens, enc_mm_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, enc_mm_tokens, gecko_concepts_acts, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
