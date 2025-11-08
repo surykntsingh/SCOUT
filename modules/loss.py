@@ -47,12 +47,12 @@ class ConceptHead(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(d_model // 2, 1)  # one activation per concept
         )
-        self.adapter = nn.Sequential(
-            nn.Linear(d_model, concept_dim),
-        )
+        # self.adapter = nn.Sequential(
+        #     nn.Linear(d_model, concept_dim),
+        # )
 
     def forward(self, fused_concepts, target_concepts):
         # fused_concepts:
         preds = self.predictor(fused_concepts).squeeze(-1) # [B, seq, 1]
-        loss = F.mse_loss(self.adapter(preds), target_concepts)
+        loss = F.mse_loss(preds, target_concepts)
         return loss
