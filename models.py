@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
-from modules.loss import LanguageModelCriterion, ConceptSupervisionHead
+from modules.loss import LanguageModelCriterion, ConceptSupervisionHead, ConceptHead
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
@@ -27,7 +27,7 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptHead(args.d_model, args.gcd, args.dropout_mlp)
 
         self.val_rouge = ROUGEScore()
         self.val_bleu = BLEUScore(n_gram=4)
@@ -82,14 +82,11 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
-        language_criterion = LanguageModelCriterion()
-        caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
-        _, attn_img, attn_con= attns
-
-        # --- Attention Regularization ---
+    def get_attn_regularization(self, attns, lambda_entropy = 1e-3, lambda_balance = 5e-2):
+        # Attention Regularization
+        _, attn_img, attn_con = attns
         # Mean over layers and heads
+
         attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
         attn_img_mean = attn_img.mean(dim=(0, 1, 2))
         # (a) Sparsity regularization (entropy)
@@ -98,10 +95,15 @@ class ReportModel(pl.LightningModule):
         # (b) Balance regularization
         balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
 
-        # Combine
-        lambda_entropy = 1e-3
-        lambda_balance = 5e-2
-        attn_reg = lambda_entropy * entropy + lambda_balance * balance
+        return lambda_entropy * entropy + lambda_balance * balance
+
+    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
+        language_criterion = LanguageModelCriterion()
+        caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
+        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
+
+        attn_reg = self.get_attn_regularization(attns)
+
         with torch.no_grad():
             caption_magnitude = caption_loss.detach()
             concept_magnitude = concept_loss.detach() + 1e-8
@@ -115,7 +117,7 @@ class ReportModel(pl.LightningModule):
         # print('train ---------->')
         gc.collect()
         _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+        output,attn, concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -133,9 +135,9 @@ class ReportModel(pl.LightningModule):
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
         with torch.no_grad():
-            output_,attn,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn,concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
 
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, enc_mm_tokens,gecko_concepts_acts, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
@@ -143,7 +145,7 @@ class ReportModel(pl.LightningModule):
 
         if batch_idx % 10==0:
             with torch.no_grad():
-                output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps, _,_ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
@@ -178,7 +180,7 @@ class ReportModel(pl.LightningModule):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_,attn,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn,concept_tokens, enc_mm_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
             loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -186,7 +188,7 @@ class ReportModel(pl.LightningModule):
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+            output,concept_attn_maps, _, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]

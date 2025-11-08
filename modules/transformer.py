@@ -23,7 +23,8 @@ class Transformer(nn.Module):
 
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(src,concepts, src_mask), concepts, src_mask, tgt, tgt_mask)
+        encoded_tokens = self.encode(src,concepts, src_mask)
+        return self.decode(encoded_tokens, concepts, src_mask, tgt, tgt_mask),encoded_tokens
 
     def encode(self, src,concepts, src_mask):
         # print(f'src: {src.shape}')
@@ -182,7 +183,7 @@ class PAM_(nn.Module):
 
         return x
 
-class CrossAttentionBlock(nn.Module):
+class ConceptFusionBlock(nn.Module):
     def __init__(self, n_heads,d_model, dropout):
         super().__init__()
         self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
@@ -191,8 +192,9 @@ class CrossAttentionBlock(nn.Module):
 
     def forward(self, x, concepts):
         x2, _ = self.cross_attn(x, concepts, concepts)
-        return self.norm(x + self.ff(x2))
-
+        c2, _ = self.cross_attn(concepts, x, x)
+        x_fused = self.norm(x + self.ff(x2 + c2))
+        return x_fused
 
 
 class EncoderDecoder(AttModel):
@@ -221,7 +223,7 @@ class EncoderDecoder(AttModel):
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = lambda x:x #PAM(self.d_model)
         mgf = MultiHeadGatedFusion(self.d_model, self.num_heads, dropout=self.dropout)
-        concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
+        concept_fusion = ConceptFusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
         model = Transformer(
             Encoder(
                 EncoderLayer(
@@ -339,13 +341,13 @@ class EncoderDecoder(AttModel):
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
             att_feats, gc_feats, att_masks, report_ids
         )
-        out, concept_attn_maps = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
+        out, concept_attn_maps, encoded_tokens = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
         # print(f'outputs: {outputs}')
 
-        return outputs, concept_attn_maps
+        return outputs, concept_attn_maps, encoded_tokens
 
     def core(self, it, fc_feats_ph, att_feats_ph, memory, gc_feats, state, mask):
 

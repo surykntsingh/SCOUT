@@ -37,3 +37,22 @@ class ConceptSupervisionHead(nn.Module):
         gecko_norm = F.normalize(gecko_concepts, dim=-1)
         # print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
         return 1 - self.cosine(pred_norm, gecko_norm).mean()
+
+class ConceptHead(nn.Module):
+    def __init__(self, d_model, concept_dim,dropout):
+        super().__init__()
+        self.predictor = nn.Sequential(
+            nn.Linear(d_model, d_model // 2),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model // 2, 1)  # one activation per concept
+        )
+        self.adapter = nn.Sequential(
+            nn.Linear(d_model, concept_dim),
+        )
+
+    def forward(self, fused_concepts, target_concepts):
+        # fused_concepts:
+        preds = self.predictor(fused_concepts).squeeze(-1) # [B, seq, 1]
+        loss = F.mse_loss(preds, target_concepts)
+        return loss

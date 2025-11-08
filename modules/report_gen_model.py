@@ -126,9 +126,10 @@ class ReportGenModel(nn.Module):
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
         attn_gc = self.concept_encoder(attn_gc)
+        encoded_mm_tokens =None
 
         if mode == 'train':
-            output, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
+            output, concept_attn_maps, encoded_mm_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
         elif mode == 'sample':
             output, _, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
         elif mode == 'encode':
@@ -141,4 +142,4 @@ class ReportGenModel(nn.Module):
         else:
             raise ValueError
 
-        return output, concept_attn_maps, attn_gc
+        return output, concept_attn_maps, attn_gc, encoded_mm_tokens
