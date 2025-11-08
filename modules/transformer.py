@@ -24,7 +24,7 @@ class Transformer(nn.Module):
 
     def forward(self, src, concepts, tgt, src_mask, tgt_mask):
         encoded_tokens = self.encode(src,concepts, src_mask)
-        # print(f'returning encoded_tokens: {encoded_tokens}' )
+        print(f'returning encoded_tokens: {encoded_tokens.shape}' )
         return self.decode(encoded_tokens, concepts, src_mask, tgt, tgt_mask), encoded_tokens
 
     def encode(self, src,concepts, src_mask):
