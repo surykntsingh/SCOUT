@@ -29,7 +29,8 @@ class Encoder(nn.Module):
         s = torch.stack(s, dim=0)  # [N, B, L, D]
         w = F.softmax(self.layer_weights, dim=0)  # [N]
         o = (w[:, None, None, None] * s).sum(0)  # [B, L, D]
-
+        
+        print(f'o: {o.shape}')
         return self.norm(o)
 
 
