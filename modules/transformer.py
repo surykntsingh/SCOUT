@@ -191,9 +191,10 @@ class ConceptFusionBlock(nn.Module):
         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
 
     def forward(self, x, concepts):
-        x2, _ = self.cross_attn(x, concepts, concepts)
+        x2, attn_x2c = self.cross_attn(x, concepts, concepts)
         c2, _ = self.cross_attn(concepts, x, x)
-        x_fused = self.norm(x + self.ff(x2 + c2))
+        c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
+        x_fused = self.norm(x + self.ff(x2 + c2_to_x))
         return x_fused
 
 

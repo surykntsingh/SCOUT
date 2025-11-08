@@ -54,5 +54,5 @@ class ConceptHead(nn.Module):
     def forward(self, fused_concepts, target_concepts):
         # fused_concepts:
         preds = self.predictor(fused_concepts).squeeze(-1) # [B, seq, 1]
-        loss = F.mse_loss(preds, target_concepts)
+        loss = F.mse_loss(self.adapter(preds), target_concepts)
         return loss
