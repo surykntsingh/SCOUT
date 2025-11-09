@@ -15,28 +15,28 @@ class LanguageModelCriterion(nn.Module):
 
         return output
 
-class ConceptSupervisionHead(nn.Module):
-    def __init__(self, d_model, concept_dim,dropout):
-        super().__init__()
-        self.proj = nn.Sequential(
-            nn.Linear(d_model, concept_dim),
-            # nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(concept_dim, concept_dim)
-        )
-
-        self.cosine = nn.CosineSimilarity(dim=-1)
-
-    def forward(self, decoder_out, gecko_concepts):
-        # decoder_out: (batch, seq_len, d_model)
-        # gecko_concepts: (batch, num_concepts, concept_dim)
-
-        pred = self.proj(decoder_out)  # mean over tokens
-        # gecko_mean = gecko_concepts.mean(dim=1)
-        pred_norm = F.normalize(pred, dim=-1)
-        gecko_norm = F.normalize(gecko_concepts, dim=-1)
-        # print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
-        return 1 - self.cosine(pred_norm, gecko_norm).mean()
+# class ConceptSupervisionHead(nn.Module):
+#     def __init__(self, d_model, concept_dim,dropout):
+#         super().__init__()
+#         self.proj = nn.Sequential(
+#             nn.Linear(d_model, concept_dim),
+#             # nn.ReLU(),
+#             nn.Dropout(dropout),
+#             nn.Linear(concept_dim, concept_dim)
+#         )
+#
+#         self.cosine = nn.CosineSimilarity(dim=-1)
+#
+#     def forward(self, decoder_out, gecko_concepts):
+#         # decoder_out: (batch, seq_len, d_model)
+#         # gecko_concepts: (batch, num_concepts, concept_dim)
+#
+#         pred = self.proj(decoder_out)  # mean over tokens
+#         # gecko_mean = gecko_concepts.mean(dim=1)
+#         pred_norm = F.normalize(pred, dim=-1)
+#         gecko_norm = F.normalize(gecko_concepts, dim=-1)
+#         # print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
+#         return 1 - self.cosine(pred_norm, gecko_norm).mean()
 
 class ConceptHead(nn.Module):
     def __init__(self, d_model, concept_dim,dropout):

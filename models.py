@@ -82,7 +82,7 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def get_attn_regularization(self, attns, lambda_entropy = 1e-2, lambda_balance = 5e-2):
+    def get_attn_regularization(self, attns, lambda_entropy = 1e-3, lambda_balance = 5e-2):
         # Attention Regularization
         _, attn_img, attn_con = attns
         # Mean over layers and heads
@@ -151,21 +151,21 @@ class ReportModel(pl.LightningModule):
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 # self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-                # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-                # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
+                gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+                preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
                 self.__calculate_evaluate_metrics(pred_texts, target_texts)
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
                 bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-                # coco_metrics = compute_coco_scores(preds, gts)
+                coco_metrics = compute_coco_scores(preds, gts)
 
 
                 # self.reg_scores.append(reg)
                 for metric in self.reg_metrics:
                     self.reg_metrics[metric].append(float(metrics[metric]))
 
-                # for metric in self.coco_metrics:
-                #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
+                for metric in self.coco_metrics:
+                    self.coco_metrics[metric].append(float(coco_metrics[metric]))
 
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -193,8 +193,8 @@ class ReportModel(pl.LightningModule):
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-            # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-            # preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
+            gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+            preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
 
             if batch_idx % 100 == 0:
                 self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
@@ -209,12 +209,12 @@ class ReportModel(pl.LightningModule):
                 )
 
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            # coco_metrics = compute_coco_scores(gts, preds)
+            coco_metrics = compute_coco_scores(gts, preds)
             for metric in self.reg_metrics:
                 self.reg_metrics[metric].append(float(metrics[metric]))
 
-            # for metric in self.coco_metrics:
-            #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
+            for metric in self.coco_metrics:
+                self.coco_metrics[metric].append(float(coco_metrics[metric]))
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
@@ -248,12 +248,17 @@ class ReportModel(pl.LightningModule):
             self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
             self.reg_metrics[metric].clear()
 
-        print(self.evaluate_metric_scores)
+        # print(self.evaluate_metric_scores)
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'val_e_{metric}', metric_score, on_epoch=False, prog_bar=False, sync_dist=True)
+            print(f'val_e_{metric}, metric_score: {metric_score}')
             self.evaluate_metric_scores[metric].clear()
 
+        for metric in self.coco_metrics:
+            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
+            self.log(f'val_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
 
     def on_test_epoch_end(self):
         # print(self.meteor_scores)
@@ -268,8 +273,14 @@ class ReportModel(pl.LightningModule):
 
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
+            print(f'test_e_{metric}, metric_score: {metric_score}')
             self.evaluate_metric_scores[metric].clear()
+
+        for metric in self.coco_metrics:
+            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
+            self.log(f'test_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
@@ -294,6 +305,13 @@ class ReportModel(pl.LightningModule):
         print('*' * 100)
 
     def __calculate_evaluate_metrics(self, pred_texts, target_texts):
+        pred_texts = list(map(lambda x: 'placeholder' if x.strip()=='' else x, pred_texts))
+        for metric in self.evaluate_metric_scores:
+            self.evaluate_metric_scores[metric].append(
+                self.evaluate_metrics[metric](pred_texts, target_texts)
+            )
+
+    def __calculate_pycococevalcap_metrics(self, pred_texts, target_texts):
         pred_texts = list(map(lambda x: 'placeholder' if x.strip()=='' else x, pred_texts))
         for metric in self.evaluate_metric_scores:
             self.evaluate_metric_scores[metric].append(
