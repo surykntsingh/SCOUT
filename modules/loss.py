@@ -53,7 +53,7 @@ class ConceptHead(nn.Module):
 
     def forward(self, fused_concepts, target_concepts):
         # fused_concepts:
-        print(f'fused_concepts: {fused_concepts.shape}')
+        # print(f'fused_concepts: {fused_concepts.shape}')
         preds = self.proj(fused_concepts).squeeze(-1) # [B, seq, 1]
 
         # print(f'preds: {preds.shape}, target_concepts: {target_concepts.shape}')
