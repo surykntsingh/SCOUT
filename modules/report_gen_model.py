@@ -125,7 +125,7 @@ class ReportGenModel(nn.Module):
         patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
-        attn_gc = self.concept_encoder(emb_gc)
+        attn_gc = self.concept_encoder(attn_gc)
         encoded_mm_tokens =None
 
         if mode == 'train':
