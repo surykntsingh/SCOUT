@@ -82,7 +82,7 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def get_attn_regularization(self, attns, lambda_entropy = 1e-3, lambda_balance = 5e-2):
+    def get_attn_regularization(self, attns, lambda_entropy = 1e-2, lambda_balance = 5e-2):
         # Attention Regularization
         _, attn_img, attn_con = attns
         # Mean over layers and heads
