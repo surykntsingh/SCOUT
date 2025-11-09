@@ -41,11 +41,11 @@ class ConceptSupervisionHead(nn.Module):
 class ConceptHead(nn.Module):
     def __init__(self, d_model, concept_dim,dropout):
         super().__init__()
-        self.predictor = nn.Sequential(
-            nn.Linear(d_model, d_model // 2),
+        self.proj = nn.Sequential(
+            nn.Linear(d_model, concept_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(d_model // 2, 1)  # one activation per concept
+            nn.Linear(concept_dim, concept_dim)
         )
         # self.adapter = nn.Sequential(
         #     nn.Linear(d_model, concept_dim),
@@ -54,7 +54,7 @@ class ConceptHead(nn.Module):
     def forward(self, fused_concepts, target_concepts):
         # fused_concepts:
         print(f'fused_concepts: {fused_concepts.shape}')
-        preds = self.predictor(fused_concepts).squeeze(-1) # [B, seq, 1]
+        preds = self.proj(fused_concepts).squeeze(-1) # [B, seq, 1]
 
         # print(f'preds: {preds.shape}, target_concepts: {target_concepts.shape}')
         loss = F.mse_loss(preds, target_concepts)
