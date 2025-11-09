@@ -70,13 +70,13 @@ class AttModel(CaptionModel):
         # 'it' contains a word index
         xt = self.embed(it)
 
-        output, state, concept_attn_maps = self.core(xt, fc_feats, att_feats, p_att_feats, gc_feats, state, att_masks)
+        output, state, concept_attn_maps, encoded_tokens = self.core(xt, fc_feats, att_feats, p_att_feats, gc_feats, state, att_masks)
         if output_logsoftmax:
             logprobs = F.log_softmax(self.logit(output), dim=1)
         else:
             logprobs = self.logit(output)
 
-        return logprobs, state, concept_attn_maps
+        return logprobs, state, concept_attn_maps, encoded_tokens
 
     def _sample_beam(self, fc_feats, att_feats, gc_feats, att_masks=None, meshes=None, opt=None):
         beam_size = opt.get('beam_size', 10)
@@ -99,7 +99,7 @@ class AttModel(CaptionModel):
 
         # first step, feed bos
         it = fc_feats.new_full([batch_size], self.bos_idx, dtype=torch.long)
-        logprobs, state, concept_attn_maps = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state, gc_feats=gc_feats)
+        logprobs, state, concept_attn_maps, encoded_tokens = self.get_logprobs_state(it, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, state, gc_feats=gc_feats)
 
         p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
@@ -121,7 +121,7 @@ class AttModel(CaptionModel):
                 seqLogprobs[k, :seq_len] = done_beams[k][0]['logps']
         del done_beams
         # return the samples and their log likelihoods
-        return seq, seqLogprobs, concept_attn_maps
+        return seq, seqLogprobs, concept_attn_maps, encoded_tokens
 
     def _sample(self, fc_feats, att_feats, gc_feats, meshes=None, att_masks=None):
         opt = self.args.__dict__

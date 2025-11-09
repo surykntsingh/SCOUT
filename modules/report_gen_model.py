@@ -130,7 +130,7 @@ class ReportGenModel(nn.Module):
         if mode == 'train':
             output, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
         elif mode == 'sample':
-            (output, _), concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
+            output, _, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
         elif mode == 'encode':
             output = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='encode')
 
