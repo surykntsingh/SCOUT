@@ -117,7 +117,7 @@ class ReportModel(pl.LightningModule):
         # print('train ---------->')
         gc.collect()
         _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        output,attn, concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+        output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -135,7 +135,7 @@ class ReportModel(pl.LightningModule):
         # print(
         #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
         with torch.no_grad():
-            output_,attn,concept_tokens, enc_mm_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
 
             loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -145,7 +145,7 @@ class ReportModel(pl.LightningModule):
 
         if batch_idx % 10==0:
             with torch.no_grad():
-                output, concept_attn_maps, _,_ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
                 # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
@@ -180,7 +180,7 @@ class ReportModel(pl.LightningModule):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_,attn,concept_tokens, enc_mm_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
             loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -188,7 +188,7 @@ class ReportModel(pl.LightningModule):
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output,concept_attn_maps, _, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
             pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -226,7 +226,7 @@ class ReportModel(pl.LightningModule):
     def predict_step(self, batch):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts = batch
         with torch.no_grad():
-            output = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
+            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
