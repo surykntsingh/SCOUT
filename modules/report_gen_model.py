@@ -12,10 +12,10 @@ class ConceptEncoder(nn.Module):
         # Projection from scalar activation (score) to scale per concept
         self.score_proj = nn.Sequential(
             nn.Linear(1, d_model),
-            # nn.ReLU(),
-            # nn.Linear(hidden, d_model),
+            nn.ReLU(),
+            nn.Linear(hidden, d_model),
             nn.Dropout(dropout),
-            # nn.ReLU(),
+            nn.ReLU(),
             nn.Linear(d_model, d_model)
         )
         self.layernorm = nn.LayerNorm(d_model)
