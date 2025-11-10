@@ -27,9 +27,7 @@ class Meteor:
                 cwd=os.path.dirname(os.path.abspath(__file__)), \
                 stdin=subprocess.PIPE, \
                 stdout=subprocess.PIPE, \
-                stderr=subprocess.PIPE,
-                universal_newlines = True,
-                bufsize = 1)
+                stderr=subprocess.PIPE, env=d)
         # Used to guarantee thread safety
         self.lock = threading.Lock()
 
