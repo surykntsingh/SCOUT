@@ -251,7 +251,7 @@ class ReportModel(pl.LightningModule):
         # print(self.evaluate_metric_scores)
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'val_e_{metric}', metric_score, on_epoch=False, prog_bar=False, sync_dist=True)
+            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             print(f'val_e_{metric}, metric_score: {metric_score}')
             self.evaluate_metric_scores[metric].clear()
 
