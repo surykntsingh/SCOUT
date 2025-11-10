@@ -1,9 +1,9 @@
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.meteor.meteor import Meteor
-from pycocoevalcap.rouge.rouge import Rouge
+# from pycocoevalcap.bleu.bleu import Bleu
+# from pycocoevalcap.meteor.meteor import Meteor
+# from pycocoevalcap.rouge.rouge import Rouge
 import spacy
 
 from typing import List, Tuple
