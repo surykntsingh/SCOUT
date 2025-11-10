@@ -224,12 +224,12 @@ class ReportModel(pl.LightningModule):
     def predict_step(self, batch):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts = batch
         with torch.no_grad():
-            output = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
+            output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
         self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-
+        print(concept_attn_maps[0])
         del output
         return slide_ids,pred_texts
 
