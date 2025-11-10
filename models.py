@@ -4,7 +4,7 @@ import os
 import torch
 import pytorch_lightning as pl
 from torchmetrics.text.rouge import ROUGEScore
-from torchmetrics.text.bleu import BLEUScore
+# from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
 from modules.loss import LanguageModelCriterion, ConceptHead
@@ -30,9 +30,9 @@ class ReportModel(pl.LightningModule):
         self.concept_supervision_head = ConceptHead(args.d_model, args.gcd, args.dropout_mlp)
 
         self.val_rouge = ROUGEScore()
-        self.val_bleu = BLEUScore(n_gram=4)
+        # self.val_bleu = BLEUScore(n_gram=4)
         self.test_rouge = ROUGEScore()
-        self.test_bleu = BLEUScore(n_gram=4)
+        # self.test_bleu = BLEUScore(n_gram=4)
         # self.bleu_2 = BLEUScore(n_gram=2)
         # self.bleu_3 = BLEUScore(n_gram=3)
         # self.bleu_4 = BLEUScore(n_gram=4)
@@ -155,7 +155,7 @@ class ReportModel(pl.LightningModule):
                 preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
                 self.__calculate_evaluate_metrics(pred_texts, target_texts)
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                bleu_score1 = self.val_bleu(pred_texts, target_texts)
+                # bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
                 coco_metrics = compute_coco_scores(preds, gts)
 
@@ -168,7 +168,7 @@ class ReportModel(pl.LightningModule):
                     self.coco_metrics[metric].append(float(coco_metrics[metric]))
 
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
                 gc.collect()
@@ -200,7 +200,7 @@ class ReportModel(pl.LightningModule):
                 self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-            bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
+            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
 
             for metric in self.evaluate_metric_scores:
@@ -216,7 +216,7 @@ class ReportModel(pl.LightningModule):
             for metric in self.coco_metrics:
                 self.coco_metrics[metric].append(float(coco_metrics[metric]))
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=Fa, sync_dist=True)
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
             gc.collect()
@@ -245,7 +245,7 @@ class ReportModel(pl.LightningModule):
 
         for metric in self.reg_metrics:
             metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             self.reg_metrics[metric].clear()
 
         # print(self.evaluate_metric_scores)
@@ -268,7 +268,7 @@ class ReportModel(pl.LightningModule):
 
         for metric in self.reg_metrics:
             metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             self.reg_metrics[metric].clear()
 
         for metric in self.evaluate_metric_scores:
