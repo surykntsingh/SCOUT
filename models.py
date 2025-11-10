@@ -229,7 +229,7 @@ class ReportModel(pl.LightningModule):
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
         self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-        print(concept_attn_maps[0])
+        print(concept_attn_maps[0].shape)
         del output
         return slide_ids,pred_texts
 
