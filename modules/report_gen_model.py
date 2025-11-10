@@ -11,7 +11,7 @@ class ConceptEncoder(nn.Module):
         self.id_embed = nn.Embedding(n_concepts, d_model)
         # Projection from scalar activation (score) to scale per concept
         self.score_proj = nn.Sequential(
-            nn.Linear(1, d_model),
+            nn.Linear(1, hidden),
             nn.ReLU(),
             nn.Linear(hidden, d_model),
             nn.Dropout(dropout),
