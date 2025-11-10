@@ -121,7 +121,7 @@ class AttModel(CaptionModel):
                 seqLogprobs[k, :seq_len] = done_beams[k][0]['logps']
         del done_beams
         # return the samples and their log likelihoods
-        return seq, seqLogprobs, concept_attn_maps
+        return seq, seqLogprobs, concept_attn_maps, concept_tokens
 
     def _sample(self, fc_feats, att_feats, gc_feats, meshes=None, att_masks=None):
         opt = self.args.__dict__
