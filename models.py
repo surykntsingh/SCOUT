@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
-from modules.loss import LanguageModelCriterion, ConceptSupervisionHead
+from modules.loss import LanguageModelCriterion, ConceptSupervisionHead, ConceptHead
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
@@ -27,17 +27,10 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptHead(args.d_model, args.gcd, args.dropout_mlp)
 
         self.val_rouge = ROUGEScore()
-        self.val_bleu = BLEUScore(n_gram=4)
         self.test_rouge = ROUGEScore()
-        self.test_bleu = BLEUScore(n_gram=4)
-        # self.bleu_2 = BLEUScore(n_gram=2)
-        # self.bleu_3 = BLEUScore(n_gram=3)
-        # self.bleu_4 = BLEUScore(n_gram=4)
-        self.val_meteor = evaluate.load("meteor")
-        self.test_meteor = evaluate.load("meteor")
 
         bleu = evaluate.load("bleu")
         rouge = evaluate.load("rouge")
@@ -82,14 +75,11 @@ class ReportModel(pl.LightningModule):
 
         # print(f'self.reports: {self.reports.keys()}')
 
-    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
-        language_criterion = LanguageModelCriterion()
-        caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
-        _, attn_img, attn_con= attns
-
-        # --- Attention Regularization ---
+    def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
+        # Attention Regularization
+        _, attn_img, attn_con = attns
         # Mean over layers and heads
+
         attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
         attn_img_mean = attn_img.mean(dim=(0, 1, 2))
         # (a) Sparsity regularization (entropy)
@@ -98,17 +88,21 @@ class ReportModel(pl.LightningModule):
         # (b) Balance regularization
         balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
 
-        # Combine
-        lambda_entropy = 1e-3
-        lambda_balance = 5e-2
-        attn_reg = lambda_entropy * entropy + lambda_balance * balance
+        return lambda_entropy * entropy + lambda_balance * balance
+
+    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
+        language_criterion = LanguageModelCriterion()
+        caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
+        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
+        attn_reg = self.get_attn_regularization(attns)
+
         with torch.no_grad():
             caption_magnitude = caption_loss.detach()
             concept_magnitude = concept_loss.detach() + 1e-8
             scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
         total_loss = caption_loss + self.concept_lambda * concept_loss * scale + attn_reg
-        return total_loss,concept_loss
+        return total_loss, concept_loss
 
 
     def training_step(self, batch, batch_idx):
@@ -149,24 +143,24 @@ class ReportModel(pl.LightningModule):
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 # self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-                # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-                # preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
+                gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+                preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
                 self.__calculate_evaluate_metrics(pred_texts, target_texts)
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                bleu_score1 = self.val_bleu(pred_texts, target_texts)
+                # bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-                # coco_metrics = compute_coco_scores(preds, gts)
+                coco_metrics = compute_coco_scores(preds, gts)
 
 
                 # self.reg_scores.append(reg)
                 for metric in self.reg_metrics:
                     self.reg_metrics[metric].append(float(metrics[metric]))
 
-                # for metric in self.coco_metrics:
-                #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
+                for metric in self.coco_metrics:
+                    self.coco_metrics[metric].append(float(coco_metrics[metric]))
 
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
                 gc.collect()
@@ -191,14 +185,14 @@ class ReportModel(pl.LightningModule):
 
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
-            # gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-            # preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
+            gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
+            preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
 
             if batch_idx % 100 == 0:
                 self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
             rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-            bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
+            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
 
             for metric in self.evaluate_metric_scores:
@@ -207,14 +201,14 @@ class ReportModel(pl.LightningModule):
                 )
 
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            # coco_metrics = compute_coco_scores(gts, preds)
+            coco_metrics = compute_coco_scores(gts, preds)
             for metric in self.reg_metrics:
                 self.reg_metrics[metric].append(float(metrics[metric]))
 
-            # for metric in self.coco_metrics:
-            #     self.coco_metrics[metric].append(float(coco_metrics[metric]))
+            for metric in self.coco_metrics:
+                self.coco_metrics[metric].append(float(coco_metrics[metric]))
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=Fa, sync_dist=True)
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
             gc.collect()
@@ -224,7 +218,7 @@ class ReportModel(pl.LightningModule):
     def predict_step(self, batch):
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts = batch
         with torch.no_grad():
-            output = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
+            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 
@@ -243,31 +237,38 @@ class ReportModel(pl.LightningModule):
 
         for metric in self.reg_metrics:
             metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             self.reg_metrics[metric].clear()
 
-        print(self.evaluate_metric_scores)
+        # print(self.evaluate_metric_scores)
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
+            print(f'val_e_{metric}, metric_score: {metric_score}')
             self.evaluate_metric_scores[metric].clear()
 
+        for metric in self.coco_metrics:
+            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
+            self.log(f'val_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
 
     def on_test_epoch_end(self):
-        # print(self.meteor_scores)
-        # meteor_score = sum(self.evaluate_metric_scores) / len(self.evaluate_metric_scores)
-        # self.log('test_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        # self.evaluate_metric_scores.clear()
 
         for metric in self.reg_metrics:
             metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             self.reg_metrics[metric].clear()
 
         for metric in self.evaluate_metric_scores:
             metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
+            print(f'test_e_{metric}, metric_score: {metric_score}')
             self.evaluate_metric_scores[metric].clear()
+
+        for metric in self.coco_metrics:
+            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
+            self.log(f'test_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
+            self.coco_metrics[metric].clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())

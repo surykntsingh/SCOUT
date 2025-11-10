@@ -128,9 +128,9 @@ class ReportGenModel(nn.Module):
         attn_gc = self.concept_encoder(attn_gc)
 
         if mode == 'train':
-            output, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
+            output, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
         elif mode == 'sample':
-            output, _, concept_attn_maps = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
+            output, _, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
         elif mode == 'encode':
             output = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='encode')
 
@@ -141,4 +141,4 @@ class ReportGenModel(nn.Module):
         else:
             raise ValueError
 
-        return output, concept_attn_maps, attn_gc
+        return output, concept_attn_maps, concept_tokens

@@ -30,7 +30,8 @@ class Transformer(nn.Module):
         return self.encoder(self.src_embed(src), src_mask, self.concept_embed(concepts))
 
     def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), hidden_states, self.concept_embed(concepts), src_mask, tgt_mask)
+        concepts = self.concept_embed(concepts)
+        return self.decoder(self.tgt_embed(tgt), hidden_states, concepts, src_mask, tgt_mask), concepts
 
 
 class MultiHeadedAttention(nn.Module):
@@ -190,8 +191,11 @@ class CrossAttentionBlock(nn.Module):
         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
 
     def forward(self, x, concepts):
-        x2, _ = self.cross_attn(x, concepts, concepts)
-        return self.norm(x + self.ff(x2))
+        x2, attn_x2c = self.cross_attn(x, concepts, concepts)
+        c2, _ = self.cross_attn(concepts, x, x)
+        c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
+        x_fused = self.norm(x + self.ff(x2 + c2_to_x))
+        return x_fused
 
 
 
@@ -339,13 +343,13 @@ class EncoderDecoder(AttModel):
         att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
             att_feats, gc_feats, att_masks, report_ids
         )
-        out, concept_attn_maps = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
+        (out, concept_attn_maps), concept_tokens = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
         # print(f'outputs: {outputs}')
 
-        return outputs, concept_attn_maps
+        return outputs, concept_attn_maps, concept_tokens
 
     def core(self, it, fc_feats_ph, att_feats_ph, memory, gc_feats, state, mask):
 
@@ -353,8 +357,8 @@ class EncoderDecoder(AttModel):
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        out, concept_attn_maps = self.model.decode(memory, gc_feats, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
-        return out[:, -1], [ys.unsqueeze(0)], concept_attn_maps
+        (out, concept_attn_maps), concept_tokens = self.model.decode(memory, gc_feats, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
+        return out[:, -1], [ys.unsqueeze(0)], concept_attn_maps, concept_tokens
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
 
