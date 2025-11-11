@@ -256,7 +256,7 @@ class EncoderDecoder(AttModel):
             nn.Sequential(
                 nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
                 nn.LayerNorm(self.d_model),
-                nn.ReLU(),
+                # nn.ReLU(),
                 nn.Dropout(self.dropout)
                 # no positional encoding, concepts are unordered
             )
