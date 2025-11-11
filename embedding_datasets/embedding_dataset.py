@@ -94,10 +94,10 @@ class EmbeddingPredictDataset(Dataset):
     def __getitem__(self, idx):
         slide_id = self.__slides[idx]
         with h5py.File(f'{self.__embeddings_path}/{slide_id}.h5', "r") as h5_file:
-            coords_np = h5_file["coords"][:]
+            # coords_np = h5_file["coords"][:]
             embeddings_np = h5_file["features"][:]
 
-            coords = torch.tensor(coords_np).float()
+            # coords = torch.tensor(coords_np).float()
             embedding1 = torch.tensor(embeddings_np).unsqueeze(0)
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:

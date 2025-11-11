@@ -27,7 +27,7 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
-        self.concept_supervision_head = ConceptHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         self.val_rouge = ROUGEScore()
         self.test_rouge = ROUGEScore()
@@ -101,7 +101,7 @@ class ReportModel(pl.LightningModule):
             concept_magnitude = concept_loss.detach() + 1e-8
             scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss # + self.concept_lambda * concept_loss * scale + attn_reg
+        total_loss = caption_loss  + self.concept_lambda * concept_loss * scale + attn_reg
         return total_loss, concept_loss
 
 
