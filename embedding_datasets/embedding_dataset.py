@@ -113,7 +113,6 @@ class EmbeddingPredictDataset(Dataset):
             emb_g = torch.tensor(bag_feats_deep_np).unsqueeze(0)
             emb_gc = torch.tensor(bag_feats_np)
             attn_gc = torch.tensor(bag_feat_attn_np)
-
         return slide_id, embedding1, embedding2, emb_g, emb_gc, attn_gc
 
 

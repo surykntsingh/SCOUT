@@ -145,7 +145,7 @@ class ReportModel(pl.LightningModule):
                 # self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
                 gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
                 preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
-                self.__calculate_evaluate_metrics(pred_texts, target_texts)
+                # self.__calculate_evaluate_metrics(pred_texts, target_texts)
                 rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
                 # bleu_score1 = self.val_bleu(pred_texts, target_texts)
                 metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
@@ -195,10 +195,10 @@ class ReportModel(pl.LightningModule):
             # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
             # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
 
-            for metric in self.evaluate_metric_scores:
-                self.evaluate_metric_scores[metric].append(
-                    self.evaluate_metrics[metric](pred_texts, target_texts)
-                )
+            # for metric in self.evaluate_metric_scores:
+            #     self.evaluate_metric_scores[metric].append(
+            #         self.evaluate_metrics[metric](pred_texts, target_texts)
+            #     )
 
             metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
             coco_metrics = compute_coco_scores(gts, preds)
@@ -241,11 +241,11 @@ class ReportModel(pl.LightningModule):
             self.reg_metrics[metric].clear()
 
         # print(self.evaluate_metric_scores)
-        for metric in self.evaluate_metric_scores:
-            metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-            print(f'val_e_{metric}, metric_score: {metric_score}')
-            self.evaluate_metric_scores[metric].clear()
+        # for metric in self.evaluate_metric_scores:
+        #     metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
+        #     self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
+        #     print(f'val_e_{metric}, metric_score: {metric_score}')
+        #     self.evaluate_metric_scores[metric].clear()
 
         for metric in self.coco_metrics:
             metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
@@ -259,11 +259,11 @@ class ReportModel(pl.LightningModule):
             self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
             self.reg_metrics[metric].clear()
 
-        for metric in self.evaluate_metric_scores:
-            metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-            self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-            print(f'test_e_{metric}, metric_score: {metric_score}')
-            self.evaluate_metric_scores[metric].clear()
+        # for metric in self.evaluate_metric_scores:
+        #     metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
+        #     self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
+        #     print(f'test_e_{metric}, metric_score: {metric_score}')
+        #     self.evaluate_metric_scores[metric].clear()
 
         for metric in self.coco_metrics:
             metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
