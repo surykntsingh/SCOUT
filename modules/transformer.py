@@ -110,7 +110,7 @@ class MultiHeadGatedFusion(nn.Module):
 
         # reshape back and project
         fused = fused.view(B, L, D)
-        out = self.out_proj(fused + 0.1*x)  # residual connection + projection
+        out = self.out_proj(fused + x)  # residual connection + projection
         return out, alpha
 
 
