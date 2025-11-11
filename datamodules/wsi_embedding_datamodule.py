@@ -107,6 +107,6 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
         feats2_pad = pad_sequence(feats_2, batch_first=True).to(device)
         emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
         emb_gc_pad = pad_sequence(emb_gc, batch_first=True).to(device)
-        attn_gc_pad = pad_sequence(attn_gc, batch_first=True).to(device)
+        attn_gc_pad = attn_gc.to(device)
 
         return slide_ids, feats1_pad, feats2_pad, emb_g_pad, emb_gc_pad, attn_gc_pad
