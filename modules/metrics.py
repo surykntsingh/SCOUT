@@ -154,18 +154,18 @@ class REG_Evaluator:
         print(f'eval_lists: {eval_lists}')
 
         for hyp_text, ref_text in eval_lists:
-            for i in range(len(hyp_text)):
-                emb_score = self.embedding_eval.get_score(ref_text, hyp_text[i])
-                key_score = self.key_eval.get_score(ref_text, hyp_text)
-                bleu_score = self.get_bleu4(ref_text, hyp_text)
-                rouge_score = self.get_rouge(ref_text, hyp_text)
-                ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
+            # for i in range(len(hyp_text)):
+            emb_score = self.embedding_eval.get_score(ref_text, hyp_text)
+            key_score = self.key_eval.get_score(ref_text, hyp_text)
+            bleu_score = self.get_bleu4(ref_text, hyp_text)
+            rouge_score = self.get_rouge(ref_text, hyp_text)
+            ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
 
-                scores['emb_score'] += emb_score
-                scores['key_score'] += key_score
-                scores['bleu_score'] += bleu_score
-                scores['rouge_score'] += rouge_score
-                scores['weighted_score'] += ranking_score
+            scores['emb_score'] += emb_score
+            scores['key_score'] += key_score
+            scores['bleu_score'] += bleu_score
+            scores['rouge_score'] += rouge_score
+            scores['weighted_score'] += ranking_score
 
         for metric in scores:
             scores[metric] /= len(eval_lists)
