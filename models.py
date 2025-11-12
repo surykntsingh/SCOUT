@@ -208,6 +208,7 @@ class ReportModel(pl.LightningModule):
             )
 
     def __save_predictions(self, slide_ids, pred_texts):
+        print(f'slide_ids: {slide_ids}, pred_texts: {pred_texts}')
         for i, slide_id in enumerate(slide_ids):
             self.predictions[slide_id] = {
                 'pred': pred_texts[i],
