@@ -183,7 +183,7 @@ def compute_coco_scores(eval_lists):
     """
 
     gts= {i:[eval_list[1]] for i,eval_list in enumerate(eval_lists)}
-    preds = {i: eval_list[0] for i, eval_list in enumerate(eval_lists)}
+    preds = {i: [eval_list[0]] for i, eval_list in enumerate(eval_lists)}
 
     print(f'preds: {preds} gts: {gts}')
 
