@@ -114,9 +114,11 @@ class ReportModel(pl.LightningModule):
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
+                target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 self.__save_predictions(slide_ids, pred_texts)
                 self.__print_results(slide_ids, pred_texts)
-
+                rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure']
+                self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
                 gc.collect()
@@ -138,10 +140,13 @@ class ReportModel(pl.LightningModule):
             output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
             output = output.detach().cpu().numpy()
             pred_texts = self.tokenizer.batch_decode(output)
+            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
             self.__save_predictions(slide_ids, pred_texts)
             if batch_idx % 10 == 0:
                 self.__print_results(slide_ids, pred_texts)
 
+            rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure']
+            self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
             gc.collect()
@@ -188,7 +193,7 @@ class ReportModel(pl.LightningModule):
             ground_truth = self.reports[slide_ids[i]]
 
             print('*' * 100)
-            print(f'{RESET} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
+            print(f'{RED} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
             print(f'{BLUE} Ground truth: {ground_truth} {RESET}')
 
             # json_string = json.dumps(extract_fields(pred_text), indent=4)
@@ -208,6 +213,7 @@ class ReportModel(pl.LightningModule):
                 'pred': pred_texts[i],
                 'target': self.reports[slide_id]
             }
+
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
         pred_texts = []
