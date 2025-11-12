@@ -31,49 +31,26 @@ class ReportModel(pl.LightningModule):
 
         self.val_rouge = ROUGEScore()
         self.test_rouge = ROUGEScore()
-
-        bleu = evaluate.load("bleu")
-        rouge = evaluate.load("rouge")
-        meteor = evaluate.load("meteor")
-        # bertscore = evaluate.load("bertscore")
-
-        self.evaluate_metrics = {
-            'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
-            'rouge': lambda x,y: rouge.compute(predictions=x,references=y)['rougeL'],
-            'meteor': lambda x,y: meteor.compute(predictions=x,references=y)['meteor'],
-            # 'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
-        }
-
-        self.evaluate_metric_scores = {
-            'bleu': [],
-            'rouge': [],
-            'meteor': [],
-            # 'bertscore': []
-        }
-
         self.reg_evaluator = REG_Evaluator()
 
-        self.reg_metrics = {
-            'emb_score': [],
-            'key_score': [],
-            'bleu_score': [],
-            'rouge_score': [],
-            'weighted_score': []
-        }
+        # bleu = evaluate.load("bleu")
+        # rouge = evaluate.load("rouge")
+        # meteor = evaluate.load("meteor")
+        # bertscore = evaluate.load("bertscore")
 
-        self.coco_metrics = {
-            'BLEU_1': [],
-            'BLEU_2': [],
-            'BLEU_3': [],
-            'BLEU_4': [],
-            'METEOR': [],
-            'ROUGE_L': []
+        # self.evaluate_metrics = {
+        #     'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
+        #     'rouge': lambda x,y: rouge.compute(predictions=x,references=y)['rougeL'],
+        #     'meteor': lambda x,y: meteor.compute(predictions=x,references=y)['meteor'],
+        #     # 'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
+        # }
+        self.predictions = {}
+
+        self.reports = {
+            report['id'].split('.')[0]: report['report'] for report in read_json_file(args.reports_json_path)
         }
-        reports = read_json_file(args.reports_json_path)
-        self.reports = {report['id'].split('.')[0]: report['report'] for report in reports}
         # torch.cuda.set_device(self.trainer.local_rank)
 
-        # print(f'self.reports: {self.reports.keys()}')
 
     def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
         # Attention Regularization
@@ -94,14 +71,14 @@ class ReportModel(pl.LightningModule):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
-        attn_reg = self.get_attn_regularization(attns)
+        # attn_reg = self.get_attn_regularization(attns)
 
-        with torch.no_grad():
-            caption_magnitude = caption_loss.detach()
-            concept_magnitude = concept_loss.detach() + 1e-8
-            scale = (caption_magnitude / concept_magnitude)
+        # with torch.no_grad():
+        #     caption_magnitude = caption_loss.detach()
+        #     concept_magnitude = concept_loss.detach() + 1e-8
+            # scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss  + self.concept_lambda * concept_loss * scale + attn_reg
+        total_loss = caption_loss  #+ self.concept_lambda * concept_loss * scale + attn_reg
         return total_loss, concept_loss
 
 
@@ -138,29 +115,11 @@ class ReportModel(pl.LightningModule):
         if batch_idx % 10==0:
             with torch.no_grad():
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
-                pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
-                # target_texts = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-                # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
-                target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-                # self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-                gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-                preds = {slide_id: [pred_texts[i]] for i,slide_id in enumerate(slide_ids)}
-                # self.__calculate_evaluate_metrics(pred_texts, target_texts)
-                rouge_score = float(self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-                # bleu_score1 = self.val_bleu(pred_texts, target_texts)
-                metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-                coco_metrics = compute_coco_scores(preds, gts)
+                output = output.detach().cpu().numpy()
+                pred_texts = self.tokenizer.batch_decode(output)
+                self.__save_predictions(slide_ids, pred_texts)
+                self.__print_results(slide_ids, pred_texts)
 
-
-                # self.reg_scores.append(reg)
-                for metric in self.reg_metrics:
-                    self.reg_metrics[metric].append(float(metrics[metric]))
-
-                for metric in self.coco_metrics:
-                    self.coco_metrics[metric].append(float(coco_metrics[metric]))
-
-                self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                # self.log('val_bleu', bleu_score1, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
                 gc.collect()
@@ -181,34 +140,11 @@ class ReportModel(pl.LightningModule):
 
         with torch.no_grad():
             output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
-            pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
+            output = output.detach().cpu().numpy()
+            pred_texts = self.tokenizer.batch_decode(output)
+            self.__save_predictions(slide_ids, pred_texts)
+            self.__print_results(slide_ids, pred_texts)
 
-            target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-
-            gts = {slide_id: [self.reports[slide_id]] for slide_id in slide_ids}
-            preds = {slide_id: [pred_texts[i]] for i, slide_id in enumerate(slide_ids)}
-
-            if batch_idx % 100 == 0:
-                self.__print_results(slide_ids[0], pred_texts[0], target_texts[0])
-                # print(f'concept_attn_maps:: {len(concept_attn_maps)}')
-            rouge_score = float(self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to('cpu'))
-            # bleu_score1 = self.test_bleu(pred_texts, target_texts).to(self.device)
-            # meteor_score = float(self.test_meteor.compute(predictions=pred_texts, references=target_texts)['meteor'])
-
-            # for metric in self.evaluate_metric_scores:
-            #     self.evaluate_metric_scores[metric].append(
-            #         self.evaluate_metrics[metric](pred_texts, target_texts)
-            #     )
-
-            metrics = self.reg_evaluator.get_metrices(pred_texts, target_texts)
-            coco_metrics = compute_coco_scores(gts, preds)
-            for metric in self.reg_metrics:
-                self.reg_metrics[metric].append(float(metrics[metric]))
-
-            for metric in self.coco_metrics:
-                self.coco_metrics[metric].append(float(coco_metrics[metric]))
-            self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            # self.log('test_bleu', bleu_score1, on_epoch=True, prog_bar=Fa, sync_dist=True)
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
             gc.collect()
@@ -228,47 +164,16 @@ class ReportModel(pl.LightningModule):
         return slide_ids,pred_texts
 
     def on_validation_epoch_end(self):
-        # print('on_validation_epoch_end start')
-        # print(f'meteor_scores: {self.meteor_scores}')
         torch.cuda.empty_cache()
-        # meteor_score = sum(self.evaluate_metric_scores) / len(self.evaluate_metric_scores)
-        # self.log('val_meteor', meteor_score, on_epoch=True, prog_bar=True, sync_dist=True)
-        # self.evaluate_metric_scores.clear()
-
-        for metric in self.reg_metrics:
-            metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'val_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-            self.reg_metrics[metric].clear()
-
-        # print(self.evaluate_metric_scores)
-        # for metric in self.evaluate_metric_scores:
-        #     metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-        #     self.log(f'val_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-        #     print(f'val_e_{metric}, metric_score: {metric_score}')
-        #     self.evaluate_metric_scores[metric].clear()
-
-        for metric in self.coco_metrics:
-            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
-            self.log(f'val_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.coco_metrics[metric].clear()
+        self.__log_reg_metrics('val', 'reg', self.reg_evaluator.get_metrics, False)
+        self.__log_reg_metrics('val', 'coco', compute_coco_scores, True)
+        self.predictions.clear()
 
     def on_test_epoch_end(self):
-
-        for metric in self.reg_metrics:
-            metric_score = sum(self.reg_metrics[metric]) / len(self.reg_metrics[metric])
-            self.log(f'test_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-            self.reg_metrics[metric].clear()
-
-        # for metric in self.evaluate_metric_scores:
-        #     metric_score = sum(self.evaluate_metric_scores[metric]) / len(self.evaluate_metric_scores[metric])
-        #     self.log(f'test_e_{metric}', metric_score, on_epoch=True, prog_bar=False, sync_dist=True)
-        #     print(f'test_e_{metric}, metric_score: {metric_score}')
-        #     self.evaluate_metric_scores[metric].clear()
-
-        for metric in self.coco_metrics:
-            metric_score = sum(self.coco_metrics[metric]) / len(self.coco_metrics[metric])
-            self.log(f'test_c_{metric}', metric_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.coco_metrics[metric].clear()
+        torch.cuda.empty_cache()
+        self.__log_reg_metrics('test', 'reg', self.reg_evaluator.get_metrics, False)
+        self.__log_reg_metrics('test', 'coco', compute_coco_scores, True)
+        self.predictions.clear()
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
@@ -277,24 +182,44 @@ class ReportModel(pl.LightningModule):
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
-    def __print_results(self, slide_id, pred_text, target_text):
+    def __print_results(self, slide_ids, pred_texts):
         RED = '\033[91m'
         RESET = '\033[0m'
         BLUE = '\033[94m'
 
-        print('*' * 100)
-        print(f'{RESET} Predicted report for slide: {slide_id}: {pred_text} {RESET}')
-        # print(f' {RED} Predicted synoptic report for slide: {slide_id}: \n {RESET}')
+        for i in range(len(slide_ids)):
+            print('*' * 100)
+            print(f'{RED} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
+            print(f'{BLUE} Ground truth: {self.reports[slide_ids[i]]['report']} {RESET}')
 
-        print(f'{BLUE} Ground truth: {target_text} {RESET}')
-
-        # json_string = json.dumps(extract_fields(pred_text), indent=4)
-        # print(f'{RED} {json_string} {RESET}')
-        print('*' * 100)
+            # json_string = json.dumps(extract_fields(pred_text), indent=4)
+            # print(f'{RED} {json_string} {RESET}')
+            print('*' * 100)
 
     def __calculate_evaluate_metrics(self, pred_texts, target_texts):
         pred_texts = list(map(lambda x: 'placeholder' if x.strip()=='' else x, pred_texts))
         for metric in self.evaluate_metric_scores:
             self.evaluate_metric_scores[metric].append(
                 self.evaluate_metrics[metric](pred_texts, target_texts)
+            )
+
+    def __save_predictions(self, slide_ids, pred_texts):
+        for i, slide_id in enumerate(slide_ids):
+            self.predictions[slide_id] = {
+                'pred': pred_texts[i],
+                'target': self.reports['report']
+            }
+
+    def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
+        pred_texts = []
+        target_texts = []
+        for slide_id in self.predictions:
+            pred_texts.append(self.predictions[slide_id]['pred'])
+            target_texts.append(self.predictions[slide_id]['target'])
+
+        metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
+
+        for metric_name, metric_score in metrics.items():
+            self.log(
+                f'{stage}_{metric_type}_{metric_name}', metric_score, on_epoch=True, prog_bar=prog_bar, sync_dist=True
             )

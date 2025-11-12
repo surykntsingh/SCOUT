@@ -59,7 +59,7 @@ class KeywordEvaluator:
         union = len(set1.union(set2))
         return intersection / union if union != 0 else 0
 
-    def get_score(self, ref_text: str, hyp_text: str, min_length: int = 3) -> Tuple[float, List[str], List[str]]:
+    def get_score(self, ref_text: str, hyp_text: str, min_length: int = 3) -> float:
         ref_keywords = self.get_keywords(ref_text, min_length)
         hyp_keywords = self.get_keywords(hyp_text, min_length)
 
@@ -143,28 +143,36 @@ class REG_Evaluator:
         score /= len(eval_lists)
         return score
 
-    def get_metrices(self, ref_texts, hyp_texts):
-
-        # Since we are always using batch_size =1
-        ref_text = ref_texts[0]
-        hyp_text = hyp_texts[0]
-
-        emb_score = self.embedding_eval.get_score(ref_text, hyp_text)
-        key_score = self.key_eval.get_score(ref_text, hyp_text)
-        bleu_score = self.get_bleu4(ref_text, hyp_text)
-        rouge_score = self.get_rouge(ref_text, hyp_text)
-
-        ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
-        return {
-            'emb_score': emb_score,
-            'key_score': key_score,
-            'bleu_score': bleu_score,
-            'rouge_score': rouge_score,
-            'weighted_score': ranking_score
+    def get_metrics(self, eval_lists):
+        scores = {
+            'emb_score': 0,
+            'key_score': 0,
+            'bleu_score': 0,
+            'rouge_score': 0,
+            'weighted_score': 0
         }
 
+        for hyp_text, ref_text in eval_lists:
+            for i in range(len(hyp_text)):
+                emb_score = self.embedding_eval.get_score(ref_text, hyp_text[i])
+                key_score = self.key_eval.get_score(ref_text, hyp_text)
+                bleu_score = self.get_bleu4(ref_text, hyp_text)
+                rouge_score = self.get_rouge(ref_text, hyp_text)
+                ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
 
-def compute_coco_scores(ref_texts, hyp_texts):
+                scores['emb_score'] += emb_score
+                scores['emb_score'] += key_score
+                scores['bleu_score'] += bleu_score
+                scores['rouge_score'] += rouge_score
+                scores['ranking_score'] += ranking_score
+
+        for metric in scores:
+            scores[metric] /= len(eval_lists)
+
+        return scores
+
+
+def compute_coco_scores(eval_lists):
     """
     Performs the MS COCO evaluation using the Python 3 implementation (https://github.com/salaniz/pycocoevalcap)
 
@@ -172,10 +180,10 @@ def compute_coco_scores(ref_texts, hyp_texts):
     :param res: Dictionary with the image ids ant their generated captions
     :print: Evaluation score (the mean of the scores of all the instances) for each measure
     """
-    # Since we are always using batch_size =1
-    # gts = ref_texts[0]
-    # res = hyp_texts[0]
-    # Set up scorers
+
+    gts= {i:[eval_list[1]] for i,eval_list in enumerate(eval_lists)}
+    preds = {i: eval_list[0] for i, eval_list in enumerate(eval_lists)}
+
     scorers = [
         (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
         (Meteor(), "METEOR"),
@@ -185,14 +193,13 @@ def compute_coco_scores(ref_texts, hyp_texts):
     # Compute score for each metric
     for scorer, method in scorers:
         try:
-            score, scores = scorer.compute_score(ref_texts, hyp_texts)
+            score, scores = scorer.compute_score(gts, preds)
         except TypeError:
-            score, scores = scorer.compute_score(ref_texts, hyp_texts)
+            score, scores = scorer.compute_score(gts, preds)
         if type(method) == list:
             for sc, m in zip(score, method):
                 eval_res[m] = sc
         else:
             eval_res[method] = score
 
-    # print(f'eval_res: {eval_res}')
     return eval_res

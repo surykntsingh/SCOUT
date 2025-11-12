@@ -246,7 +246,6 @@ class EncoderDecoder(AttModel):
                     deepcopy(mgf), # multihead gate fusion
                     self.dropout
                 ),
-                deepcopy(ff),
                 self.num_layers
             ),
             LayerNorm(self.d_model),
