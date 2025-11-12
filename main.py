@@ -76,7 +76,7 @@ def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
 
 def tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule):
     # gecko tuning
-    print('tuning on gecko concept features')
+    print('Freezing gecko activations and tuning the model')
     model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
     tune_metrics, _ = trainer.tune(model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model tuning finished')
