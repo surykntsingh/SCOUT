@@ -4,6 +4,29 @@ import torch.nn.functional as F
 
 from modules.transformer import EncoderDecoder
 
+class ConceptSupervisionHead(nn.Module):
+    def __init__(self, d_model, concept_dim,dropout):
+        super().__init__()
+        self.proj = nn.Sequential(
+            nn.Linear(d_model, concept_dim),
+            # nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(concept_dim, concept_dim)
+        )
+
+        self.cosine = nn.CosineSimilarity(dim=-1)
+
+    def forward(self, decoder_out, gecko_concepts):
+        # decoder_out: (batch, seq_len, d_model)
+        # gecko_concepts: (batch, num_concepts, concept_dim)
+
+        pred = self.proj(decoder_out)  # mean over tokens
+        # gecko_mean = gecko_concepts.mean(dim=1)
+        pred_norm = F.normalize(pred, dim=-1)
+        gecko_norm = F.normalize(gecko_concepts, dim=-1)
+        # print(f'decoder_out: {pred_norm.shape}, gecko_concepts: {gecko_norm.shape}')
+        return 1 - self.cosine(pred_norm, gecko_norm).mean()
+
 class ConceptEncoder(nn.Module):
     def __init__(self, n_concepts, d_model, dropout, hidden=256):
         super().__init__()
@@ -72,6 +95,7 @@ class ReportGenModel(nn.Module):
         )
 
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
+        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         gd = args.gd
         gcd =args.gcd
@@ -101,10 +125,18 @@ class ReportGenModel(nn.Module):
 
 
     def freeze_deep_features(self):
-        for param in self.encoder_decoder.parameters():
+        print('Freezing concept parameters')
+        for param in self.concept_encoder.parameters():
             param.requires_grad = False
 
+        for param in self.concept_supervision_head.parameters():
+            param.requires_grad = False
 
+        for param in self.encoder_decoder.model.concept_embed.parameters():
+            param.requires_grad = False
+
+        for param in self.encoder_decoder.gc_embed.parameters():
+            param.requires_grad = False
 
 
     def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, attn_gc, report_ids=None, patch_masks=None, mode='train'):

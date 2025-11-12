@@ -226,6 +226,8 @@ class EncoderDecoder(AttModel):
         pp = lambda x:x #PAM(self.d_model)
         mgf = MultiHeadGatedFusion(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
+
+
         model = Transformer(
             Encoder(
                 EncoderLayer(

@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
-from modules.loss import LanguageModelCriterion, ConceptSupervisionHead, ConceptHead
+from modules.loss import LanguageModelCriterion, ConceptHead
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
@@ -27,7 +27,7 @@ class ReportModel(pl.LightningModule):
         self.learning_rate = args.lr
         self.__weight_decay = args.weight_decay
         self.__lr_patience =args.lr_patience
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+
 
         self.val_rouge = ROUGEScore()
         self.test_rouge = ROUGEScore()
@@ -70,7 +70,7 @@ class ReportModel(pl.LightningModule):
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.concept_supervision_head(concept_tokens, gecko_concepts)
+        concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
         # attn_reg = self.get_attn_regularization(attns)
 
         # with torch.no_grad():
