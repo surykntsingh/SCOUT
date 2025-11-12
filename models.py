@@ -185,7 +185,7 @@ class ReportModel(pl.LightningModule):
         BLUE = '\033[94m'
 
         for i in range(len(slide_ids)):
-            ground_truth = self.reports[slide_ids[i]]['report']
+            ground_truth = self.reports[slide_ids[i]]
 
             print('*' * 100)
             print(f'{RESET} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
