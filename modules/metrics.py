@@ -161,10 +161,10 @@ class REG_Evaluator:
                 ranking_score = 0.15 * (rouge_score + bleu_score) + 0.4 * key_score + 0.3 * emb_score
 
                 scores['emb_score'] += emb_score
-                scores['emb_score'] += key_score
+                scores['key_score'] += key_score
                 scores['bleu_score'] += bleu_score
                 scores['rouge_score'] += rouge_score
-                scores['ranking_score'] += ranking_score
+                scores['weighted_score'] += ranking_score
 
         for metric in scores:
             scores[metric] /= len(eval_lists)
