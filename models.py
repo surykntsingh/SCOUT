@@ -117,7 +117,7 @@ class ReportModel(pl.LightningModule):
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 self.__save_predictions(slide_ids, pred_texts)
                 self.__print_results(slide_ids, pred_texts)
-                rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure']
+                rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
                 del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
@@ -145,7 +145,7 @@ class ReportModel(pl.LightningModule):
             if batch_idx % 10 == 0:
                 self.__print_results(slide_ids, pred_texts)
 
-            rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure']
+            rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
