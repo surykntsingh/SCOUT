@@ -206,7 +206,7 @@ class ReportModel(pl.LightningModule):
         for i, slide_id in enumerate(slide_ids):
             self.predictions[slide_id] = {
                 'pred': pred_texts[i],
-                'target': self.reports[slide_id]['report']
+                'target': self.reports[slide_id]
             }
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
