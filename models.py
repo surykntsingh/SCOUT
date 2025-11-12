@@ -98,11 +98,8 @@ class ReportModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        # print('val ---------->')
-        # gc.collect()
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        # print(
-        #     f"[RANK {self.global_rank}] image_feats: {patch_feats.device}, model: {next(self.parameters()).device}")
+
         with torch.no_grad():
             output_,attn,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
 
@@ -127,7 +124,6 @@ class ReportModel(pl.LightningModule):
 
 
     def test_step(self, batch, batch_idx):
-        # gc.collect()
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
@@ -143,7 +139,8 @@ class ReportModel(pl.LightningModule):
             output = output.detach().cpu().numpy()
             pred_texts = self.tokenizer.batch_decode(output)
             self.__save_predictions(slide_ids, pred_texts)
-            self.__print_results(slide_ids, pred_texts)
+            if batch_idx % 10 == 0:
+                self.__print_results(slide_ids, pred_texts)
 
             del output
             del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
@@ -189,7 +186,7 @@ class ReportModel(pl.LightningModule):
 
         for i in range(len(slide_ids)):
             print('*' * 100)
-            print(f'{RED} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
+            print(f'{RESET} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
             print(f'{BLUE} Ground truth: {self.reports[slide_ids[i]]['report']} {RESET}')
 
             # json_string = json.dumps(extract_fields(pred_text), indent=4)
