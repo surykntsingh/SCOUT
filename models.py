@@ -185,9 +185,11 @@ class ReportModel(pl.LightningModule):
         BLUE = '\033[94m'
 
         for i in range(len(slide_ids)):
+            ground_truth = self.reports[slide_ids[i]]['report']
+
             print('*' * 100)
             print(f'{RESET} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
-            print(f'{BLUE} Ground truth: {self.reports[slide_ids[i]]['report']} {RESET}')
+            print(f'{BLUE} Ground truth: {ground_truth} {RESET}')
 
             # json_string = json.dumps(extract_fields(pred_text), indent=4)
             # print(f'{RED} {json_string} {RESET}')
