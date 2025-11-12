@@ -151,7 +151,7 @@ class REG_Evaluator:
             'rouge_score': 0,
             'weighted_score': 0
         }
-        print(f'eval_lists: {eval_lists}')
+        # print(f'eval_lists: {eval_lists}')
 
         for hyp_text, ref_text in eval_lists:
             # for i in range(len(hyp_text)):
@@ -185,7 +185,7 @@ def compute_coco_scores(eval_lists):
     gts= {i:[eval_list[1]] for i,eval_list in enumerate(eval_lists)}
     preds = {i: [eval_list[0]] for i, eval_list in enumerate(eval_lists)}
 
-    print(f'preds: {preds} gts: {gts}')
+    # print(f'preds: {preds} gts: {gts}')
 
     scorers = [
         (Bleu(4), ["BLEU_1", "BLEU_2", "BLEU_3", "BLEU_4"]),
