@@ -48,7 +48,7 @@ def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
 
 
     metrics = {**train_metrics, **test_metrics, 'best_model_path': best_model_path}
-    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics})') #, tune_metrics: {tune_metrics}')
+    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics} tune_metrics: {tune_metrics}')
 
     copy_yaml(config_file_path, args.ckpt_path)
     os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)
