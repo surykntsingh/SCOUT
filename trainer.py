@@ -114,7 +114,7 @@ class Trainer:
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
         )
-
+        model.hparams.lr = 5e-6
         self.trainer.fit(
             model, datamodule=datamodule
         )
