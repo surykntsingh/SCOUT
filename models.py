@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
 
-from modules.loss import LanguageModelCriterion, ConceptHead
+from modules.loss import LanguageModelCriterion
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
 from utils.utils import extract_fields, read_json_file
