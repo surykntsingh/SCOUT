@@ -38,7 +38,7 @@ class EmbeddingDataset(Dataset):
             embeddings_np = h5_file["features"][:]
 
             # coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np).unsqueeze(0)
+            embedding1 = torch.tensor(embeddings_np)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 
@@ -98,7 +98,7 @@ class EmbeddingPredictDataset(Dataset):
             embeddings_np = h5_file["features"][:]
 
             # coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np).unsqueeze(0)
+            embedding1 = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
             embeddings_np = h5_file["features"][:]

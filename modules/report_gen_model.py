@@ -55,6 +55,34 @@ class ConceptEncoder(nn.Module):
         return concept_tokens  # [B, M, d_model]
 
 
+class SlideEncoder(nn.Module):
+    def __init__(self, d_vf, d_model, dropout, hidden=256):
+        super().__init__()
+        # Option A: per-concept learned embedding table (concept id -> vector)
+        self.id_embed = nn.Embedding(d_vf, d_model)
+        # Projection from scalar activation (score) to scale per concept
+        self.score_proj = nn.Sequential(
+            nn.Linear(1, hidden),
+            # nn.ReLU(),
+            nn.Linear(hidden, d_model),
+            nn.Dropout(dropout),
+            # nn.ReLU(),
+            nn.Linear(d_model, d_model)
+        )
+        self.layernorm = nn.LayerNorm(d_model)
+
+    def forward(self, scores):
+        # scores: [B, M] (float activations from GECKO)
+        B, M = scores.shape
+        ids = torch.arange(M, device=scores.device).unsqueeze(0).expand(B, M)  # [B, M]
+        base = self.id_embed(ids)  # [B, M, d_model]
+        # project scalar score per concept to a vector and use as multiplicative gating
+        scales = self.score_proj(scores.unsqueeze(-1))  # [B, M, d_model]
+        concept_tokens = base * (1 + scales)  # broadcast multiply
+        concept_tokens = self.layernorm(concept_tokens)
+        return concept_tokens  # [B, M, d_model]
+
+
 class ReportGenModel(nn.Module):
 
     def __init__(self, args, tokenizer):
@@ -95,6 +123,7 @@ class ReportGenModel(nn.Module):
         )
 
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
+        self.slide_encoder = SlideEncoder(args.d1, args.d_model, args.dropout_mlp)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         gd = args.gd
@@ -144,7 +173,7 @@ class ReportGenModel(nn.Module):
         # patch_feats = image_embeddings # + coords_encoded
         # print(f'image_embeddings1: {image_embeddings1}')
         patch_masks=None
-        image_embeddings1 = self.adapter_mlp_1(image_embeddings1)
+        image_embeddings1 = self.adapter_mlp_1(self.slide_encoder(image_embeddings1))
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
 
         emb_gc_proj = self.gecko_mlp(emb_gc.unsqueeze(1))
