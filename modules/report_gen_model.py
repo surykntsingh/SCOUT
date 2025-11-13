@@ -143,11 +143,11 @@ class ReportGenModel(nn.Module):
         )
 
         self.gecko_encoder = nn.Sequential(
-            nn.Linear(gd, 2 * gd),
+            nn.Linear(d, 2 * d),
             nn.ReLU(),
-            nn.Linear(2 * gd, 4 * gd),
+            nn.Linear(2 * d, 4 * d),
             nn.ReLU(),
-            nn.Linear(4 * gd, 2*d),
+            nn.Linear(4 * d, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2*d, d)
