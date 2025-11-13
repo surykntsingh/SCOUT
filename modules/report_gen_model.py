@@ -130,27 +130,27 @@ class ReportGenModel(nn.Module):
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
-        # gcd =args.gcd
+        dm =args.d_model
         self.gecko_mlp = nn.Sequential(
-            nn.Linear(d, 2 * d),
+            nn.Linear(dm, 2 * dm),
             nn.ReLU(),
-            nn.Linear(2 * d, 4 * d),
+            nn.Linear(2 * dm, 4 * dm),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(4 * d, 2*d),
+            nn.Linear(4 * dm, 2*dm),
             nn.ReLU(),
-            nn.Linear(2 * d, d),
+            nn.Linear(2 * dm, dm),
         )
 
         self.gecko_encoder = nn.Sequential(
-            nn.Linear(d, 2 * d),
+            nn.Linear(dm, 2 * dm),
             nn.ReLU(),
-            nn.Linear(2 * d, 4 * d),
+            nn.Linear(2 * dm, 4 * dm),
             nn.ReLU(),
-            nn.Linear(4 * d, 2*d),
+            nn.Linear(4 * dm, 2*dm),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2*d, d)
+            nn.Linear(2*dm, dm)
         )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
