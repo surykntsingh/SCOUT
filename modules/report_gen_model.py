@@ -129,8 +129,8 @@ class ReportGenModel(nn.Module):
         self.gecko_deep_projector = SlideEncoder(args.gd, args.d_model, args.dropout_mlp)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
-        gd = args.gd
-        gcd =args.gcd
+        # gd = args.gd
+        # gcd =args.gcd
         self.gecko_mlp = nn.Sequential(
             nn.Linear(d, 2 * d),
             nn.ReLU(),
