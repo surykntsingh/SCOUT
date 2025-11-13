@@ -252,7 +252,7 @@ class EncoderDecoder(AttModel):
             ),
             LayerNorm(self.d_model),
             # Target token embedding + position
-            nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
+            nn.Sequential(Embeddings(self.d_model, tgt_vocab)),
             # Concept embedding module
             nn.Sequential(
                 nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
