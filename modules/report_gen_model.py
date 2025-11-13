@@ -125,7 +125,8 @@ class ReportGenModel(nn.Module):
 
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         self.slide_encoder = SlideEncoder(args.d1, args.d_model, args.dropout_mlp)
-        self.gecko_encoder = SlideEncoder(args.gd, args.d_model, args.dropout_mlp)
+        self.gecko_projector = SlideEncoder(args.gcd, args.d_model, args.dropout_mlp)
+        self.gecko_deep_projector = SlideEncoder(args.gd, args.d_model, args.dropout_mlp)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         gd = args.gd
@@ -178,9 +179,9 @@ class ReportGenModel(nn.Module):
         image_embeddings1 = self.adapter_mlp_1(self.slide_encoder(image_embeddings1))
         image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
 
-        emb_gc_proj = self.gecko_mlp(self.gecko_encoder(emb_gc))
+        emb_gc_proj = self.gecko_mlp(self.gecko_projector(emb_gc))
 
-        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1))
+        gecko_embeddings = self.gecko_encoder(torch.cat([self.gecko_deep_projector(emb_g),emb_gc_proj], dim=1))
 
         # gecko_embeddings = self.gecko_encoder(emb_g)
 
