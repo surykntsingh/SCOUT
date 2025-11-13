@@ -120,7 +120,7 @@ class ReportGenModel(nn.Module):
         self.slide_encoder = ConceptEncoder(args.d1, args.d_model, args.dropout_mlp)
         self.gecko_projector = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         self.gecko_deep_projector = ConceptEncoder(args.gd, args.d_model, args.dropout_mlp)
-        self.concept_supervision_head = ConceptHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
         dm =args.d_model
