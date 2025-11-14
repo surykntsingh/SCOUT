@@ -30,7 +30,7 @@ class DecoderLayer(nn.Module):
 
         x_fused, alpha = self.gate_fusion(x, x_img, x_con)
         out = self.sublayer[3](x_fused, self.ff_1)
-        return out, (alpha, x_img, x_con_attn)
+        return out, (alpha, x_img_attn, x_con_attn)
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
