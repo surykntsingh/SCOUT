@@ -178,8 +178,8 @@ class ReportGenModel(nn.Module):
 
         # gecko_embeddings = self.gecko_encoder(emb_g)
 
-        patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
-        patch_feats = self.encoder(patch_feats)
+        # patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
+        patch_feats = self.encoder(image_embeddings1)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         fc_feats = torch.sum(att_feats, dim=1)
         attn_gc = self.concept_encoder(attn_gc)
