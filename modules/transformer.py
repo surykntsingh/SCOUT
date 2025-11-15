@@ -246,6 +246,7 @@ class EncoderDecoder(AttModel):
                     deepcopy(attn),  # cross-attn (concept)
                     deepcopy(ff),  # feed-forward
                     deepcopy(mgf), # multi head gate fusion
+                    deepcopy(mgf),
                     self.dropout
                 ),
                 self.num_layers

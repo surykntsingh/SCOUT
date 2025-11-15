@@ -6,14 +6,15 @@ from utils import utils
 from utils.utils import clones
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1,gate_fusion, dropout):
+    def __init__(self, d_model, self_attn, src_attn, concept_attn, ff_1,gate_fusion1,gate_fusion2, dropout):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
         self.src_attn = src_attn
         self.concept_attn = concept_attn
         # self.feed_forward = feed_forward
-        self.gate_fusion = gate_fusion
+        self.gate_fusion1 = gate_fusion1
+        self.gate_fusion2 = gate_fusion2
         self.ff_1 = ff_1
         # self.ff_2 = ff_2
         self.n = 4
@@ -24,11 +25,13 @@ class DecoderLayer(nn.Module):
         # m = hidden_states
         x, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
-        x_img, x_img_attn = self.sublayer[1](x, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
+        x_img, x_img_attn = self.sublayer[1](feats, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
 
         x_con, x_con_attn = self.sublayer[2](feats, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        x_fused, alpha = self.gate_fusion(x, x, x_con)
+        x_fused1, alpha = self.gate_fusion1(x, x_img, x_con)
+        x_fused , _ = self.gate_fusion2(x, x, x_fused1)
+
         out = self.sublayer[3](x_fused, self.ff_1)
         return out, (alpha, x_img_attn, x_con_attn)
 
