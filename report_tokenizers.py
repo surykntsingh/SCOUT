@@ -81,14 +81,14 @@ class Tokenizer:
         report_cleaner = lambda t: (t.replace('\n', ' ').replace('  ', ' ')
                                     .replace('  ', ' ').replace('  ', ' ')
                                     .replace(' 10. ', ' ').replace(' 11. ', ' ')
-                                    .replace(' 12. ', ' ').replace(' 13. ',' 14.', ' ')
-                                    .replace(' 1. ', ' ').replace(' 2. ', ' ')
-                                    .replace(' 3. ', ' ').replace(' 4. ', ' ')
-                                    .replace(' 5. ', ' ').replace(' 6. ',' ')
-                                    .replace(' 7. ', ' ').replace(' 8. ', ' ')
-                                    .replace(' 9. ', ' ').strip().lower() + ' ').split('. ')
+                                    .replace(' 12. ', ' ').replace(' 13. ', ' ')
+                                    .replace(' 14.', ' ').replace(' 1. ', ' ')
+                                    .replace(' 2. ', ' ').replace(' 3. ', ' ')
+                                    .replace(' 4. ', ' ').replace(' 5. ', ' ')
+                                    .replace(' 6. ', ' ').replace(' 7. ', ' ')
+                                    .replace(' 8. ', ' ') .replace(' 9. ', ' ').strip().lower() + ' ').split('. ')
         sent_cleaner = lambda t: re.sub('[#,?;*!^&_+():-\[\]{}]', '', t.replace('"', '').
-                                        replace('\\', '').replace("'", '').strip().lower())
+                                    replace('\\', '').replace("'", '').strip().lower())
         tokens = [sent_cleaner(sent) for sent in report_cleaner(report) if sent_cleaner(sent) != []]
         report = ' . '.join(tokens)
         return report
