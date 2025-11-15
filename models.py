@@ -115,7 +115,8 @@ class ReportModel(pl.LightningModule):
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-                self.__save_predictions(slide_ids, pred_texts)
+                ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+                self.__save_predictions(slide_ids, pred_texts, ground_truths)
                 self.__print_results(slide_ids, pred_texts)
                 rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -141,7 +142,8 @@ class ReportModel(pl.LightningModule):
             output = output.detach().cpu().numpy()
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
-            self.__save_predictions(slide_ids, pred_texts)
+            ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+            self.__save_predictions(slide_ids, pred_texts, ground_truths)
             if batch_idx % 10 == 0:
                 self.__print_results(slide_ids, pred_texts)
 
@@ -207,12 +209,12 @@ class ReportModel(pl.LightningModule):
                 self.evaluate_metrics[metric](pred_texts, target_texts)
             )
 
-    def __save_predictions(self, slide_ids, pred_texts):
+    def __save_predictions(self, slide_ids, pred_texts, ground_truths):
         # print(f'slide_ids: {slide_ids}, pred_texts: {pred_texts}')
         for i, slide_id in enumerate(slide_ids):
             self.predictions[slide_id] = {
                 'pred': pred_texts[i],
-                'target': self.reports[slide_id]
+                'target': ground_truths[i]
             }
 
 
