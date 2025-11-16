@@ -90,5 +90,5 @@ class Tokenizer:
         sent_cleaner = lambda t: re.sub('[#,?;*!^&_+():-\[\]{}]', '', t.replace('"', '').
                                     replace('\\', '').replace("'", '').strip().lower())
         tokens = [sent_cleaner(sent) for sent in report_cleaner(report) if sent_cleaner(sent) != []]
-        report = ' . '.join(tokens)
+        report = '. '.join(tokens)
         return report
