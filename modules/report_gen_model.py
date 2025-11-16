@@ -96,6 +96,118 @@ class FilmFusion(nn.Module):
         out = self.layernorm(patch * (1 + gamma) + beta)
         return out                              # [B,M,D]
 
+class AttentionPool(nn.Module):
+    def __init__(self, D, n_heads=4):
+        super().__init__()
+        self.query = nn.Parameter(torch.randn(1, 1, D))
+        self.attn = nn.MultiheadAttention(D, n_heads, batch_first=True)
+
+    def forward(self, x):
+        # x: [B, M, D]
+        B = x.size(0)
+        q = self.query.expand(B, -1, -1)  # [B,1,D]
+        pooled, _ = self.attn(q, x, x)    # [B,1,D]
+        return pooled.squeeze(1)          # [B,D]
+
+class PatchSlideFusion(nn.Module):
+    """
+    Fusion pipeline:
+        1. FiLM modulation of patch features by slide-feature vector
+        2. Cross-attention (patch queries → slide token as key/value)
+        3. MLP + residual
+        4. Attention pooling for joint slide embedding
+        5. Final fusion MLP (optional)
+    """
+    def __init__(
+        self,
+        D,          # patch feature dimension
+        D_s,        # slide feature dimension
+        D_out=None, # output latent dimension (if None → D)
+        hidden=128,
+        n_heads=4,
+        dropout=0.1
+    ):
+        super().__init__()
+        if D_out is None:
+            D_out = D
+
+        # ---------------------------------------
+        # 1. FiLM modulation
+        # ---------------------------------------
+        self.film = nn.Sequential(
+            nn.Linear(D_s, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 2 * D)   # gamma, beta
+        )
+        self.film_norm = nn.LayerNorm(D)
+
+        # ---------------------------------------
+        # 2. Cross-attention (patch → slide)
+        # ---------------------------------------
+        self.slide_proj = nn.Linear(D_s, D)
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=D, num_heads=n_heads, batch_first=True
+        )
+        self.cross_norm = nn.LayerNorm(D)
+
+        # ---------------------------------------
+        # 3. MLP block (residual)
+        # ---------------------------------------
+        self.mlp = nn.Sequential(
+            nn.Linear(D, D),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(D, D)
+        )
+        self.mlp_norm = nn.LayerNorm(D)
+
+        # ---------------------------------------
+        # 4. Patch-level attention pooling
+        # ---------------------------------------
+        self.pooler = AttentionPool(D, n_heads=n_heads)
+
+        # ---------------------------------------
+        # 5. Final slide fusion projection
+        # ---------------------------------------
+        self.final_proj = nn.Sequential(
+            nn.Linear(D + D_s, D_out),
+            nn.GELU(),
+            nn.Linear(D_out, D_out)
+        )
+
+    # ---------------------------------------------------------
+    def forward(self, patch, slide):
+        """
+        patch: [B, M, D]
+        slide: [B, D_s]
+        Returns:
+            patch_fused: [B, M, D]
+            slide_fused: [B, D_out]
+        """
+        B, M, D = patch.shape
+
+        # -----------------------------------------------------
+        # 1) FiLM modulation
+        # -----------------------------------------------------
+        gamma, beta = self.film(slide).chunk(2, dim=-1)   # [B,D], [B,D]
+        gamma = gamma.unsqueeze(1)                        # [B,1,D]
+        beta  = beta.unsqueeze(1)
+
+        patch = self.film_norm(patch * (1 + gamma) + beta)
+
+        # -----------------------------------------------------
+        # 2) Cross-attention: patch Q → slide K,V
+        # -----------------------------------------------------
+        slide_token = self.slide_proj(slide).unsqueeze(1)  # [B,1,D]
+        attn_out, _ = self.cross_attn(patch, slide_token, slide_token)
+        patch = self.cross_norm(patch + attn_out)
+
+        # -----------------------------------------------------
+        # 3) Patch MLP residual
+        # -----------------------------------------------------
+        patch = self.mlp_norm(patch + self.mlp(patch))
+
+        return patch
 
 class ReportGenModel(nn.Module):
 
@@ -138,9 +250,9 @@ class ReportGenModel(nn.Module):
         gd = args.gd
         gdc = args.gcd
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
-        self.image_fusion = FilmFusion(d,d)
-        self.gecko_fusion = FilmFusion(gd, gdc)
-        self.concept_fusion = FilmFusion(d, d)
+        self.image_fusion = PatchSlideFusion(d,d)
+        # self.gecko_fusion = PatchSlideFusion(gd, gdc)
+        self.concept_fusion = PatchSlideFusion(d, d)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
 
