@@ -139,7 +139,7 @@ class ReportGenModel(nn.Module):
         gdc = args.gcd
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         self.image_fusion = FilmFusion(d,d)
-        # self.gecko_fusion = FilmFusion(d, d)
+        self.gecko_fusion = FilmFusion(gd, gdc)
         self.concept_fusion = FilmFusion(d, d)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
@@ -196,8 +196,8 @@ class ReportGenModel(nn.Module):
         image_embeddings = self.image_fusion(image_embeddings2,image_embeddings1)
 
         emb_gc_proj = self.gecko_mlp(emb_gc)
-
-        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1))
+        gecko_embeddings = self.gecko_fusion(emb_g.unsqueeze(1), emb_gc)
+        # gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1).unsqueeze(1))
 
         # gecko_embeddings = self.gecko_encoder(emb_g)
 
