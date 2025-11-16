@@ -135,34 +135,36 @@ class ReportGenModel(nn.Module):
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2 * d, d)
         )
-
+        gd = args.gd
+        gdc = args.gdc
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         self.image_fusion = FilmFusion(d,d)
+        # self.gecko_fusion = FilmFusion(d, d)
         self.concept_fusion = FilmFusion(d, d)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
-        # gd = args.gd
-        dm =args.d_model
+
+        # dm =args.d_model
         self.gecko_mlp = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
+            nn.Linear(gdc, 2 * gdc),
             nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
+            nn.Linear(2 * gdc, 4 * gd),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(4 * dm, 2*dm),
+            nn.Linear(4 * gd, 2*gd),
             nn.ReLU(),
-            nn.Linear(2 * dm, dm),
+            nn.Linear(2 * gd, gd),
         )
 
         self.gecko_encoder = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
+            nn.Linear(gd, 2 * gd),
             nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
+            nn.Linear(2 * gd, 4 * d),
             nn.ReLU(),
-            nn.Linear(4 * dm, 2*dm),
+            nn.Linear(4 * d, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2*dm, dm)
+            nn.Linear(2*d, d)
         )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
