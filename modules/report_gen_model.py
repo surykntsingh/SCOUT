@@ -77,6 +77,33 @@ class ConceptEncoder(nn.Module):
         concept_tokens = self.layernorm(concept_tokens)
         return concept_tokens  # [B, M, d_model]
 
+class ChannelProjector(nn.Module):
+    def __init__(self, n_concepts, d_model, dropout, hidden=256):
+        super().__init__()
+        # Option A: per-concept learned embedding table (concept id -> vector)
+        self.id_embed = nn.Embedding(n_concepts, d_model)
+        # Projection from scalar activation (score) to scale per concept
+        self.score_proj = nn.Sequential(
+            nn.Linear(1, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, d_model),
+            nn.Dropout(dropout),
+            nn.ReLU(),
+            nn.Linear(d_model, d_model)
+        )
+        self.layernorm = nn.LayerNorm(d_model)
+
+    def forward(self, scores):
+        # scores: [B, M] (float activations from GECKO)
+        B, M = scores.shape
+        ids = torch.arange(M, device=scores.device).unsqueeze(0).expand(B, M)  # [B, M]
+        base = self.id_embed(ids)  # [B, M, d_model]
+        # project scalar score per concept to a vector and use as multiplicative gating
+        scales = self.score_proj(scores.unsqueeze(-1))  # [B, M, d_model]
+        concept_tokens = base * (1 + scales)  # broadcast multiply
+        concept_tokens = self.layernorm(concept_tokens)
+        return concept_tokens  # [B, M, d_model]
+
 class ReportGenModel(nn.Module):
 
     def __init__(self, args, tokenizer):
@@ -117,9 +144,9 @@ class ReportGenModel(nn.Module):
         )
 
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
-        self.slide_encoder = ConceptEncoder(args.d1, args.d_model, args.dropout_mlp)
-        self.gecko_projector = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
-        self.gecko_deep_projector = ConceptEncoder(args.gd, args.d_model, args.dropout_mlp)
+        self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
+        self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
+        self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd

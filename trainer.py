@@ -48,10 +48,10 @@ class Trainer:
         )
         early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
 
-        suggested_lr = self.find_lr(model, datamodule)
-        print(f'setting lr: {suggested_lr}')
-        # Set suggested LR
-        model.hparams.lr = suggested_lr
+        # suggested_lr = self.find_lr(model, datamodule)
+        # print(f'setting lr: {suggested_lr}')
+        # # Set suggested LR
+        # model.hparams.lr = suggested_lr
 
         self.trainer = pl.Trainer(
             # precision="bf16-mixed",
