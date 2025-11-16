@@ -206,6 +206,7 @@ class ReportGenModel(nn.Module):
         # patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
 
         patch_feats = self.concept_fusion(image_embeddings, gecko_embeddings)
+        print(f'patch_feats: {patch_feats.shape}, image_embeddings: {image_embeddings.shape}, gecko_embeddings: {gecko_embeddings.shape}')
         # patch_feats = self.encoder(gecko_embeddings)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         # att_feats = self.prompt
