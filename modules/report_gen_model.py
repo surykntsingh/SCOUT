@@ -197,7 +197,9 @@ class ReportGenModel(nn.Module):
 
         emb_gc_proj = self.gecko_mlp(emb_gc)
         # gecko_embeddings = self.gecko_fusion(emb_g.unsqueeze(1), emb_gc)
-        gecko_embeddings = self.gecko_encoder(torch.cat([emb_g,emb_gc_proj], dim=1).unsqueeze(1))
+        gecko_embeddings = torch.cat([emb_g,emb_gc_proj], dim=1)
+        print(f'gecko_embeddings: {gecko_embeddings.shape}')
+        gecko_embeddings = self.gecko_encoder()
 
         # gecko_embeddings = self.gecko_encoder(emb_g)
 
