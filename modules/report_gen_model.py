@@ -157,8 +157,7 @@ class ReportGenModel(nn.Module):
         )
 
         self.gecko_encoder = nn.Sequential(
-            nn.Linear(gd, 2 * gd),
-            nn.ReLU(),
+
             nn.Linear(2 * gd, 4 * d),
             nn.ReLU(),
             nn.Linear(4 * d, 2*d),
@@ -197,7 +196,7 @@ class ReportGenModel(nn.Module):
 
         emb_gc_proj = self.gecko_mlp(emb_gc)
         # gecko_embeddings = self.gecko_fusion(emb_g.unsqueeze(1), emb_gc)
-        gecko_embeddings = torch.cat([emb_g,emb_gc_proj], dim=0)
+        gecko_embeddings = torch.cat([emb_g,emb_gc_proj], dim=1)
         # print(f'gecko_embeddings: {gecko_embeddings.shape}')
         gecko_embeddings = self.gecko_encoder(gecko_embeddings)
 
@@ -206,7 +205,7 @@ class ReportGenModel(nn.Module):
         # patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
 
         patch_feats = self.concept_fusion(image_embeddings, gecko_embeddings)
-        print(f'patch_feats: {patch_feats.shape}, image_embeddings: {image_embeddings.shape}, gecko_embeddings: {gecko_embeddings.shape}')
+        # print(f'patch_feats: {patch_feats.shape}, image_embeddings: {image_embeddings.shape}, gecko_embeddings: {gecko_embeddings.shape}')
         # patch_feats = self.encoder(gecko_embeddings)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         # att_feats = self.prompt
