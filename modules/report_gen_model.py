@@ -136,7 +136,7 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
         gd = args.gd
-        gdc = args.gdc
+        gdc = args.gcd
         self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         self.image_fusion = FilmFusion(d,d)
         # self.gecko_fusion = FilmFusion(d, d)
