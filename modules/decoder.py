@@ -23,14 +23,14 @@ class DecoderLayer(nn.Module):
 
     def forward(self, feats, hidden_states, concepts, src_mask, tgt_mask):
         # m = hidden_states
-        x, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x_self, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
         x_img, x_img_attn = self.sublayer[1](feats, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
 
         x_con, x_con_attn = self.sublayer[2](feats, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        x_fused1, alpha = self.gate_fusion1(x, x_img, x_con)
-        x_fused , _ = self.gate_fusion2(x, x, x_fused1)
+        x_fused1, alpha = self.gate_fusion1(feats, x_img, x_con)
+        x_fused , _ = self.gate_fusion2(feats, x_self, x_fused1)
 
         out = self.sublayer[3](x_fused, self.ff_1)
         return out, (alpha, x_img_attn, x_con_attn)
