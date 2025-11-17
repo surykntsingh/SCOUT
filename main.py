@@ -17,7 +17,7 @@ torch.set_float32_matmul_precision('medium')
 torch.autograd.set_detect_anomaly(True)
 
 @app.command()
-def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
+def train(config_file_path: str='histai_config.yaml', notes: str=''):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.80, 0.1, 0.1]
     tokenizer = Tokenizer(args.reports_json_path)
@@ -50,6 +50,8 @@ def train(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
     metrics = {**train_metrics, **test_metrics, 'best_model_path': best_model_path}
     print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}')# tune_metrics: {tune_metrics}')
 
+
+    metrics['exp_notes'] = notes
     copy_yaml(config_file_path, args.ckpt_path)
     os.makedirs(f'{args.ckpt_path}/results', exist_ok=True)
     write_metrics(f'{args.ckpt_path}/results', metrics, date)
