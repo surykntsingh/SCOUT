@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         for i,layer in enumerate(self.layers):
             # x = self.concept_fusion(self.norm(x), concepts)
             x = layer(self.norm(x), mask)
-            x = self.PAM[i](x)
+            # x = self.PAM[i](x)
 
             s.append(x)
 
