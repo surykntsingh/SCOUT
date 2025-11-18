@@ -110,7 +110,7 @@ class MultiHeadGatedFusion(nn.Module):
 
         # reshape back and project
         fused = fused.view(B, L, D)
-        out = self.out_proj(fused+x)  # residual connection + projection
+        out = self.out_proj(fused)  # residual connection + projection
         return out, alpha
 
 
@@ -246,7 +246,7 @@ class EncoderDecoder(AttModel):
                     deepcopy(attn),  # cross-attn (concept)
                     deepcopy(ff),  # feed-forward
                     deepcopy(mgf), # multi head gate fusion
-                    deepcopy(mgf),
+                    deepcopy(attn),
                     self.dropout
                 ),
                 self.num_layers

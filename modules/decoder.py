@@ -17,7 +17,7 @@ class DecoderLayer(nn.Module):
         self.gate_fusion2 = gate_fusion2
         self.ff_1 = ff_1
         # self.ff_2 = ff_2
-        self.n = 4
+        self.n = 5
         self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
 
 
@@ -29,10 +29,10 @@ class DecoderLayer(nn.Module):
 
         x_con, x_con_attn = self.sublayer[2](feats, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        x_fused1, alpha = self.gate_fusion1(feats, x_img, x_con)
-        x_fused , _ = self.gate_fusion2(feats, x_self, x_fused1)
-
-        out = self.sublayer[3](x_fused, self.ff_1)
+        x_fused, alpha = self.gate_fusion1(feats, x_img, x_con)
+        # x_fused , _ = self.gate_fusion2(feats, x_self, x_fused1)
+        x_out, _ = self.sublayer[3](x_self, lambda x: self.gate_fusion2(x, x_fused, x_fused, mask=None))
+        out = self.sublayer[4](x_out, self.ff_1)
         return out, (alpha, x_img_attn, x_con_attn)
 
 class Decoder(nn.Module):

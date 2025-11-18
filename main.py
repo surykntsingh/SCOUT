@@ -40,7 +40,7 @@ def train(config_file_path: str='histai_config.yaml', notes: str=''):
     # if not args.fast_dev_run:
     print(f'loading best model from {best_model_path}')
 
-    tune_metrics, best_model_path = tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule)
+    # tune_metrics, best_model_path = tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule)
     best_model = ReportModel.load_from_checkpoint(best_model_path, args=args, tokenizer=tokenizer)
     test_metrics, tr = trainer.test(best_model, datamodule, fast_dev_run=args.fast_dev_run)
     print('model testing finished')
@@ -48,7 +48,7 @@ def train(config_file_path: str='histai_config.yaml', notes: str=''):
 
 
     metrics = {**train_metrics, **test_metrics, 'best_model_path': best_model_path}
-    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}, tune_metrics: {tune_metrics}')
+    print(f'train_metrics: {train_metrics}, test_metrics: {test_metrics}') #, tune_metrics: {tune_metrics}')
 
 
     metrics['exp_notes'] = notes
