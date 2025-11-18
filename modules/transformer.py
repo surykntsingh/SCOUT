@@ -124,6 +124,45 @@ class MultiHeadGatedFusion(nn.Module):
         return out, alpha
 
 
+class MultiHeadGatedFusionV2(nn.Module):
+    def __init__(self, d_model, num_heads, dropout):
+        super().__init__()
+        H = num_heads
+        d_h = d_model // H
+        self.num_heads = H
+        self.head_dim = d_h
+
+        # produce 3 logits for gating per head
+        self.gate_net = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 3 * d_model)   # 3-way gating
+        )
+
+        self.out_proj = nn.Linear(d_model, d_model)
+
+    def forward(self, x, x_self, x_img, x_con):
+        B, L, D = x.shape
+        H, d_h = self.num_heads, self.head_dim
+
+        gates = self.gate_net(x).view(B, L, H, 3, d_h)     # [B,L,H,3,d_h]
+        weights = gates.softmax(dim=3)                     # [B,L,H,3,d_h]
+
+        w_self = weights[:, :, :, 0]
+        w_img  = weights[:, :, :, 1]
+        w_con  = weights[:, :, :, 2]
+
+        # reshape inputs
+        x_self = x_self.view(B, L, H, d_h)
+        x_img  = x_img.view(B, L, H, d_h)
+        x_con  = x_con.view(B, L, H, d_h)
+
+        fused = w_self * x_self + w_img * x_img + w_con * x_con
+
+        fused = fused.view(B, L, D)
+        return self.out_proj(fused), weights
+
 
 class PositionwiseFeedForward(nn.Module):
     def __init__(self, d_model, d_ff, dropout=0.1):
@@ -234,7 +273,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadGatedFusion(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadGatedFusionV2(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
