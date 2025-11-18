@@ -183,6 +183,80 @@ class Embeddings(nn.Module):
     def forward(self, x):
         return self.lut(x) * math.sqrt(self.d_model)
 
+class MultiHeadGatedFusionV3(nn.Module):
+    def __init__(self, d_model, num_heads, dropout=0.1, temperature=1.0):
+        super().__init__()
+        H = num_heads
+        d_h = d_model // H
+
+        self.num_heads = H
+        self.head_dim = d_h
+        self.temperature = nn.Parameter(torch.tensor(temperature))
+
+        # Per-head projections
+        self.proj_self = nn.Linear(d_model, d_model)
+        self.proj_img  = nn.Linear(d_model, d_model)
+        self.proj_con  = nn.Linear(d_model, d_model)
+
+        # Contextual gating network
+        self.gate_net = nn.Sequential(
+            nn.Linear(3 * d_model, d_model),
+            nn.ReLU(),
+            nn.Linear(d_model, 3 * d_model)
+        )
+
+        # Fusion + normalization
+        self.out_proj = nn.Linear(d_model, d_model)
+        self.norm = nn.LayerNorm(d_model)
+
+        # Small FFN for extra expressiveness
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.GELU(),
+            nn.Linear(4 * d_model, d_model),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x, x_self, x_img, x_con):
+        B, L, D = x.shape
+        H, d_h = self.num_heads, self.head_dim
+
+        # ---- Per-head projections ----
+        s0 = self.proj_self(x_self)
+        i0 = self.proj_img(x_img)
+        c0 = self.proj_con(x_con)
+
+        # ---- Contextual gating ----
+        ctx = torch.cat([x, x_img, x_con], dim=-1)
+        gates = self.gate_net(ctx)                         # [B,L,3D]
+        gates = gates.view(B, L, H, 3, d_h)
+
+        # Temperature-scaled softmax
+        weights = F.softmax(gates / self.temperature, dim=3)
+
+        w_self = weights[:, :, :, 0]
+        w_img  = weights[:, :, :, 1]
+        w_con  = weights[:, :, :, 2]
+
+        # ---- Reshape modalities ----
+        s0 = s0.view(B, L, H, d_h)
+        i0 = i0.view(B, L, H, d_h)
+        c0 = c0.view(B, L, H, d_h)
+
+        # ---- Weighted fusion ----
+        fused = w_self * s0 + w_img * i0 + w_con * c0
+        fused = fused.view(B, L, D)
+
+        # ---- Projection + residual + normalization ----
+        out = x + self.out_proj(fused)
+        out = self.norm(out)
+
+        # ---- Extra FFN ----
+        out = out + self.ffn(out)
+
+        return out, weights
+
+
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout, max_len=5000):
@@ -273,7 +347,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadGatedFusionV2(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
