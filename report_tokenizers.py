@@ -18,7 +18,7 @@ class Tokenizer:
         reports = read_json_file(reports_json_path)
 
         for report in reports:
-            tokens = self.__split_text(report['report'])
+            tokens = self.__split_text(self.clean_report_brca_v2(report['report']))
             # for token in tokens:
             #     total_tokens.append(token)
             total_tokens.extend(tokens)
