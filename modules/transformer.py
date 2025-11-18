@@ -78,7 +78,15 @@ class MultiHeadGatedFusion(nn.Module):
         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
 
         # gating network per head
-        self.gate_net = nn.Sequential(
+        self.gate_net_1 = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, d_model),
+            nn.Sigmoid()
+        )
+
+        self.gate_net_2 = nn.Sequential(
             nn.Linear(d_model, d_model),
             nn.ReLU(),
             nn.Dropout(dropout),
@@ -88,7 +96,7 @@ class MultiHeadGatedFusion(nn.Module):
 
         self.out_proj = nn.Linear(d_model, d_model)
 
-    def forward(self, x, x_img, x_con):
+    def forward(self, x, x_self, x_img, x_con):
         """
         x: [B, L, D] - decoder token
         x_img: [B, L, D] - attended image features
@@ -99,14 +107,16 @@ class MultiHeadGatedFusion(nn.Module):
         d_h = self.head_dim
 
         # compute per-head gating
-        alpha = self.gate_net(x).view(B, L, H, d_h)   # [B, L, H, d_h]
+        alpha = self.gate_net_1(x).view(B, L, H, d_h)   # [B, L, H, d_h]
+        beta = self.gate_net_2(x).view(B, L, H, d_h)  # [B, L, H, d_h]
 
         # reshape inputs to [B, L, H, d_h]
+        x_self = x_self.view(B, L, H, d_h)
         x_img = x_img.view(B, L, H, d_h)
         x_con = x_con.view(B, L, H, d_h)
 
         # fuse per head
-        fused = (1 - alpha) * x_img + alpha * x_con
+        fused = beta * x_img + alpha * x_con + (1-alpha-beta) * x_self
 
         # reshape back and project
         fused = fused.view(B, L, D)
@@ -246,7 +256,6 @@ class EncoderDecoder(AttModel):
                     deepcopy(attn),  # cross-attn (concept)
                     deepcopy(ff),  # feed-forward
                     deepcopy(mgf), # multi head gate fusion
-                    deepcopy(attn),
                     self.dropout
                 ),
                 self.num_layers
