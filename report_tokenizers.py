@@ -103,7 +103,7 @@ class Tokenizer:
         # -------------------------------------------------------
         # 1. Normalize whitespace and remove section numbering
         # -------------------------------------------------------
-        text = report.replace("\n", ". ")
+        text = report.replace("\n", " ")
         text = re.sub(r"\s+", " ", text)
 
         # Remove bullets like: 1. , 10. , 14.
@@ -114,7 +114,7 @@ class Tokenizer:
         # -------------------------------------------------------
         text = re.sub(
             r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<x-units>',
             text,
             flags=re.IGNORECASE
         )
@@ -147,7 +147,7 @@ class Tokenizer:
         # 4. Clean each sentence: remove punctuation, quotes, noise
         # -------------------------------------------------------
         def clean_sentence(s):
-            s = re.sub(r'[#,?;*!^&_\[\]{}]', '', s)
+            s = re.sub(r'[#,?;*!^&_:\[\]{}]', '', s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
 
