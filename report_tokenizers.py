@@ -2,7 +2,7 @@ import os
 import json
 import re
 from collections import Counter
-
+import unicodedata
 from utils.utils import read_json_file
 
 
@@ -98,6 +98,7 @@ class Tokenizer:
         # 0. Remove invalid UTF-8 characters
         # -------------------------------------------------------
         report = report.encode("utf-8", "ignore").decode("utf-8")
+        report = unicodedata.normalize("NFKC", report)
 
         # -------------------------------------------------------
         # 1. Normalize whitespace and remove section numbering
