@@ -111,18 +111,28 @@ class Tokenizer:
         # -------------------------------------------------------
         # 2. Remove measurement expressions
         # -------------------------------------------------------
-        # Single measurements: 2.5 cm, 3 mm, 10.2-mm, 4cm
-        text = re.sub(r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b', "x units", text)
+        text = re.sub(
+            r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            '<x units>',
+            text,
+            flags=re.IGNORECASE
+        )
 
-        # Multi-dimensional: 2.2 x 2.2 x 2.2 cm, 3 × 4 × 5 mm, 1.0 by 0.4 cm
-        measurement_pattern = r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*)+\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b'
+        # Remove 2D only (A x B cm)
+        text = re.sub(
+            r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            '<x units>',
+            text,
+            flags=re.IGNORECASE
+        )
 
-        text = re.sub(measurement_pattern, "<x> units", text, flags=re.IGNORECASE | re.VERBOSE)
-
-        # Two-dimensional measurements: 3 x 4 cm
-        measurement_pattern_2d = r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b'
-
-        text = re.sub(measurement_pattern_2d, "x units", text, flags=re.IGNORECASE | re.VERBOSE)
+        # Remove single measurements (A cm, A mm)
+        text = re.sub(
+            r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            '<x units>',
+            text,
+            flags=re.IGNORECASE
+        )
 
         # Normalize spaces again
         text = re.sub(r"\s+", " ", text).strip().lower()
