@@ -117,7 +117,7 @@ class ReportModel(pl.LightningModule):
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 self.__save_predictions(slide_ids, pred_texts, ground_truths)
-                self.__print_results(slide_ids, pred_texts)
+                self.__print_results(slide_ids, pred_texts, ground_truths)
                 rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
                 del output
@@ -145,7 +145,7 @@ class ReportModel(pl.LightningModule):
             ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
             self.__save_predictions(slide_ids, pred_texts, ground_truths)
             if batch_idx % 10 == 0:
-                self.__print_results(slide_ids, pred_texts)
+                self.__print_results(slide_ids, pred_texts, ground_truths)
 
             rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -186,7 +186,7 @@ class ReportModel(pl.LightningModule):
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
-    def __print_results(self, slide_ids, pred_texts):
+    def __print_results(self, slide_ids, pred_texts, target_texts):
         RED = '\033[91m'
         RESET = '\033[0m'
         BLUE = '\033[94m'
@@ -196,6 +196,7 @@ class ReportModel(pl.LightningModule):
 
             print('*' * 100)
             print(f'{RED} Predicted report for slide: {slide_ids[i]}: {pred_texts[i]} {RESET}')
+            print(f'Ground truth: {target_texts}')
             print(f'{BLUE} Ground truth: {ground_truth} {RESET}')
 
             # json_string = json.dumps(extract_fields(pred_text), indent=4)
