@@ -11,8 +11,9 @@ class Tokenizer:
     def __init__(self, reports_json_path, threshold=1):
         self.__threshold = threshold
         self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
-        self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
         self.clean_reports = self.clean_report_brca
+        self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
+
 
     def create_vocabulary(self, reports_json_path):
         total_tokens = []
