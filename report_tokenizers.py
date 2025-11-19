@@ -12,13 +12,14 @@ class Tokenizer:
         self.__threshold = threshold
         self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
         self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
+        self.clean_reports = self.clean_report_brca
 
     def create_vocabulary(self, reports_json_path):
         total_tokens = []
         reports = read_json_file(reports_json_path)
 
         for report in reports:
-            tokens = self.__split_text(self.clean_report_brca_v2(report['report']))
+            tokens = self.__split_text(self.clean_reports(report['report']))
             # for token in tokens:
             #     total_tokens.append(token)
             total_tokens.extend(tokens)
@@ -51,7 +52,7 @@ class Tokenizer:
         return [m.group(0) for m in self.__pattern.finditer(text)]
 
     def __call__(self, report):
-        tokens = self.__split_text(self.clean_report_brca_v2(report))
+        tokens = self.__split_text(self.clean_reports(report))
         ids = []
         for token in tokens:
             ids.append(self.get_id_by_token(token))
