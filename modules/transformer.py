@@ -37,7 +37,7 @@ class Transformer(nn.Module):
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h, d_model, dropout=0.1):
         super().__init__()
-        assert d_model % h == 0
+        assert d_model % h == 0, f'd_model % h = {d_model % h}. Must be 0!'
         self.d_k = d_model // h
         self.h = h
         self.linears = clones(nn.Linear(d_model, d_model), 4)
