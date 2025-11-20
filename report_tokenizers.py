@@ -99,7 +99,7 @@ class Tokenizer:
         # 0. Remove invalid UTF-8 characters
         # -------------------------------------------------------
         report = report.encode("utf-8", "ignore").decode("utf-8")
-        report = unicodedata.normalize("NFKC", report)
+        # report = unicodedata.normalize("NFKC", report)
 
         # -------------------------------------------------------
         # 1. Normalize whitespace and remove section numbering
