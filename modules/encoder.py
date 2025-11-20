@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-from modules.common import LayerNorm, SublayerConnection
+from modules.common import LayerNorm, SublayerConnection, ConceptSublayer
 from utils import utils
 from utils.utils import clones
 
@@ -14,24 +14,24 @@ class Encoder(nn.Module):
         self.norm = LayerNorm(layer.d_model)
         self.PAM = clones(PAM, N)
         self.N = N
-        self.concept_fusion = concept_fusion
+        self.concept_sublayer = clones(ConceptSublayer(layer.d_model, concept_fusion), N)
         self.layer_weights = nn.Parameter(torch.ones(N))
 
     def forward(self, x, mask, concepts):
-        s=[]
+        outputs=[]
         for i,layer in enumerate(self.layers):
-            # x = self.concept_fusion(self.norm(x), concepts)
-            x = layer(self.norm(x), mask)
+            x = self.concept_sublayer[i](x, concepts)
+            x = self.layers[i](x, mask)
             x = self.PAM[i](x)
 
-            s.append(x)
+            outputs.append(x)
 
-            # Weighted sum of layer outputs
-        s = torch.stack(s, dim=0)  # [N, B, L, D]
-        w = F.softmax(self.layer_weights, dim=0)  # [N]
-        o = (w[:, None, None, None] * s).sum(0)  # [B, L, D]
+        # weighted layer averaging
+        outputs = torch.stack(outputs, dim=0)
+        w = F.softmax(self.layer_weights, dim=0)
+        out = (w[:, None, None, None] * outputs).sum(0)
 
-        return self.norm(o)
+        return self.norm(out)
 
 
 class EncoderLayer(nn.Module):

@@ -31,3 +31,12 @@ class SublayerConnection(nn.Module):
             return x + self.dropout(y[0]), y[1]
         else:
             return x + self.dropout(y)
+
+class ConceptSublayer(nn.Module):
+    def __init__(self, d_model, concept_fusion):
+        super().__init__()
+        self.norm = nn.LayerNorm(d_model)
+        self.fusion = concept_fusion   # expects fused output, same shape as x
+
+    def forward(self, x, concepts):
+        return x + self.fusion(self.norm(x), concepts)
