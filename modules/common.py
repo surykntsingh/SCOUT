@@ -39,4 +39,5 @@ class ConceptSublayer(nn.Module):
         self.fusion = concept_fusion   # expects fused output, same shape as x
 
     def forward(self, x, concepts):
-        return x + self.fusion(self.norm(x), concepts)
+        x_infused, _, _ = self.fusion(self.norm(x), concepts)
+        return x + x_infused
