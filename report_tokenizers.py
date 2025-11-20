@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import unicodedata
 from collections import Counter
 
 from utils.utils import read_json_file
@@ -98,6 +99,7 @@ class Tokenizer:
         # 0. Remove invalid UTF-8 characters
         # -------------------------------------------------------
         report = report.encode("utf-8", "ignore").decode("utf-8")
+        report = unicodedata.normalize("NFKC", report)
 
         # -------------------------------------------------------
         # 1. Normalize whitespace and remove section numbering
@@ -113,7 +115,7 @@ class Tokenizer:
         # -------------------------------------------------------
         text = re.sub(
             r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<x_units>',
             text,
             flags=re.IGNORECASE
         )
@@ -121,7 +123,7 @@ class Tokenizer:
         # Remove 2D only (A x B cm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<x_units>',
             text,
             flags=re.IGNORECASE
         )
@@ -129,7 +131,7 @@ class Tokenizer:
         # Remove single measurements (A cm, A mm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<x_units>',
             text,
             flags=re.IGNORECASE
         )
