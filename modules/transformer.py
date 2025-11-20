@@ -322,9 +322,9 @@ class CrossAttentionBlock(nn.Module):
 
 
 class CrossAttentionBlockV2(nn.Module):
-    def __init__(self, d_model, n_heads, dropout=0.1):
+    def __init__(self, n_heads, d_model, dropout=0.1):
         super().__init__()
-        print(f'n_heads: {n_heads}, d_model: {d_model}, dropout: {dropout}')
+        # print(f'n_heads: {n_heads}, d_model: {d_model}, dropout: {dropout}')
         # separate cross attentions
         self.x2c_attn = MultiHeadedAttention(n_heads, d_model, dropout)
         self.c2x_attn = MultiHeadedAttention(n_heads, d_model, dropout)
