@@ -24,9 +24,9 @@ class DecoderLayer(nn.Module):
         # m = hidden_states
         x_self, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
-        x_img, x_img_attn = self.sublayer[1](feats, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
+        x_img, x_img_attn = self.sublayer[1](x_self, lambda x: self.src_attn(x, hidden_states, hidden_states, src_mask))
 
-        x_con, x_con_attn = self.sublayer[2](feats, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
+        x_con, x_con_attn = self.sublayer[2](x_img, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
         x_fused, x_con,  alpha = self.gate_fusion(feats, x_self, x_img, x_con)
 
