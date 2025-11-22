@@ -161,7 +161,7 @@ class MultiHeadGatedFusionV2(nn.Module):
         fused = w_self * x_self + w_img * x_img + w_con * x_con
 
         fused = fused.view(B, L, D)
-        return self.out_proj(fused), weights
+        return self.out_proj(fused), x_con, weights
 
 
 class PositionwiseFeedForward(nn.Module):
