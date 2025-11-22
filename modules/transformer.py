@@ -275,36 +275,36 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
-
-class PAM(nn.Module):
-    def __init__(self, dim=512):
-        super(PAM, self).__init__()
-        self.proj = nn.Conv2d(dim, dim, 13, 1, 13//2, groups=dim)
-        self.proj1 = nn.Conv2d(dim, dim, 7, 1, 7//2, groups=dim)
-        self.proj2 = nn.Conv2d(dim, dim, 3, 1, 3//2, groups=dim)
-
-    def forward(self, x):
-        B, H, C = x.shape
-        # print(f'B, H, C : {(B, H, C)}')
-        assert int(math.sqrt(H))**2==H, f'{x.shape}'
-        cnn_feat = x.transpose(1, 2).reshape(B, C, int(math.sqrt(H)), int(math.sqrt(H)))
-        x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
-        x = x.flatten(2).transpose(1, 2)
-
-        return x
-
-class PAM_(nn.Module):
-    def __init__(self, dim=512):
-        super().__init__()
-        self.proj = nn.Sequential(
-            nn.Linear(dim, dim),
-            nn.ReLU(),)
-
-    def forward(self, x):
-        # B, H, C = x.shape
-        x = self.proj(x)
-
-        return x
+#
+# class PAM(nn.Module):
+#     def __init__(self, dim=512):
+#         super(PAM, self).__init__()
+#         self.proj = nn.Conv2d(dim, dim, 13, 1, 13//2, groups=dim)
+#         self.proj1 = nn.Conv2d(dim, dim, 7, 1, 7//2, groups=dim)
+#         self.proj2 = nn.Conv2d(dim, dim, 3, 1, 3//2, groups=dim)
+#
+#     def forward(self, x):
+#         B, H, C = x.shape
+#         # print(f'B, H, C : {(B, H, C)}')
+#         assert int(math.sqrt(H))**2==H, f'{x.shape}'
+#         cnn_feat = x.transpose(1, 2).reshape(B, C, int(math.sqrt(H)), int(math.sqrt(H)))
+#         x = self.proj(cnn_feat)+cnn_feat+self.proj1(cnn_feat)+self.proj2(cnn_feat)
+#         x = x.flatten(2).transpose(1, 2)
+#
+#         return x
+#
+# class PAM_(nn.Module):
+#     def __init__(self, dim=512):
+#         super().__init__()
+#         self.proj = nn.Sequential(
+#             nn.Linear(dim, dim),
+#             nn.ReLU(),)
+#
+#     def forward(self, x):
+#         # B, H, C = x.shape
+#         x = self.proj(x)
+#
+#         return x
 
 # class CrossAttentionBlock(nn.Module):
 #     def __init__(self, n_heads,d_model, dropout):
@@ -393,7 +393,7 @@ class EncoderDecoder(AttModel):
         attn = MultiHeadedAttention(self.num_heads, self.d_model, dropout=self.dropout)
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
-        pp = PAM(self.d_model)
+        pp = lambda x:x #PAM(self.d_model)
         mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = CrossAttentionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
 
