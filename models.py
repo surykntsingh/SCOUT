@@ -54,7 +54,7 @@ class ReportModel(pl.LightningModule):
 
     def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
         # Attention Regularization
-        _, attn_img, attn_con = attns
+        _, _, attn_img, attn_con = attns
         # Mean over layers and heads
 
         attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
@@ -70,7 +70,7 @@ class ReportModel(pl.LightningModule):
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
+        concept_loss = self.model.concept_supervision_head(attns[0], gecko_concepts)
         attn_reg = self.get_attn_regularization(attns)
 
         with torch.no_grad():

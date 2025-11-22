@@ -4,49 +4,47 @@ import torch.nn.functional as F
 
 from modules.transformer import EncoderDecoder
 
-class ConceptSupervisionHead(nn.Module):
-    def __init__(self, d_model, concept_dim, dropout, temp=0.07):
+class ConceptEmbeddingSupervisionHead(nn.Module):
+    """
+    Decoder concept-stream supervision:
+    Aligns x_con (decoded concept representation) with Gecko activations.
+    """
+    def __init__(self, d_model, concept_dim, dropout, hidden=256, mode="cosine"):
         super().__init__()
-
-        self.token_to_concept = nn.Linear(d_model, concept_dim)
-        self.temp = temp
-
+        self.mode = mode
         self.proj = nn.Sequential(
-            nn.Linear(d_model, d_model),
+            nn.Linear(d_model, hidden),
             nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_model, concept_dim)
+            nn.Linear(hidden, concept_dim)
         )
+        self.cos = nn.CosineSimilarity(dim=-1)
+        self.kl = nn.KLDivLoss(reduction="batchmean")
 
-    def forward(self, decoder_out, gecko_concepts):
+    def forward(self, x_con, concept_scores):
         """
-        decoder_out: [B, L, D]
-        gecko_concepts: [B, M, C]
+        x_con: [B, L, H, d_h]
+        concept_scores: [B, C]
         """
-        B, L, D = decoder_out.shape
-        _, M, C = gecko_concepts.shape
+        B, L, H, d_h = x_con.shape
+        D = H * d_h
 
-        # 1. Project tokens to concept space
-        token_repr = self.proj(decoder_out)    # [B, L, C]
+        # merge heads
+        x_con = x_con.reshape(B, L, D)
 
-        # 2. Normalize for cosine similarity
-        token_norm = F.normalize(token_repr, dim=-1)   # [B, L, C]
-        gecko_norm = F.normalize(gecko_concepts, dim=-1)  # [B, M, C]
+        # mean-pool tokens
+        concept_repr = x_con.mean(dim=1)  # [B, D]
 
-        # 3. Compute token→concept attention weights
-        #    shape: [B, L, M]
-        sim = torch.matmul(token_norm, gecko_norm.transpose(1, 2)) / self.temp
-        attn = F.softmax(sim, dim=-1)
+        pred_scores = self.proj(concept_repr)  # [B, C]
 
-        # 4. Predict concept embedding by weighted sum of tokens
-        #    shape: [B, M, C]
-        pred_concepts = torch.matmul(attn.transpose(1, 2), token_repr)
+        # normalize both
+        pred_n = F.normalize(pred_scores, dim=-1)
+        target_n = F.normalize(concept_scores, dim=-1)
 
-        # 5. Normalize predictions
-        pred_norm = F.normalize(pred_concepts, dim=-1)
-
-        # 6. Cosine distance loss
-        loss = 1 - (pred_norm * gecko_norm).sum(dim=-1).mean()
+        if self.mode == "cosine":
+            loss = 1 - self.cos(pred_n, target_n).mean()
+        else:
+            loss = self.kl(F.log_softmax(pred_scores, -1),
+                           F.softmax(concept_scores, -1))
 
         return loss
 
@@ -194,7 +192,7 @@ class ReportGenModel(nn.Module):
         self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
         self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
         self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptEmbeddingSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
         dm =args.d_model

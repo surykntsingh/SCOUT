@@ -321,7 +321,7 @@ class PositionalEncoding(nn.Module):
 #         return x_fused
 
 
-class CrossAttentionBlockV2(nn.Module):
+class ConceptInfusionBlock(nn.Module):
     def __init__(self, n_heads, d_model, dropout=0.1):
         super().__init__()
         # print(f'n_heads: {n_heads}, d_model: {d_model}, dropout: {dropout}')
@@ -395,7 +395,7 @@ class EncoderDecoder(AttModel):
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = lambda x:x #PAM(self.d_model)
         mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
-        concept_fusion = CrossAttentionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
+        concept_fusion = ConceptInfusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
         model = Transformer(

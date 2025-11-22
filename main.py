@@ -132,7 +132,7 @@ def trainkfold(config_file_path='tcga_config.yaml'):
 @app.command()
 def predict(config_file_path='histai_config.yaml', pt=False):
     args = get_params_for_key(config_file_path, "train")
-    tokenizer = Tokenizer(args.reports_json_path)
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
     # if pt:
     #     model = ReportModel(args, tokenizer)
     #     model.load_state_dict(torch.load(args.model_load_path))
