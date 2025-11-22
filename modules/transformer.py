@@ -306,19 +306,19 @@ class PAM_(nn.Module):
 
         return x
 
-class CrossAttentionBlock(nn.Module):
-    def __init__(self, n_heads,d_model, dropout):
-        super().__init__()
-        self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
-        self.norm = LayerNorm(d_model)
-        self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
-
-    def forward(self, x, concepts):
-        x2, attn_x2c = self.cross_attn(x, concepts, concepts)
-        c2, _ = self.cross_attn(concepts, x, x)
-        c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
-        x_fused = self.norm(x + self.ff(x2 + c2_to_x))
-        return x_fused
+# class CrossAttentionBlock(nn.Module):
+#     def __init__(self, n_heads,d_model, dropout):
+#         super().__init__()
+#         self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+#         self.norm = LayerNorm(d_model)
+#         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+#
+#     def forward(self, x, concepts):
+#         x2, attn_x2c = self.cross_attn(x, concepts, concepts)
+#         c2, _ = self.cross_attn(concepts, x, x)
+#         c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
+#         x_fused = self.norm(x + self.ff(x2 + c2_to_x))
+#         return x_fused
 
 
 class CrossAttentionBlockV2(nn.Module):
