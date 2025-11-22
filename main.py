@@ -20,7 +20,7 @@ torch.autograd.set_detect_anomaly(True)
 def train(config_file_path: str='histai_config.yaml', notes: str=''):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.82, 0.09, 0.09]
-    tokenizer = Tokenizer(args.reports_json_path)
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
     if args.resume:
         print(f'Resuming training... Loading model from {args.model_load_path}')
         model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
@@ -93,7 +93,7 @@ def test(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
 
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.85, 0.07, 0.08]
-    tokenizer = Tokenizer(args.reports_json_path)
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     trainer = Trainer(args, tokenizer, split_frac)
 
