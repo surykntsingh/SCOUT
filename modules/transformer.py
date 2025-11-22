@@ -254,7 +254,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         # ---- Extra FFN ----
         out = out + self.ffn(out)
 
-        return out, weights
+        return out, c0, weights
 
 
 
