@@ -41,7 +41,7 @@ class ConceptEmbeddingSupervisionHead(nn.Module):
         pred_n = F.normalize(pred_scores, dim=-1)
         target_n = F.normalize(concept_scores, dim=-1)
 
-        if self.mode == "cosine":
+        if self.mode == "kl":
             loss = 1 - self.cos(pred_n, target_n).mean()
         else:
             loss = self.kl(F.log_softmax(pred_scores, -1),
