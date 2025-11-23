@@ -30,7 +30,7 @@ class ConceptEmbeddingSupervisionHead(nn.Module):
 
         # merge heads
         # x_con = x_con.reshape(B, L, D)
-        print(f'x_con: {x_con.shape}')
+        # print(f'x_con: {x_con.shape}')
 
         # mean-pool tokens
         concept_repr = x_con.mean(dim=1)  # [B, D]
