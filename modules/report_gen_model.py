@@ -6,48 +6,63 @@ from modules.transformer import EncoderDecoder
 
 class ConceptEmbeddingSupervisionHead(nn.Module):
     """
-    Decoder concept-stream supervision:
-    Aligns x_con (decoded concept representation) with Gecko activations.
+    Supervise decoder concept-stream (x_con) to match Gecko concept activations.
+    x_con: [B, L, D]
+    concept_scores: [B, C]
     """
-    def __init__(self, d_model, concept_dim, dropout, hidden=256, mode="cosine"):
+    def __init__(self, d_model, concept_dim, hidden=256, mode="mse", temp=0.07):
         super().__init__()
         self.mode = mode
+        self.temp = temp
+        self.concept_dim = concept_dim
+
         self.proj = nn.Sequential(
             nn.Linear(d_model, hidden),
             nn.ReLU(),
             nn.Linear(hidden, concept_dim)
         )
+
         self.cos = nn.CosineSimilarity(dim=-1)
         self.kl = nn.KLDivLoss(reduction="batchmean")
+        self.mse = nn.MSELoss()
+        self.bce = nn.BCEWithLogitsLoss()
 
     def forward(self, x_con, concept_scores):
         """
-        x_con: [B, L, H, d_h]
+        x_con: [B, L, D]
         concept_scores: [B, C]
         """
-        # B, L, H, d_h = x_con.shape
-        # D = H * d_h
+        # B, L, D = x_con.shape
+        assert concept_scores.shape[-1] == self.concept_dim
 
-        # merge heads
-        # x_con = x_con.reshape(B, L, D)
-        # print(f'x_con: {x_con.shape}')
+        # ---- Pool over tokens ----
+        pooled = x_con.mean(dim=1)     # [B, D]
 
-        # mean-pool tokens
-        concept_repr = x_con.mean(dim=1)  # [B, D]
+        # ---- Predict concept scores ----
+        pred = self.proj(pooled)       # [B, C]
 
-        pred_scores = self.proj(concept_repr)  # [B, C]
+        # ---- Choose supervision type ----
+        if self.mode == "mse":
+            loss = self.mse(pred, concept_scores)
 
-        # normalize both
-        pred_n = F.normalize(pred_scores, dim=-1)
-        target_n = F.normalize(concept_scores, dim=-1)
+        elif self.mode == "bce":
+            loss = self.bce(pred, concept_scores)
 
-        if self.mode == "kl":
-            loss = 1 - self.cos(pred_n, target_n).mean()
+        elif self.mode == "cosine":
+            pred_n = F.normalize(pred, dim=-1)
+            tgt_n  = F.normalize(concept_scores, dim=-1)
+            loss = 1 - self.cos(pred_n, tgt_n).mean()
+
+        elif self.mode == "kl":
+            log_p = F.log_softmax(pred / self.temp, dim=-1)
+            q = F.softmax(concept_scores / self.temp, dim=-1)
+            loss = self.kl(log_p, q)
+
         else:
-            loss = self.kl(F.log_softmax(pred_scores, -1),
-                           F.softmax(concept_scores, -1))
+            raise ValueError(f"Unknown mode: {self.mode}")
 
-        return loss
+        return loss, pred
+
 
 
 # class ConceptSupervisionHead(nn.Module):

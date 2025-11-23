@@ -256,6 +256,70 @@ class MultiHeadGatedFusionV3(nn.Module):
 
         return out, weights
 
+class MultiHeadGatedFusionV4(nn.Module):
+    def __init__(self, d_model, num_heads, dropout=0.1, temperature=1.0):
+        super().__init__()
+        H = num_heads
+        d_h = d_model // H
+
+        self.num_heads = H
+        self.head_dim = d_h
+        self.temperature = nn.Parameter(torch.tensor(temperature))
+
+        # Per-modality projections
+        self.proj_self = nn.Linear(d_model, d_model)
+        self.proj_img  = nn.Linear(d_model, d_model)
+        self.proj_con  = nn.Linear(d_model, d_model)
+
+        # Light gating net
+        self.gate_net = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Linear(d_model, 3 * d_model)
+        )
+
+        self.out_proj = nn.Linear(d_model, d_model)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.GELU(),
+            nn.Linear(4 * d_model, d_model),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x, x_self, x_img, x_con):
+        B, L, D = x.shape
+        H, d_h = self.num_heads, self.head_dim
+
+        # project modalities
+        s0 = self.proj_self(x_self).view(B, L, H, d_h)
+        i0 = self.proj_img(x_img).view(B, L, H, d_h)
+        c0 = self.proj_con(x_con).view(B, L, H, d_h)
+
+        # gating context (better)
+        ctx = x_con    # final attended representation
+        gates = self.gate_net(ctx).view(B, L, H, 3, d_h)
+
+        weights = F.softmax(gates / self.temperature, dim=3)
+
+        # fusion
+        fused = (
+              weights[..., 0, :] * s0
+            + weights[..., 1, :] * i0
+            + weights[..., 2, :] * c0
+        ).view(B, L, D)
+
+        # residual 1
+        out = x_con + self.out_proj(fused)
+        out = self.norm1(out)
+
+        # residual 2 (with FFN)
+        out = out + self.ffn(self.norm2(out))
+
+        return out, weights
+
 
 
 class PositionalEncoding(nn.Module):
@@ -394,7 +458,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = lambda x:x #PAM(self.d_model)
-        mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadGatedFusionV4(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
