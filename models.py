@@ -52,20 +52,42 @@ class ReportModel(pl.LightningModule):
         # torch.cuda.set_device(self.trainer.local_rank)
 
 
-    def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
-        # Attention Regularization
-        _, _, attn_img, attn_con = attns
-        # Mean over layers and heads
+    # def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
+    #     # Attention Regularization
+    #     _, _, attn_img, attn_con = attns
+    #     # Mean over layers and heads
+    #
+    #     attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
+    #     attn_img_mean = attn_img.mean(dim=(0, 1, 2))
+    #     # (a) Sparsity regularization (entropy)
+    #     entropy = - (attn_con_mean * torch.log(attn_con_mean + 1e-8)).sum(-1).mean()
+    #
+    #     # (b) Balance regularization
+    #     balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
+    #
+    #     return lambda_entropy * entropy + lambda_balance * balance
 
-        attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
-        attn_img_mean = attn_img.mean(dim=(0, 1, 2))
-        # (a) Sparsity regularization (entropy)
-        entropy = - (attn_con_mean * torch.log(attn_con_mean + 1e-8)).sum(-1).mean()
+    def get_attn_regularization(self, attns,
+                                lambda_entropy=1e-3, lambda_balance=5e-2):
+        """
+        x_img_attn: (L, B, H, T, S_img)
+        x_con_attn: (L, B, H, T, S_con)
+        """
+        _, _, x_img_attn, x_con_attn = attns
+        # --- Mean over layers, batch, heads ---
+        img_mean = x_img_attn.mean(dim=(0, 1, 2))  # (T, S_img)
+        con_mean = x_con_attn.mean(dim=(0, 1, 2))  # (T, S_con)
 
-        # (b) Balance regularization
-        balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
+        # --- Sparsity (minimize entropy) ---
+        img_entropy = -(img_mean * (img_mean + 1e-8).log()).sum(-1).mean()
+        con_entropy = -(con_mean * (con_mean + 1e-8).log()).sum(-1).mean()
 
-        return lambda_entropy * entropy + lambda_balance * balance
+        entropy_loss = img_entropy + con_entropy  # encourage sparse attn
+
+        # --- Balance (compare sparsity levels, not raw means) ---
+        balance_loss = (img_entropy - con_entropy).abs()
+
+        return lambda_entropy * entropy_loss + lambda_balance * balance_loss
 
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
@@ -78,7 +100,7 @@ class ReportModel(pl.LightningModule):
             concept_magnitude = concept_loss.detach() + 1e-8
             scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss   + self.concept_lambda * concept_loss * scale # + attn_reg
+        total_loss = caption_loss+ attn_reg #   + self.concept_lambda * concept_loss * scale # + attn_reg
         return total_loss, concept_loss
 
 
