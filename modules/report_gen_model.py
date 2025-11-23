@@ -10,7 +10,7 @@ class ConceptEmbeddingSupervisionHead(nn.Module):
     x_con: [B, L, D]
     concept_scores: [B, C]
     """
-    def __init__(self, d_model, concept_dim, hidden=256, mode="mse", temp=0.07):
+    def __init__(self, d_model, concept_dim, dropout, hidden=256, mode="mse", temp=0.07):
         super().__init__()
         self.mode = mode
         self.temp = temp
