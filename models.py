@@ -92,7 +92,7 @@ class ReportModel(pl.LightningModule):
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.model.concept_supervision_head(attns[1], gecko_concepts)
+        concept_loss = self.model.concept_supervision_head(attns[0], gecko_concepts)
         attn_reg = self.get_attn_regularization(attns)
 
         total_loss = caption_loss+ attn_reg + self.concept_lambda * concept_loss
