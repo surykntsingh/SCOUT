@@ -80,7 +80,7 @@ class ConceptGateSupervisionHead(nn.Module):
 
     def forward(self, weights, concept_scores):
         loss_wcon = 0
-        for l in range(weights.shape[0]):
+        for l in range(len(weights)):
             weight = weights[l]
             weight = weight.mean(dim=-1)  # → [B, L, H, 3]
             # w_self = weight[..., 0]
@@ -89,7 +89,7 @@ class ConceptGateSupervisionHead(nn.Module):
             lw, _ = self.get_loss(w_con, concept_scores)
             loss_wcon += lw
 
-        loss_wcon /= weights.shape[0]
+        loss_wcon /= len(weights)
         return loss_wcon
 
     def get_loss(self, w_con, concept_scores):
