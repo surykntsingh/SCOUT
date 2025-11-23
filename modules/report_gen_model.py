@@ -61,7 +61,7 @@ class ConceptEmbeddingSupervisionHead(nn.Module):
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
 
-        return loss, pred
+        return loss
 
 
 
