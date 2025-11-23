@@ -63,6 +63,56 @@ class ConceptEmbeddingSupervisionHead(nn.Module):
 
         return loss
 
+class ConceptGateSupervisionHead(nn.Module):
+    """
+    Encourage decoder to rely on concept stream proportionally to concept activations.
+    """
+    def __init__(self, head_dim, num_heads, concept_dim, hidden=256, mode="cosine"):
+        super().__init__()
+        self.mode = mode
+        self.proj = nn.Sequential(
+            nn.Linear(num_heads * head_dim, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, concept_dim)
+        )
+        self.cos = nn.CosineSimilarity(dim=-1)
+        self.kl = nn.KLDivLoss(reduction="batchmean")
+
+    def forward(self, weights, concept_scores):
+        loss_wcon = 0
+        for l in range(weights.shape[0]):
+            weight = weights[l]
+            weight = weight.mean(dim=-1)  # → [B, L, H, 3]
+            # w_self = weight[..., 0]
+            # w_img = weight[..., 1]
+            w_con = weight[..., 2]
+            lw, _ = self.get_loss(w_con, concept_scores)
+            loss_wcon += lw
+
+        loss_wcon /= weights.shape[0]
+        return loss_wcon
+
+    def get_loss(self, w_con, concept_scores):
+        """
+        w_con: [B, L, H, d_h]
+        concept_scores: [B, C]
+        """
+        B, L, H, d_h = w_con.shape
+
+        # average across tokens
+        gate_repr = w_con.mean(dim=1)  # [B, H, d_h]
+        gate_repr = gate_repr.reshape(B, H * d_h)
+
+        pred = self.proj(gate_repr)  # [B, C]
+
+        if self.mode == "cosine":
+            return 1 - self.cos(
+                F.normalize(pred, -1),
+                F.normalize(concept_scores, -1)
+            ).mean()
+        else:
+            return self.kl(F.log_softmax(pred, -1),
+                           F.softmax(concept_scores, -1))
 
 
 # class ConceptSupervisionHead(nn.Module):
@@ -208,8 +258,8 @@ class ReportGenModel(nn.Module):
         self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
         self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
         self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
-        self.concept_supervision_head = ConceptEmbeddingSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
-
+        # self.concept_supervision_head = ConceptEmbeddingSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+        self.concept_supervision_head = ConceptGateSupervisionHead(args.d_model, args.num_heads, args.gcd)
         # gd = args.gd
         dm =args.d_model
         self.gecko_mlp = nn.Sequential(
