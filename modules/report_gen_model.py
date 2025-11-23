@@ -208,7 +208,7 @@ class ReportGenModel(nn.Module):
         self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
         self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
         self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
-        self.concept_supervision_head = ConceptEmbeddingSupervisionHead(args.d_model, args.gcd, args.dropout_mlp, mode='kl')
+        self.concept_supervision_head = ConceptEmbeddingSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
         dm =args.d_model
