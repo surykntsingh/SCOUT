@@ -14,13 +14,13 @@ class Encoder(nn.Module):
         self.norm = LayerNorm(layer.d_model)
         # self.PAM = clones(PAM, N)
         self.N = N
-        self.concept_sublayer = clones(ConceptSublayer(layer.d_model, concept_fusion), N)
+        # self.concept_sublayer = clones(ConceptSublayer(layer.d_model, concept_fusion), N)
         self.layer_weights = nn.Parameter(torch.ones(N))
 
     def forward(self, x, mask, concepts):
         outputs=[]
         for i,layer in enumerate(self.layers):
-            x = self.concept_sublayer[i](x, concepts)
+            # x = self.concept_sublayer[i](x, concepts)
             x = self.layers[i](x, mask)
             # x = self.PAM[i](x)
 
