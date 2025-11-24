@@ -45,5 +45,5 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, concepts, mask):
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask)[0])
-        x = self.sublayer[1](x, lambda x: self.concept_attn(x, concepts, concepts, mask)[0])
+        x = self.sublayer[1](x, lambda x: self.concept_attn(x, concepts, concepts)[0])
         return self.sublayer[1](x, self.feed_forward)
