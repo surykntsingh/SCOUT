@@ -95,7 +95,7 @@ class ReportModel(pl.LightningModule):
         concept_loss = self.model.concept_supervision_head(attns[0], gecko_concepts)
         attn_reg = self.get_attn_regularization(attns)
 
-        total_loss = caption_loss+ attn_reg + self.concept_lambda * concept_loss
+        total_loss = caption_loss+ attn_reg #+ self.concept_lambda * concept_loss
         return total_loss, concept_loss
 
 
