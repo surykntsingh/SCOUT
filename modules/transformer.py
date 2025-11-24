@@ -455,6 +455,7 @@ class EncoderDecoder(AttModel):
                 EncoderLayer(
                     self.d_model,
                     deepcopy(attn),
+                    deepcopy(attn),
                     deepcopy(ff),
                     self.dropout
                 ),

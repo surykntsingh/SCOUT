@@ -21,7 +21,7 @@ class Encoder(nn.Module):
         outputs=[]
         for i,layer in enumerate(self.layers):
             # x = self.concept_sublayer[i](x, concepts)
-            x = self.layers[i](x, mask)
+            x = self.layers[i](x,concepts, mask)
             x = self.PAM[i](x)
 
             outputs.append(x)
@@ -35,13 +35,14 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, feed_forward, dropout):
+    def __init__(self, d_model, self_attn, concept_attn, feed_forward, dropout):
         super().__init__()
         self.self_attn = self_attn
         self.feed_forward = feed_forward
-        self.sublayer = clones(SublayerConnection(d_model, dropout), 2)
+        self.sublayer = clones(SublayerConnection(d_model, dropout), 3)
         self.d_model = d_model
 
-    def forward(self, x, mask):
+    def forward(self, x, concepts, mask):
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask)[0])
+        x = self.sublayer[1](x, lambda x: self.concept_attn(x, concepts, concepts, mask)[0])
         return self.sublayer[1](x, self.feed_forward)
