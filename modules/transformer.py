@@ -312,7 +312,7 @@ class MultiHeadGatedFusionV4(nn.Module):
         ).view(B, L, D)
 
         # residual 1
-        out = x_con + self.out_proj(fused)
+        out = x + self.out_proj(fused)
         out = self.norm1(out)
 
         # residual 2 (with FFN)
