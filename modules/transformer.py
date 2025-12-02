@@ -299,7 +299,7 @@ class MultiHeadGatedFusionV4(nn.Module):
         c0 = self.proj_con(x_con).view(B, L, H, d_h)
 
         # gating context (better)
-        ctx = x_con    # final attended representation
+        ctx = torch.cat([x,x_self, x_img, x_con], dim=-1)    # final attended representation
         gates = self.gate_net(ctx).view(B, L, H, 3, d_h)
 
         weights = F.softmax(gates / self.temperature, dim=3)
