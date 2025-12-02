@@ -184,7 +184,7 @@ class Embeddings(nn.Module):
         return self.lut(x) * math.sqrt(self.d_model)
 
 class MultiHeadGatedFusionV3(nn.Module):
-    def __init__(self, d_model, num_heads, dropout=0.1, temperature=1.0):
+    def __init__(self, d_model, num_heads, dropout=0.2, temperature=1.0):
         super().__init__()
         H = num_heads
         d_h = d_model // H
@@ -202,6 +202,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         self.gate_net = nn.Sequential(
             nn.Linear(4 * d_model, 2*d_model),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(2 * d_model, d_model),
             nn.ReLU(),
             nn.Linear(d_model, 3 * d_model)
