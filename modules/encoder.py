@@ -12,7 +12,7 @@ class Encoder(nn.Module):
         super().__init__()
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
-        self.PAM = clones(PAM, N)
+        # self.PAM = clones(PAM, N)
         self.N = N
         self.concept_fusion = concept_fusion
         self.layer_weights = nn.Parameter(torch.ones(N))
@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         for i,layer in enumerate(self.layers):
             # x = self.concept_fusion(self.norm(x), concepts)
             x = layer(self.norm(x), mask)
-            x = self.PAM[i](x)
+            # x = self.PAM[i](x)
 
             s.append(x)
 
