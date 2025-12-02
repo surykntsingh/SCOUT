@@ -129,7 +129,7 @@ class Tokenizer:
         # Remove single measurements (A cm, A mm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<xunits>',
             text,
             flags=re.IGNORECASE
         )
