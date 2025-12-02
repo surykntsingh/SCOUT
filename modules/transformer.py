@@ -273,7 +273,7 @@ class MultiHeadGatedFusionV4(nn.Module):
 
         # Light gating net
         self.gate_net = nn.Sequential(
-            nn.Linear(d_model, d_model),
+            nn.Linear(4*d_model, d_model),
             nn.ReLU(),
             nn.Linear(d_model, 3 * d_model)
         )
