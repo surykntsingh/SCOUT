@@ -311,7 +311,52 @@ class CrossAttentionBlock(nn.Module):
         x_fused = self.norm(x + self.ff(x2 + c2_to_x))
         return x_fused
 
+class ConceptInfusionBlock(nn.Module):
+    def __init__(self, n_heads, d_model, dropout):
+        super().__init__()
+        # print(f'n_heads: {n_heads}, d_model: {d_model}, dropout: {dropout}')
+        # separate cross attentions
+        self.x2c_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+        self.c2x_attn = MultiHeadedAttention(n_heads, d_model, dropout)
 
+
+        # residual norms
+        self.norm_x = nn.LayerNorm(d_model)
+        self.norm_c = nn.LayerNorm(d_model)
+
+        # process after cross attention
+        self.ff_x = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+        self.ff_c = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+
+        # learned gating for fusion
+        self.gate = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.ReLU(),
+            nn.Linear(d_model, d_model),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x, concepts):
+        """
+        x:        [B, L, D]
+        concepts: [B, M, D]
+        """
+
+        # --- 1. X attends to Concepts ---------------------------------------
+        x2c, att_x2c = self.x2c_attn(x, concepts, concepts)
+        x = self.norm_x(x + x2c)
+        x = self.ff_x(x)
+
+        # --- 2. Concepts attend to X ----------------------------------------
+        c2x, att_c2x = self.c2x_attn(concepts, x, x)
+        concepts = self.norm_c(concepts + c2x)
+        concepts = self.ff_c(concepts)
+
+        # --- 3. Fuse updated concepts back into tokens with gating ----------
+        gate = self.gate(x)  # [B,L,D]
+        fused = x + gate * concepts.mean(dim=1, keepdim=True)
+
+        return fused, att_x2c, att_c2x
 
 class EncoderDecoder(AttModel):
 
@@ -339,7 +384,7 @@ class EncoderDecoder(AttModel):
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
         mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
-        concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
+        concept_fusion = ConceptInfusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
         model = Transformer(

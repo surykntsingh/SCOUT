@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-from modules.common import LayerNorm, SublayerConnection
+from modules.common import LayerNorm, SublayerConnection, ConceptSublayer
 from utils import utils
 from utils.utils import clones
 
@@ -14,7 +14,7 @@ class Encoder(nn.Module):
         self.norm = LayerNorm(layer.d_model)
         # self.PAM = clones(PAM, N)
         self.N = N
-        self.concept_fusion = concept_fusion
+        self.concept_sublayers = clones(ConceptSublayer(layer.d_model, concept_fusion), N)
         self.layer_weights = nn.Parameter(torch.ones(N))
 
     def forward(self, x, mask, concepts):
@@ -22,6 +22,7 @@ class Encoder(nn.Module):
         for i,layer in enumerate(self.layers):
             # x = self.concept_fusion(self.norm(x), concepts)
             x = layer(self.norm(x), mask)
+            x = self.concept_sublayers[i](x, concepts)
             # x = self.PAM[i](x)
 
             s.append(x)
