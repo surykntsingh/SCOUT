@@ -113,7 +113,7 @@ class Tokenizer:
         # -------------------------------------------------------
         text = re.sub(
             r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<xunits>',
             text,
             flags=re.IGNORECASE
         )
@@ -121,7 +121,7 @@ class Tokenizer:
         # Remove 2D only (A x B cm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            '<xunits>',
             text,
             flags=re.IGNORECASE
         )
@@ -146,7 +146,7 @@ class Tokenizer:
         # 4. Clean each sentence: remove punctuation, quotes, noise
         # -------------------------------------------------------
         def clean_sentence(s):
-            s = re.sub(r'[#,?;*!^&_:\[\]{}]', '', s)
+            s = re.sub(r'[#,?;*!^&_+():-\[\]{}]', '', s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
 
