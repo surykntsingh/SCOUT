@@ -78,12 +78,15 @@ class FiLMProjector(nn.Module):
         return concept_tokens  # [B, M, d_model]
 
 class FilmFusion(nn.Module):
-    def __init__(self, D, D_s, hidden=128):
+    def __init__(self, D, D_s, hidden=1024, dropout=0.2):
         super().__init__()
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
             nn.ReLU(),
-            nn.Linear(hidden, 2 * D)  # gamma, beta
+            nn.Linear(hidden, D),
+            nn.Dropout(dropout),
+            nn.ReLU(),
+            nn.Linear(D, 2 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
 
@@ -169,8 +172,8 @@ class ReportGenModel(nn.Module):
         # self.gecko_projector = FiLMProjector(args.gcd, args.d_model, args.dropout_mlp)
         # self.gecko_deep_projector = FiLMProjector(args.gd, args.d_model, args.dropout_mlp)
 
-        self.gecko_fusion = FilmFusion(dm, dm)
-        self.slide_fusion = FilmFusion(dm, dm)
+        self.gecko_fusion = FilmFusion(dm, dm, dropout=args.dropout_mlp)
+        self.slide_fusion = FilmFusion(dm, dm, dropout=args.dropout_mlp)
 
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
