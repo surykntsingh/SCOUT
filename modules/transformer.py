@@ -409,18 +409,17 @@ class EncoderDecoder(AttModel):
                 ),
                 self.num_layers
             ),
-            lambda x:x,
+            LayerNorm(self.d_model),
             # Target token embedding + position
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # Concept embedding module
-            # nn.Sequential(
-            #     nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
-            #     nn.LayerNorm(self.d_model),
-            #     nn.ReLU(),
-            #     nn.Dropout(self.dropout)
-            #     # no positional encoding, concepts are unordered
-            # )
-            lambda x: x
+            nn.Sequential(
+                nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
+                nn.LayerNorm(self.d_model),
+                nn.ReLU(),
+                nn.Dropout(self.dropout)
+                # no positional encoding, concepts are unordered
+            )
         )
         return model
 
