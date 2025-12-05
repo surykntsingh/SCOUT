@@ -142,9 +142,8 @@ class ReportGenModel(nn.Module):
             nn.ReLU(),
             nn.LayerNorm(2*d),
             nn.Linear(2 * d, d),
-            nn.LayerNorm(d),
-            nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
+            nn.ReLU(),
             nn.Linear(d, d)
         )
         d1 = args.d1
