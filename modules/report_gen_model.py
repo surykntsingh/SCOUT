@@ -76,6 +76,27 @@ class FiLMProjector(nn.Module):
         concept_tokens = base * (1 + scales)  # broadcast multiply
         concept_tokens = self.layernorm(concept_tokens)
         return concept_tokens  # [B, M, d_model]
+
+    class FilmFusion(nn.Module):
+        def __init__(self, D, D_s, hidden=128):
+            super().__init__()
+            self.gamma_beta = nn.Sequential(
+                nn.Linear(D_s, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, 2 * D)  # gamma, beta
+            )
+            self.layernorm = nn.LayerNorm(D)
+
+        def forward(self, patch, slide):
+            # patch: [B,M,D], slide:[B,D_s]
+            gb = self.gamma_beta(slide)  # [B, 2D]
+            gamma, beta = gb.chunk(2, dim=-1)  # [B,D], [B,D]
+            gamma = gamma.unsqueeze(1)  # [B,1,D]
+            beta = beta.unsqueeze(1)
+            out = self.layernorm(patch * (1 + gamma) + beta)
+            return out  # [B,M,D]
+
+
 #
 # class ChannelProjector(nn.Module):
 #     def __init__(self, n_concepts, d_model, dropout, hidden=256):
@@ -210,7 +231,7 @@ class ReportGenModel(nn.Module):
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         # att_feats = self.prompt
         fc_feats = torch.sum(att_feats, dim=1)
-        attn_gc = self.concept_encoder(attn_gc)
+        # attn_gc = self.concept_encoder(attn_gc)
 
         if mode == 'train':
             output, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
