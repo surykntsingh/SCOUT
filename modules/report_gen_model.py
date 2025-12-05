@@ -169,30 +169,32 @@ class ReportGenModel(nn.Module):
         # self.gecko_projector = FiLMProjector(args.gcd, args.d_model, args.dropout_mlp)
         # self.gecko_deep_projector = FiLMProjector(args.gd, args.d_model, args.dropout_mlp)
 
-        self.gecko_fusion = FilmFusion(dm, args.gd)
-        self.slide_fusion = FilmFusion(dm, d)
+        self.gecko_fusion = FilmFusion(dm, dm)
+        self.slide_fusion = FilmFusion(dm, dm)
 
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
+        gd = args.gd
+        gcd = args.gcd
 
         self.gecko_mlp = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
+            nn.Linear(gcd, 2 * gcd),
             nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
+            nn.Linear(2 * gcd, 4 * gcd),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(4 * dm, 2*dm),
+            nn.Linear(4 * gcd, 2*gd),
             nn.ReLU(),
-            nn.Linear(2 * dm, dm),
+            nn.Linear(2 * gd, gd),
         )
 
         self.gecko_encoder = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
+            nn.Linear(gd, 2 * gd),
             nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
+            nn.Linear(2 * gd, 4 * gd),
             nn.ReLU(),
-            nn.Linear(4 * dm, 2*dm),
+            nn.Linear(4 * gd, 2*dm),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
             nn.Linear(2*dm, dm)
