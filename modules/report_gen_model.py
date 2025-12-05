@@ -235,7 +235,7 @@ class ReportGenModel(nn.Module):
         patch_fused = self.slide_fusion(image_embeddings2, image_embeddings1)
 
         patch_feats = torch.cat([gecko_fused, patch_fused], dim=1)
-        # patch_feats = self.encoder(gecko_embeddings)
+        patch_feats = self.encoder(patch_feats)
         att_feats = torch.cat([self.prompt, patch_feats], dim=1)
         # att_feats = self.prompt
         fc_feats = torch.sum(att_feats, dim=1)
