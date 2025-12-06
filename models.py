@@ -61,7 +61,7 @@ class ReportModel(pl.LightningModule):
 
         # w_con_scalar = w_con.mean(dim=-1)
         #
-        print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}')
+        print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}, weights: {weights.shape}')
         # print(f'w_con: {w_con.mean(dim=-1)}')
 
 
