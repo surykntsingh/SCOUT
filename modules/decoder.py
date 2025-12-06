@@ -28,10 +28,10 @@ class DecoderLayer(nn.Module):
 
         x_con, x_con_attn = self.sublayer[2](x_self, lambda x: self.concept_attn(x, concepts, concepts, mask=None))
 
-        x_fused, alpha = self.gate_fusion(feats, x_self, x_img, x_con)
+        x_fused, weights = self.gate_fusion(feats, x_self, x_img, x_con)
 
         out = self.sublayer[3](x_fused, self.ff_1)
-        return out, (alpha, x_img_attn, x_con_attn)
+        return out, (weights, x_img_attn, x_con_attn)
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
@@ -40,15 +40,17 @@ class Decoder(nn.Module):
         self.norm = LayerNorm(layer.d_model)
 
     def forward(self, x, hidden_states, concepts, src_mask, tgt_mask):
-        attn_maps = []
+        gate_weights = []
         attn_img_all = []
         attn_con_all = []
         for layer in self.layers:
-            x, (alpha, attn_img, attn_con) = layer(x, hidden_states, concepts, src_mask, tgt_mask)
-            attn_maps.append(alpha)
+            x, (weights, attn_img, attn_con) = layer(x, hidden_states, concepts, src_mask, tgt_mask)
+            gate_weights.append(weights)
             attn_img_all.append(attn_img)
             attn_con_all.append(attn_con)
 
         attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
         attn_con_all = torch.stack(attn_con_all)
-        return self.norm(x), (attn_maps, attn_img_all, attn_con_all)
+        gate_weights = torch.stack(gate_weights).mean(dim=0)
+
+        return self.norm(x), (gate_weights, attn_img_all, attn_con_all)

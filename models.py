@@ -54,24 +54,22 @@ class ReportModel(pl.LightningModule):
 
     def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
         # Attention Regularization
-        _, attn_img, attn_con = attns
-        # Mean over layers and heads
+        weights, _, _ = attns
+        w_self = weights[:, :, :, 0]
+        w_img = weights[:, :, :, 1]
+        w_con = weights[:, :, :, 2]
 
-        attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
-        attn_img_mean = attn_img.mean(dim=(0, 1, 2))
-        # (a) Sparsity regularization (entropy)
-        entropy = - (attn_con_mean * torch.log(attn_con_mean + 1e-8)).sum(-1).mean()
+        # w_con_scalar = w_con.mean(dim=-1)
+        #
+        print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}')
+        # print(f'w_con: {w_con.mean(dim=-1)}')
 
-        # (b) Balance regularization
-        balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
-
-        return lambda_entropy * entropy + lambda_balance * balance
 
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
-        # attn_reg = self.get_attn_regularization(attns)
+        attn_reg = self.get_attn_regularization(attns)
 
         # with torch.no_grad():
         #     caption_magnitude = caption_loss.detach()
@@ -109,7 +107,7 @@ class ReportModel(pl.LightningModule):
             del output_
             torch.cuda.empty_cache()
 
-        if batch_idx % 10==0:
+        if batch_idx % 2==0:
             with torch.no_grad():
                 output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
                 output = output.detach().cpu().numpy()
