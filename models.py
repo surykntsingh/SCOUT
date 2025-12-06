@@ -55,14 +55,14 @@ class ReportModel(pl.LightningModule):
     def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
         # Attention Regularization
         weights, _, _ = attns
-        w_self = weights[:, :, :, 0]
-        w_img = weights[:, :, :, 1]
-        w_con = weights[:, :, :, 2]
+        # w_self = weights[:, :, :, 0]
+        w_img = weights[:, :, :, 0]
+        w_con = weights[:, :, :, 1]
 
         # w_con_scalar = w_con.mean(dim=-1)
         #
         # print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}, weights: {weights.shape}')
-        print(f'w_con: {w_con.mean()}, w_img: {w_img.mean()}, w_con: {w_self.mean()}')
+        print(f'w_con: {w_con.mean()}, w_img: {w_img.mean()}')
 
 
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
