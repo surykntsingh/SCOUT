@@ -61,8 +61,8 @@ class ReportModel(pl.LightningModule):
 
         # w_con_scalar = w_con.mean(dim=-1)
         #
-        print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}, weights: {weights.shape}')
-        # print(f'w_con: {w_con.mean(dim=-1)}')
+        # print(f'w_self: {w_self.shape}, w_img: {w_img.shape}, w_con: {w_con.shape}, weights: {weights.shape}')
+        print(f'w_con: {w_con.mean()}, w_img: {w_img.mean()}, w_con: {w_self.mean()}')
 
 
     def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
