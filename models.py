@@ -71,13 +71,7 @@ class ReportModel(pl.LightningModule):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         concept_loss = self.model.concept_supervision_head(attns[0], gecko_concepts)
-        # attn_reg = self.get_attn_regularization(attns)
 
-        # with torch.no_grad():
-        #     caption_magnitude = caption_loss.detach()
-        #     concept_magnitude = concept_loss.detach() + 1e-8
-        #     scale = (caption_magnitude / concept_magnitude)
-        # concept_loss *= scale
         total_loss = caption_loss  # + self.concept_lambda * concept_loss * scale # + attn_reg
         return total_loss, concept_loss
 
@@ -85,15 +79,29 @@ class ReportModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
         gc.collect()
-        _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
+        slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
         output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
         self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
-        # if batch_idx %1000==0:
-        #     print(
-        #         f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
+
+        if batch_idx % 100==0:
+            with torch.no_grad():
+                output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+                output = output.detach().cpu().numpy()
+                pred_texts = self.tokenizer.batch_decode(output)
+                target_texts = [self.reports[slide_id] for slide_id in slide_ids]
+                ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
+                self.__save_predictions(slide_ids, pred_texts, ground_truths)
+                self.__print_results(slide_ids, pred_texts, ground_truths)
+                rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
+                self.log('train_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
+                del output
+                del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
+                gc.collect()
+                torch.cuda.empty_cache()
+
         del output
         return loss
 
@@ -105,7 +113,7 @@ class ReportModel(pl.LightningModule):
 
             loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
@@ -133,7 +141,7 @@ class ReportModel(pl.LightningModule):
             output_,attn,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
             loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
@@ -166,6 +174,12 @@ class ReportModel(pl.LightningModule):
 
         del output
         return slide_ids,pred_texts
+
+    def on_train_epoch_end(self):
+        torch.cuda.empty_cache()
+        self.__log_reg_metrics('train', 'reg', self.reg_evaluator.get_metrics, False)
+        self.__log_reg_metrics('train', 'coco', compute_coco_scores, False)
+        self.predictions.clear()
 
     def on_validation_epoch_end(self):
         torch.cuda.empty_cache()
