@@ -50,8 +50,8 @@ class Tokenizer:
 
     def __split_text(self, text):
         # text = text.lower()
-        # return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-        return text.split()
+        return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+        # return text.split('')
         # return [m.group(0) for m in self.__pattern.finditer(text)]
 
     def __call__(self, report):
@@ -69,7 +69,7 @@ class Tokenizer:
             if idx > 0:
                 # if i >= 1:
                 #     txt += ' '
-                txt += self.get_token_by_id(idx)
+                txt += ' '+ self.get_token_by_id(idx)
             else:
                 break
         return txt
