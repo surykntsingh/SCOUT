@@ -455,7 +455,7 @@ class MultiHeadCooperativeFusionV3(nn.Module):
     - Supports Hadamard or low-rank bilinear interactions
     - Multi-head aware
     """
-    def __init__(self, d_model, num_heads, dropout=0.1, bilinear_rank=64):
+    def __init__(self, d_model, num_heads, dropout=0.1, bilinear_rank=512):
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
@@ -516,7 +516,7 @@ class MultiHeadCooperativeFusionV3(nn.Module):
         fused = fused_heads.view(B, L, D)
 
         # ---- Residual + normalization + FFN ----
-        out = x_con + self.out_proj(fused)
+        out = self.out_proj(fused)
         out = self.norm1(out)
         out = out + self.ffn(self.norm2(out))
 
