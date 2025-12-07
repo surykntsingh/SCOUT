@@ -227,8 +227,10 @@ class ReportModel(pl.LightningModule):
 
     def __save_predictions(self, slide_ids, pred_texts, ground_truths):
         # print(f'slide_ids: {slide_ids}, pred_texts: {pred_texts}')
+        pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
 
         for i, slide_id in enumerate(slide_ids):
+
             self.predictions[slide_id] = {
                 'pred': pred_texts[i],
                 'target': ground_truths[i]
@@ -239,11 +241,11 @@ class ReportModel(pl.LightningModule):
         pred_texts = []
         target_texts = []
         for slide_id in self.predictions:
-            pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
+            # pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
             pred_texts.append(self.predictions[slide_id]['pred'])
             target_texts.append(self.predictions[slide_id]['target'])
 
-
+        print(f'pred_texts: {pred_texts}')
         metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
 
         for metric_name, metric_score in metrics.items():
