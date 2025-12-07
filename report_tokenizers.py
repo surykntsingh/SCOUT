@@ -12,7 +12,7 @@ class Tokenizer:
         self.__threshold = threshold
         self.clean_reports = lambda x: x
         if dataset_type and dataset_type == 'tcga_brca':
-            self.clean_reports = self.clean_report_brca_v2
+            self.clean_reports = self.clean_report_brca_v3
         self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
         self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
 
@@ -154,6 +154,72 @@ class Tokenizer:
             s = re.sub(r"\s+", " ", s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
+
+        cleaned = [clean_sentence(s) for s in sentences if clean_sentence(s)]
+
+        # -------------------------------------------------------
+        # 5. Re-join cleaned sentences
+        # -------------------------------------------------------
+        return " . ".join(cleaned)
+
+
+    def clean_report_brca_v3(self, report):
+        # -------------------------------------------------------
+        # 0. Remove invalid UTF-8 characters
+        # -------------------------------------------------------
+        report = report.encode("utf-8", "ignore").decode("utf-8")
+
+        # -------------------------------------------------------
+        # 1. Normalize whitespace and remove section numbering
+        # -------------------------------------------------------
+        text = report.replace("\n", " ")
+        text = re.sub(r"\s+", " ", text)
+
+        # Remove bullets like: 1. , 10. , 14.
+        text = re.sub(r"\b([1-9]|1[0-4])\.\s*", " ", text)
+
+        # -------------------------------------------------------
+        # 2. Remove measurement expressions
+        # -------------------------------------------------------
+        text = re.sub(
+            r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            'x units',
+            text,
+            flags=re.IGNORECASE
+        )
+
+        # Remove 2D only (A x B cm)
+        text = re.sub(
+            r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            'x units',
+            text,
+            flags=re.IGNORECASE
+        )
+
+        # Remove single measurements (A cm, A mm)
+        text = re.sub(
+            r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
+            'x units',
+            text,
+            flags=re.IGNORECASE
+        )
+
+        # Normalize spaces again
+        text = re.sub(r"\s+", " ", text).strip().lower()
+
+        # -------------------------------------------------------
+        # 3. Split into sentences by ". "
+        # -------------------------------------------------------
+        sentences = text.split(". ")
+
+        # -------------------------------------------------------
+        # 4. Clean each sentence: remove punctuation, quotes, noise
+        # -------------------------------------------------------
+        def clean_sentence(s):
+            # s = re.sub(r'[#,?;*!^&_+():\-\[\]{}]', ' ', s)
+            s = re.sub(r"\s+", " ", s)
+            s = s.replace('"', '').replace("'", "").replace("\\", "")
+            return s.strip()#.lower()
 
         cleaned = [clean_sentence(s) for s in sentences if clean_sentence(s)]
 
