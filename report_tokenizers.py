@@ -50,9 +50,9 @@ class Tokenizer:
 
     def __split_text(self, text):
         # text = text.lower()
-        # return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-
-        return [m.group(0) for m in self.__pattern.finditer(text)]
+        return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
+        # return text.split('')
+        # return [m.group(0) for m in self.__pattern.finditer(text)]
 
     def __call__(self, report):
         tokens = self.__split_text(self.clean_reports(report))
@@ -69,7 +69,7 @@ class Tokenizer:
             if idx > 0:
                 # if i >= 1:
                 #     txt += ' '
-                txt += self.get_token_by_id(idx)
+                txt += ' '+ self.get_token_by_id(idx)
             else:
                 break
         return txt
@@ -144,7 +144,7 @@ class Tokenizer:
         # -------------------------------------------------------
         # 3. Split into sentences by ". "
         # -------------------------------------------------------
-        sentences = text.split(". ")
+        sentences = text.split(".")
 
         # -------------------------------------------------------
         # 4. Clean each sentence: remove punctuation, quotes, noise
@@ -160,5 +160,6 @@ class Tokenizer:
         # -------------------------------------------------------
         # 5. Re-join cleaned sentences
         # -------------------------------------------------------
-        return " . ".join(cleaned)
+        return " . ".join(cleaned).strip() + ' .'
+
     
