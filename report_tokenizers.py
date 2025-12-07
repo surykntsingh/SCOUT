@@ -139,7 +139,7 @@ class Tokenizer:
         )
 
         # Normalize spaces again
-        text = re.sub(r"\s+", " ", text).strip().lower()
+        text = re.sub(r"\s+", " ", text).strip()#.lower()
 
         # -------------------------------------------------------
         # 3. Split into sentences by ". "
