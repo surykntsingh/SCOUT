@@ -80,11 +80,13 @@ class ReportModel(pl.LightningModule):
         # print('train ---------->')
         gc.collect()
         slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
-        # print(f'train output: {output}')
-        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
-        self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
+        with torch.no_grad():
+            output_, attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,
+                                                       gecko_concepts_acts, report_ids, patch_masks, mode='train')
+
+            loss,concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+            self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
+        #self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
 
         if batch_idx % 100==0:
             with torch.no_grad():
@@ -102,7 +104,7 @@ class ReportModel(pl.LightningModule):
                 gc.collect()
                 torch.cuda.empty_cache()
 
-        del output
+        del output_
         return loss
 
     def validation_step(self, batch, batch_idx):
