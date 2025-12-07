@@ -468,7 +468,7 @@ class MultiHeadCooperativeFusionV3(nn.Module):
 
         # Independent gating for cooperative fusion
         self.gate_con = nn.Linear(d_model, num_heads)
-        self.gate_coop = nn.Linear(d_model, num_heads)
+        self.gate_coop = nn.Linear(self.head_dim, num_heads)
 
         # Optional low-rank bilinear
         if bilinear_rank is not None:
