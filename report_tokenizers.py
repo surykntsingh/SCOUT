@@ -160,6 +160,6 @@ class Tokenizer:
         # -------------------------------------------------------
         # 5. Re-join cleaned sentences
         # -------------------------------------------------------
-        return " . ".join(cleaned).strip()
+        return " . ".join(cleaned).strip() + ' .'
 
     
