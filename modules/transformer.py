@@ -334,6 +334,193 @@ class MultiHeadGatedFusionV4(nn.Module):
 
         return out, weights
 
+class MultiHeadCooperativeFusionV1(nn.Module):
+    """
+    Multi-head cooperative fusion of x_img and x_con.
+
+    Inputs:
+      x_img : [B, L, D]  (image-conditioned token features)
+      x_con : [B, L, D]  (concept-conditioned token features)
+    Returns:
+      out   : [B, L, D]  fused output (residual added to x_con)
+      info  : dict with gates and bilinear for diagnostics:
+              {
+                "g_img": [B, L, H],   # per-head scalar gate for image
+                "g_con": [B, L, H],   # per-head scalar gate for concept
+                "bilinear": [B, L, H, d_h]  # per-head hadamard vectors
+              }
+    """
+    def __init__(self, d_model, num_heads, dropout=0.1, bilinear_rank=None, init_con_bias=0.0):
+        super().__init__()
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_h = d_model // num_heads
+
+        # Per-head projections (shared linear then reshape)
+        self.proj_img = nn.Linear(d_model, d_model)
+        self.proj_con = nn.Linear(d_model, d_model)
+
+        # Gate network -> outputs 2 scalars per head (img gate, con gate)
+        # Input: concat(x_img, x_con)  -> [B, L, 2D]
+        # Output: [B, L, num_heads * 2] -> reshape -> [B, L, H, 2]
+        self.gate_net = nn.Sequential(
+            nn.Linear(2 * d_model, d_model),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, num_heads * 2)
+        )
+
+        # optional small linear to transform per-head hadamard before combining
+        self.bilin_head_proj = nn.Linear(self.d_h, self.d_h, bias=True)
+
+        # per-head scalar to scale bilinear contribution (learnable)
+        self.register_parameter("bilin_scale", nn.Parameter(torch.ones(num_heads)))
+
+        # final projection back to model dim, norms, ffn
+        self.out_proj = nn.Linear(d_model, d_model)
+        self.norm = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.GELU(),
+            nn.Linear(4 * d_model, d_model),
+            nn.Dropout(dropout),
+        )
+
+        # small bias init for concept gate if desired (help early concept usage)
+        if init_con_bias != 0.0:
+            with torch.no_grad():
+                b = self.gate_net[-1].bias  # shape: (num_heads*2,)
+                # layout: [h0_img, h0_con, h1_img, h1_con, ...]
+                for h in range(num_heads):
+                    b[h * 2 + 1] = init_con_bias
+                self.gate_net[-1].bias.copy_(b)
+
+    def forward(self, x_img, x_con):
+        """
+        x_img: [B, L, D]
+        x_con: [B, L, D]
+        """
+        B, L, D = x_img.shape
+        H, d_h = self.num_heads, self.d_h
+
+        # 1) per-head projections -> [B, L, H, d_h]
+        img_heads = self.proj_img(x_img).view(B, L, H, d_h)
+        con_heads = self.proj_con(x_con).view(B, L, H, d_h)
+
+        # 2) gate logits -> [B, L, H, 2] where [:,:,:,0]=img gate logit, [:,:,:,1]=con gate logit
+        gate_in = torch.cat([x_img, x_con], dim=-1)        # [B, L, 2D]
+        gate_logits = self.gate_net(gate_in).view(B, L, H, 2)
+
+        # 3) independent sigmoid gates (cooperative, NOT competitive)
+        g_img = torch.sigmoid(gate_logits[..., 0])   # [B, L, H]
+        g_con = torch.sigmoid(gate_logits[..., 1])   # [B, L, H]
+
+        # 4) per-head bilinear (Hadamard) interaction
+        #    hadamard: [B, L, H, d_h]
+        hadamard = img_heads * con_heads
+        # optional linear transform of head-wise hadamard
+        hadamard = self.bilin_head_proj(hadamard.view(-1, d_h)).view(B, L, H, d_h)
+        # scale per head
+        hadamard = hadamard * self.bilin_scale.view(1, 1, H, 1)  # [B,L,H,d_h]
+
+        # 5) assemble fused heads: cooperative gating + bilinear
+        #    broadcast gates to d_h channel for multiplication
+        g_img_e = g_img.unsqueeze(-1)   # [B,L,H,1]
+        g_con_e = g_con.unsqueeze(-1)
+
+        fused_heads = g_img_e * img_heads + g_con_e * con_heads + hadamard  # [B,L,H,d_h]
+
+        # 6) collapse heads back to [B, L, D]
+        fused = fused_heads.reshape(B, L, D)   # contiguous flatten H*d_h -> D
+
+        # 7) projection + residual (use x_con as residual, recommended)
+        out = x_con + self.out_proj(fused)
+        out = self.norm(out)
+
+        # 8) FFN residual
+        out = out + self.ffn(out)
+
+        info = {
+            "g_img": g_img,           # [B,L,H]
+            "g_con": g_con,           # [B,L,H]
+            "bilinear": hadamard,     # [B,L,H,d_h]
+        }
+        return out, info
+
+class MultiHeadCooperativeFusionV3(nn.Module):
+    """
+    Cooperative 2-way fusion of image and concept features.
+    - Sigmoid additive gating (non-competitive)
+    - Supports Hadamard or low-rank bilinear interactions
+    - Multi-head aware
+    """
+    def __init__(self, d_model, num_heads, dropout=0.1, bilinear_rank=64):
+        super().__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        self.bilinear_rank = bilinear_rank
+
+        # Per-head projections
+        self.proj_img = nn.Linear(d_model, d_model)
+        self.proj_con = nn.Linear(d_model, d_model)
+
+        # Independent gating for cooperative fusion
+        self.gate_con = nn.Linear(d_model, num_heads)
+        self.gate_coop = nn.Linear(d_model, num_heads)
+
+        # Optional low-rank bilinear
+        if bilinear_rank is not None:
+            self.bilin_U = nn.Linear(self.head_dim, bilinear_rank, bias=False)
+            self.bilin_V = nn.Linear(self.head_dim, bilinear_rank, bias=False)
+            self.bilin_out = nn.Linear(bilinear_rank, self.head_dim)
+
+        # Output projection + normalization
+        self.out_proj = nn.Linear(d_model, d_model)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4*d_model),
+            nn.GELU(),
+            nn.Linear(4*d_model, d_model),
+            nn.Dropout(dropout)
+        )
+        self.norm2 = nn.LayerNorm(d_model)
+
+    def forward(self, x_img, x_con):
+        """
+        x_img: [B, L, D] - attended image features
+        x_con: [B, L, D] - attended concept features
+        """
+        B, L, D = x_img.shape
+        H, d_h = self.num_heads, self.head_dim
+
+        # ---- Per-head projections ----
+        img_heads = self.proj_img(x_img).view(B, L, H, d_h)
+        con_heads = self.proj_con(x_con).view(B, L, H, d_h)
+
+        # ---- Cooperative interaction ----
+        if self.bilinear_rank is not None:
+            xU = self.bilin_U(img_heads)    # [B,L,H,r]
+            yV = self.bilin_V(con_heads)    # [B,L,H,r]
+            coop = self.bilin_out(xU * yV)  # [B,L,H,d_h]
+        else:
+            coop = img_heads * con_heads    # Hadamard
+
+        # ---- Independent additive gating ----
+        g_con = torch.sigmoid(self.gate_con(x_con)).unsqueeze(-1)   # [B,L,H,1]
+        g_coop = torch.sigmoid(self.gate_coop(coop)).unsqueeze(-1) # [B,L,H,1]
+
+        fused_heads = g_con * con_heads + g_coop * coop
+        fused = fused_heads.view(B, L, D)
+
+        # ---- Residual + normalization + FFN ----
+        out = x_con + self.out_proj(fused)
+        out = self.norm1(out)
+        out = out + self.ffn(self.norm2(out))
+
+        return out, {'g_con':g_con, 'g_coop':g_coop}
+
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout, max_len=5000):
@@ -457,7 +644,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadGatedFusionV4(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadCooperativeFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
