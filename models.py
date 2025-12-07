@@ -239,11 +239,11 @@ class ReportModel(pl.LightningModule):
         pred_texts = []
         target_texts = []
         for slide_id in self.predictions:
-
+            pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
             pred_texts.append(self.predictions[slide_id]['pred'])
             target_texts.append(self.predictions[slide_id]['target'])
 
-        pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
+
         metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
 
         for metric_name, metric_score in metrics.items():
