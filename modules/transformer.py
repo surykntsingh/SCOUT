@@ -644,7 +644,7 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadCooperativeFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadCooperativeFusionV1(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlock(self.num_heads, self.d_model, dropout=self.dropout)
 
 
