@@ -20,9 +20,11 @@ class Encoder(nn.Module):
     def forward(self, x, mask, concepts):
         outputs=[]
         for i,layer in enumerate(self.layers):
-            x = self.PAM[i](x)
             x = self.layers[i](x, mask)
-            x = self.concept_sublayer[i](x, concepts)
+            x = self.PAM[i](x)
+
+            if i == self.N -1:
+                x = self.concept_sublayer[i](x, concepts)
 
             outputs.append(x)
 

@@ -122,7 +122,7 @@ class Tokenizer:
         # -------------------------------------------------------
         text = re.sub(
             r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x_units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
@@ -130,7 +130,7 @@ class Tokenizer:
         # Remove 2D only (A x B cm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x_units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
@@ -138,7 +138,7 @@ class Tokenizer:
         # Remove single measurements (A cm, A mm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x_units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
