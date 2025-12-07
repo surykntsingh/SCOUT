@@ -10,11 +10,12 @@ class Tokenizer:
 
     def __init__(self, reports_json_path, threshold=1, dataset_type=None):
         self.__threshold = threshold
-        self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
-        self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
-        self.clean_reports = lambda x:x
+        self.clean_reports = lambda x: x
         if dataset_type and dataset_type == 'tcga_brca':
             self.clean_reports = self.clean_report_brca_v2
+        self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
+        self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
+
 
     def create_vocabulary(self, reports_json_path):
         total_tokens = []
