@@ -468,7 +468,7 @@ class MultiHeadCooperativeFusionV3(nn.Module):
 
         # Independent gating for cooperative fusion
         self.gate_con = nn.Linear(d_model, num_heads)
-        self.gate_coop = nn.Linear(self.head_dim, num_heads)
+        self.gate_coop = nn.Linear(d_model, num_heads)
 
         # Optional low-rank bilinear
         if bilinear_rank is not None:
@@ -507,9 +507,10 @@ class MultiHeadCooperativeFusionV3(nn.Module):
         else:
             coop = img_heads * con_heads    # Hadamard
 
+        coop_flat = coop.view(B, L, D)
         # ---- Independent additive gating ----
         g_con = torch.sigmoid(self.gate_con(x_con)).unsqueeze(-1)   # [B,L,H,1]
-        g_coop = torch.sigmoid(self.gate_coop(coop)).unsqueeze(-1) # [B,L,H,1]
+        g_coop = torch.sigmoid(self.gate_coop(coop_flat)).unsqueeze(-1) # [B,L,H,1]
 
         fused_heads = g_con * con_heads + g_coop * coop
         fused = fused_heads.view(B, L, D)
