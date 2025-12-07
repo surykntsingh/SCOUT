@@ -67,9 +67,9 @@ class Tokenizer:
         txt = ''
         for i, idx in enumerate(ids):
             if idx > 0:
-                # if i >= 1:
-                #     txt += ' '
-                txt += ' '+ self.get_token_by_id(idx)
+                if i >= 1:
+                    txt += ' '
+                txt += self.get_token_by_id(idx)
             else:
                 break
         return txt
@@ -150,7 +150,7 @@ class Tokenizer:
         # 4. Clean each sentence: remove punctuation, quotes, noise
         # -------------------------------------------------------
         def clean_sentence(s):
-            s = re.sub(r'[#,?;*!^&_+():\-\[\]{}]', ' ', s)
+            s = re.sub(r'[#,?;*!^&_+():-\[\]{}]', ' ', s)
             s = re.sub(r"\s+", " ", s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
