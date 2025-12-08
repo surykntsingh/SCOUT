@@ -392,6 +392,81 @@ class CrossAttentionBlock(nn.Module):
         x_fused = self.norm(x + self.ff(x2 + c2_to_x))
         return x_fused
 
+class ConceptInfusionBlockV2(nn.Module):
+    """
+    Stable bidirectional concept infusion with:
+      - shared Q/K/V projections
+      - lightweight concept update
+      - safe pooled concept context injection
+      - cooperative gating (not competitive)
+    """
+
+    def __init__(self, n_heads, d_model, dropout=0.1, concept_update=True):
+        super().__init__()
+        self.n_heads = n_heads
+        self.d_model = d_model
+        self.concept_update = concept_update
+
+        # ---- 1) Shared cross-attention projections -------------------------
+        self.x_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+        self.c_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+
+        # ---- 2) Feed-forwards ----------------------------------------------
+        self.ff_x = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+        self.ff_c = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+
+        # ---- 3) Norms ------------------------------------------------------
+        self.norm_x = nn.LayerNorm(d_model)
+        self.norm_c = nn.LayerNorm(d_model)
+
+        # ---- 4) Concept pooling (learned) ---------------------------------
+        self.pool = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.Tanh()
+        )
+
+        # ---- 5) Cooperative gate (only scales concept signal) ------------
+        self.gate = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.SiLU(),
+            nn.Linear(d_model, d_model),
+            nn.Sigmoid()
+        )
+
+        # ---- 6) Output projection -----------------------------------------
+        self.out_proj = nn.Linear(d_model, d_model)
+
+    def forward(self, x, concepts):
+        """
+        x:        [B, L, D]
+        concepts: [B, M, D]
+        """
+
+        # ----------- A) Main: X attends to Concept Tokens -------------------
+        x2c, att_x2c = self.x_attn(x, concepts, concepts)   # X <- Concepts
+        x = self.norm_x(x + x2c)
+        x = self.ff_x(x)
+
+        # ----------- B) Optional Concept Update -----------------------------
+        if self.concept_update:
+            c2x, att_c2x = self.c_attn(concepts, x, x)  # C <- X
+            concepts = self.norm_c(concepts + c2x)
+            concepts = self.ff_c(concepts)
+        else:
+            att_c2x = None
+
+        # ----------- C) Pool Concepts to a Small Context Vector ------------
+        # [B, M, D] → [B, 1, D]
+        c_pooled = self.pool(concepts.mean(dim=1, keepdim=True))
+
+        # ----------- D) Cooperative Fusion ---------------------------------
+        # gate ∈ [0,1] expands concept info but never suppresses x
+        g = self.gate(x)                       # [B, L, D]
+        fused = x + g * c_pooled               # additive, cooperative
+        fused = self.out_proj(fused)
+
+        return fused, att_x2c, att_c2x
+
 
 
 class EncoderDecoder(AttModel):
@@ -420,7 +495,7 @@ class EncoderDecoder(AttModel):
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
         mgf = MultiHeadGatedFusionV4(self.d_model, self.num_heads, dropout=self.dropout)
-        concept_fusion = CrossAttentionBlock(self.num_heads, self.d_model, dropout=self.dropout)
+        concept_fusion = ConceptInfusionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
 
 
         model = Transformer(
