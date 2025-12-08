@@ -45,6 +45,7 @@ class ReportModel(pl.LightningModule):
         #     # 'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
         # }
         self.predictions = {}
+        self.train_predictions = {}
 
         self.reports = {
             report['id'].split('.')[0]: report['report'] for report in read_json_file(args.reports_json_path)
@@ -94,7 +95,7 @@ class ReportModel(pl.LightningModule):
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
-                self.__save_predictions(slide_ids, pred_texts, ground_truths)
+                self.__save_train_predictions(slide_ids, pred_texts, ground_truths)
                 self.__print_results(slide_ids, pred_texts, ground_truths)
                 rouge_score = self.train_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('train_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -178,9 +179,9 @@ class ReportModel(pl.LightningModule):
 
     def on_train_epoch_end(self):
         torch.cuda.empty_cache()
-        self.__log_reg_metrics('train', 'reg', self.reg_evaluator.get_metrics, False)
-        self.__log_reg_metrics('train', 'coco', compute_coco_scores, False)
-        self.predictions.clear()
+        self.__log_train_reg_metrics('train', 'reg', self.reg_evaluator.get_metrics, False)
+        self.__log_train_reg_metrics('train', 'coco', compute_coco_scores, False)
+        self.train_predictions.clear()
 
     def on_validation_epoch_end(self):
         torch.cuda.empty_cache()
@@ -227,9 +228,10 @@ class ReportModel(pl.LightningModule):
 
     def __save_predictions(self, slide_ids, pred_texts, ground_truths):
         # print(f'slide_ids: {slide_ids}, pred_texts: {pred_texts}')
-        pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
+        # pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
 
         for i, slide_id in enumerate(slide_ids):
+
 
             self.predictions[slide_id] = {
                 'pred': pred_texts[i],
@@ -246,6 +248,32 @@ class ReportModel(pl.LightningModule):
             target_texts.append(self.predictions[slide_id]['target'])
 
         print(f'stage: {stage} pred_texts: {pred_texts}')
+        metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
+
+        for metric_name, metric_score in metrics.items():
+            self.log(
+                f'{stage}_{metric_type}_{metric_name}', metric_score, on_epoch=True, prog_bar=prog_bar, sync_dist=True
+            )
+
+    def __save_train_predictions(self, slide_ids, pred_texts, ground_truths):
+        # print(f'slide_ids: {slide_ids}, pred_texts: {pred_texts}')
+        # pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
+
+        for i, slide_id in enumerate(slide_ids):
+            self.train_predictions[slide_id] = {
+                'pred': pred_texts[i],
+                'target': ground_truths[i]
+            }
+
+    def __log_train_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
+        pred_texts = []
+        target_texts = []
+        for slide_id in self.train_predictions:
+            # pred_texts = list(map(lambda x: 'placeholder' if x.strip() == '' else x, pred_texts))
+            pred_texts.append(self.predictions[slide_id]['pred'])
+            target_texts.append(self.predictions[slide_id]['target'])
+
+        # print(f'stage: {stage} pred_texts: {pred_texts}')
         metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
 
         for metric_name, metric_score in metrics.items():
