@@ -25,6 +25,9 @@ class Encoder(nn.Module):
             x = layer(self.norm(x), mask)
             x = self.PAM[i](x)
 
+            if i==self.N-1:
+                x = self.concept_sublayer(x, concepts)
+
             s.append(x)
 
         # x = self.concept_sublayer(x, concepts)

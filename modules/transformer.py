@@ -291,7 +291,7 @@ class MultiHeadGatedFusionV4(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x, x_self, x_img, x_con):
+    def forward(self, x_self, x_img, x_con):
         B, L, D = x_self.shape
         H, d_h = self.num_heads, self.head_dim
 
