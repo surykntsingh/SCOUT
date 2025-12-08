@@ -247,7 +247,7 @@ class ReportModel(pl.LightningModule):
             pred_texts.append(self.predictions[slide_id]['pred'])
             target_texts.append(self.predictions[slide_id]['target'])
 
-        print(f'stage: {stage} pred_texts: {pred_texts}')
+        # print(f'stage: {stage} pred_texts: {pred_texts}')
         metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
 
         for metric_name, metric_score in metrics.items():
