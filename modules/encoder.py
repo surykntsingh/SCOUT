@@ -28,7 +28,7 @@ class Encoder(nn.Module):
             s.append(x)
 
         # x = self.concept_sublayer(x, concepts)
-        s.append(x)
+        # s.append(x)
 
             # Weighted sum of layer outputs
         s = torch.stack(s, dim=0)  # [N, B, L, D]
