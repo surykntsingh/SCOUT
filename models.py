@@ -71,14 +71,14 @@ class ReportModel(pl.LightningModule):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
-        attn_reg = self.get_attn_regularization(attns)
-
-        with torch.no_grad():
-            caption_magnitude = caption_loss.detach()
-            concept_magnitude = concept_loss.detach() + 1e-8
-            scale = (caption_magnitude / concept_magnitude)
+        # attn_reg = self.get_attn_regularization(attns)
+        #
+        # with torch.no_grad():
+        #     caption_magnitude = caption_loss.detach()
+        #     concept_magnitude = concept_loss.detach() + 1e-8
+        #     scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss   + self.concept_lambda * concept_loss * scale + attn_reg
+        total_loss = caption_loss #  + self.concept_lambda * concept_loss * scale + attn_reg
         return total_loss, concept_loss
 
 
