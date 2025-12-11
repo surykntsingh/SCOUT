@@ -74,12 +74,11 @@ class ReportModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
         gc.collect()
-        _, features, report_ids, report_masks, patch_masks = batch
-        output,attn = self.model(features, report_ids, patch_masks, mode='train')
+        _, features, report_ids, report_masks = batch
+        output,attn = self.model(features, report_ids, mode='train')
         # print(f'train output: {output}')
-        loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+        loss = self.loss_fn(output, report_ids, report_masks, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-        self.log('train_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
         # if batch_idx %1000==0:
         #     print(
         #         f"[GPU] Alloc: {torch.cuda.memory_allocated() / 1e6:.1f} MB | Reserved: {torch.cuda.memory_reserved() / 1e6:.1f} MB")
@@ -87,10 +86,10 @@ class ReportModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        slide_ids, features, report_ids, report_masks, patch_masks = batch
+        slide_ids, features, report_ids, report_masks = batch
 
         with torch.no_grad():
-            output_,attn = self.model(features, report_ids, patch_masks, mode='train')
+            output_,attn = self.model(features, report_ids, mode='train')
 
             loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -100,7 +99,7 @@ class ReportModel(pl.LightningModule):
 
         if batch_idx % 10==0:
             with torch.no_grad():
-                output, concept_attn_maps, _ = self.model(features, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps, _ = self.model(features, report_ids, mode='sample')
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -113,17 +112,17 @@ class ReportModel(pl.LightningModule):
 
 
     def test_step(self, batch, batch_idx):
-        slide_ids, features, report_ids, report_masks, patch_masks = batch
+        slide_ids, features, report_ids, report_masks = batch
 
         with torch.no_grad():
-            output_,attn  = self.model(features, report_ids, patch_masks, mode='train')
+            output_,attn  = self.model(features, report_ids, mode='train')
             loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output,concept_attn_maps = self.model(features, report_ids, patch_masks, mode='sample')
+            output,concept_attn_maps = self.model(features, report_ids, mode='sample')
             output = output.detach().cpu().numpy()
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
