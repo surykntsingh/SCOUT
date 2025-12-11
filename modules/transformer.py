@@ -623,7 +623,7 @@ class EncoderDecoder(AttModel):
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        out, attn_maps = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
+        out, attn_maps = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory[0].device))
         return out[:, -1], [ys.unsqueeze(0)], attn_maps
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
