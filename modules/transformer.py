@@ -575,6 +575,8 @@ class EncoderDecoder(AttModel):
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
+        else:
+            print(f'att_masks: {att_masks.shape}')
         att_masks = att_masks.unsqueeze(-2)
 
         if seq is not None:
