@@ -23,7 +23,7 @@ class FilmFusion(nn.Module):
 
     def forward(self, patch, slide):
         # patch: [B,M,D], slide:[B,D_s]
-        gb = self.gamma_beta(slide)  # [B, 2D]
+        gb = self.alpha_gamma_beta(slide)  # [B, 2D]
         alpha, gamma, beta = gb.chunk(3, dim=-1)  # [B,D], [B,D]
         alpha = alpha.unsqueeze(1)
         gamma = gamma.unsqueeze(1)  # [B,1,D]
