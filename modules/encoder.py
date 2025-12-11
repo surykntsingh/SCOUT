@@ -24,7 +24,7 @@ class FilmFusion(nn.Module):
     def forward(self, patch, slide):
         # patch: [B,M,D], slide:[B,D_s]
         gb = self.gamma_beta(slide)  # [B, 2D]
-        gamma, beta = gb.chunk(3, dim=-1)  # [B,D], [B,D]
+        gamma, beta = gb.chunk(2, dim=-1)  # [B,D], [B,D]
         gamma = gamma.unsqueeze(1)  # [B,1,D]
         beta = beta.unsqueeze(1)
         out = self.layernorm(patch * (1 + gamma) + beta)
