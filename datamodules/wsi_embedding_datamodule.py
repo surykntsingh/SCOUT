@@ -55,11 +55,11 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
         features = {
-            'slide': slide_embedding,
-            'patch': patch_embeddings,
+            'slide': pad_sequence(slide_embedding,atch_first=True).to(device),
+            'patch': pad_sequence(patch_embeddings,batch_first=True).to(device),
             'gecko': {
-                'deep': gecko_deep_embedding,
-                'concept': gecko_concept_embedding
+                'deep': pad_sequence(gecko_deep_embedding,batch_first=True).to(device),
+                'concept': pad_sequence(gecko_concept_embedding,batch_first=True).to(device)
             }
         }
         return slide_ids, features, report_ids, torch.FloatTensor(report_masks)
@@ -111,11 +111,11 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
     def collate_fn(batch, device='cuda'):
         slide_ids, slide_embedding, patch_embeddings, gecko_deep_embedding, gecko_concept_embedding= zip(*batch)
         features = {
-            'slide': slide_embedding,
-            'patch': patch_embeddings,
+            'slide': pad_sequence(slide_embedding, atch_first=True).to(device),
+            'patch': pad_sequence(patch_embeddings, batch_first=True).to(device),
             'gecko': {
-                'deep': gecko_deep_embedding,
-                'concept': gecko_concept_embedding
+                'deep': pad_sequence(gecko_deep_embedding, batch_first=True).to(device),
+                'concept': pad_sequence(gecko_concept_embedding, batch_first=True).to(device)
             }
         }
 
