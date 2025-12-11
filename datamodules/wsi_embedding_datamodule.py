@@ -41,7 +41,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
-        slide_ids, features, report_ids, report_masks = zip(*batch)
+        slide_ids, slide_embedding, patch_embeddings, gecko_deep_embedding, gecko_concept_embedding, report_ids, report_masks = zip(*batch)
         # feats1_pad = pad_sequence(feats_1, batch_first=True).to(device)
         # feats2_pad = pad_sequence(feats_2, batch_first=True).to(device)
         # emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
@@ -54,6 +54,14 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         # for i, p in enumerate(patch_feats):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
+        features = {
+            'slide': slide_embedding,
+            'patch': patch_embeddings,
+            'gecko': {
+                'deep': gecko_deep_embedding,
+                'concept': gecko_concept_embedding
+            }
+        }
         return slide_ids, features, report_ids, torch.FloatTensor(report_masks)
 
 
@@ -99,13 +107,16 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
         return DataLoader(self.predict_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
 
 
-    # @staticmethod
-    # def collate_fn(batch, device='cuda'):
-    #     slide_ids, features= zip(*batch)
-    #     feats1_pad = feats_1.to(device)
-    #     feats2_pad = feats_2.to(device)
-    #     emb_g_pad = emb_g.to(device)
-    #     emb_gc_pad = emb_gc.to(device)
-    #     attn_gc_pad = attn_gc.to(device)
-    #
-    #     return slide_ids, feats1_pad, feats2_pad, emb_g_pad, emb_gc_pad, attn_gc_pad
+    @staticmethod
+    def collate_fn(batch, device='cuda'):
+        slide_ids, slide_embedding, patch_embeddings, gecko_deep_embedding, gecko_concept_embedding= zip(*batch)
+        features = {
+            'slide': slide_embedding,
+            'patch': patch_embeddings,
+            'gecko': {
+                'deep': gecko_deep_embedding,
+                'concept': gecko_concept_embedding
+            }
+        }
+
+        return slide_ids, features

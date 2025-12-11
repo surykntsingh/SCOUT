@@ -38,7 +38,7 @@ class EmbeddingDataset(Dataset):
             embeddings_np = h5_file["features"][:]
 
             # coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np)
+            slide_embedding = torch.tensor(embeddings_np)
             report_text = self.__reports[slide_id]
             report_ids = self.__tokenizer(report_text)
 
@@ -51,30 +51,19 @@ class EmbeddingDataset(Dataset):
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
             embeddings_np = h5_file["features"][:]
-            embedding2 = torch.tensor(embeddings_np)
+            patch_embedding = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
-            bag_feat_attn_np = h5_file["attention_bag_feats"][:]
+            # bag_feat_attn_np = h5_file["attention_bag_feats"][:]
 
-            emb_g = torch.tensor(bag_feats_deep_np)
-            emb_gc = torch.tensor(bag_feats_np)
-            attn_gc = torch.tensor(bag_feat_attn_np)
+            gecko_deep_embedding = torch.tensor(bag_feats_deep_np)
+            gecko_concept_embedding = torch.tensor(bag_feats_np)
+            # attn_gc = torch.tensor(bag_feat_attn_np)
 
-        features = {
-            'slide': embedding1,
-            'patch': embedding2,
-            'gecko': {
-                'deep': emb_g,
-                'concepts': emb_gc,
-                'activations': attn_gc
-            }
-        }
-
-        # coords = None
-        return slide_id, features, report_ids, report_masks
+        return slide_id, slide_embedding, patch_embedding, gecko_deep_embedding, gecko_concept_embedding, report_ids, report_masks
 
 
 class EmbeddingPredictDataset(Dataset):
@@ -108,32 +97,22 @@ class EmbeddingPredictDataset(Dataset):
             embeddings_np = h5_file["features"][:]
 
             # coords = torch.tensor(coords_np).float()
-            embedding1 = torch.tensor(embeddings_np)
+            slide_embedding = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
             embeddings_np = h5_file["features"][:]
-            embedding2 = torch.tensor(embeddings_np)
+            patch_embeddings = torch.tensor(embeddings_np)
 
         with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
-            bag_feat_attn_np = h5_file["attention_bag_feats"][:]
+            # bag_feat_attn_np = h5_file["attention_bag_feats"][:]
 
-            emb_g = torch.tensor(bag_feats_deep_np)
-            emb_gc = torch.tensor(bag_feats_np)
-            attn_gc = torch.tensor(bag_feat_attn_np)
+            gecko_deep_embedding = torch.tensor(bag_feats_deep_np)
+            gecko_concept_embedding = torch.tensor(bag_feats_np)
 
-            features = {
-                'slide': embedding1,
-                'patch': embedding2,
-                'gecko': {
-                    'deep': emb_g,
-                    'concepts': emb_gc,
-                    'attention': attn_gc
-                }
-            }
-        return slide_id, features
+        return slide_id, slide_embedding, patch_embeddings, gecko_deep_embedding, gecko_concept_embedding
 
 
 
