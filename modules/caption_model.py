@@ -107,7 +107,7 @@ class CaptionModel(nn.Module):
 
         # Start diverse_beam_search
         opt = kwargs['opt']
-        gc_feats = kwargs['gc_feats']
+        
         temperature = opt.get('temperature', 1)  # This should not affect beam search, but will affect dbs
         beam_size = opt.get('beam_size', 10)
         group_size = opt.get('group_size', 1)
