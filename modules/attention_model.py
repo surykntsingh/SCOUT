@@ -102,7 +102,7 @@ class AttModel(CaptionModel):
 
         logprobs, state, concept_attn_maps = self.get_logprobs_state(it, p_fc_feats, p_att_feats, encoded_features, p_att_masks, state)
 
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, gc_feats = utils.repeat_tensors(beam_size,
+        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
                                                                                    encoded_features, p_att_masks]
                                                                                   )
