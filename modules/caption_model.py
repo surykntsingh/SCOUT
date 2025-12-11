@@ -107,7 +107,7 @@ class CaptionModel(nn.Module):
 
         # Start diverse_beam_search
         opt = kwargs['opt']
-        
+
         temperature = opt.get('temperature', 1)  # This should not affect beam search, but will affect dbs
         beam_size = opt.get('beam_size', 10)
         group_size = opt.get('group_size', 1)
@@ -197,7 +197,7 @@ class CaptionModel(nn.Module):
                     # move the current group one step forward in time
 
                     it = beam_seq_table[divm][:, :, t - divm].reshape(-1)
-                    logprobs_table[divm], state_table[divm],_,_ = self.get_logprobs_state(it, *(
+                    logprobs_table[divm], state_table[divm],_ = self.get_logprobs_state(it, *(
                             args[divm] + [state_table[divm]]))
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
 
