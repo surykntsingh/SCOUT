@@ -57,16 +57,17 @@ class Encoder(nn.Module):
         slides = []
         concepts = []
 
+        x_patch = patch
         for i,layer in enumerate(self.layers):
 
-            patch = layer(self.norm(patch), mask)
-            patch = self.PAM[i](patch)
-            slide = self.slide_fusion_layer[i](patch, slide)
-            concept = self.concept_fusion_layer[i](patch, concept)
+            x_patch = layer(self.norm(x_patch), mask)
+            x_patch = self.PAM[i](x_patch)
+            x_slide = self.slide_fusion_layer[i](x_patch, slide)
+            x_concept = self.concept_fusion_layer[i](x_patch, concept)
 
-            patches.append(patch)
-            slides.append(slide)
-            concepts.append(concept)
+            patches.append(x_patch)
+            slides.append(x_slide)
+            concepts.append(x_concept)
 
         features = torch.stack([
             self.aggregate_weights(patches, self.patch_layer_weights, self.patch_norm),
