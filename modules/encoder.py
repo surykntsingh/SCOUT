@@ -100,7 +100,7 @@ class Encoder(nn.Module):
             self.aggregate_weights(patches, self.patch_layer_weights, self.patch_norm),
             self.aggregate_weights(slides, self.slide_layer_weights, self.slide_norm),
             self.aggregate_weights(concepts, self.concept_layer_weights, self.concept_norm)
-        ], dim =0)
+        ], dim =-1)
 
         return features
 
@@ -109,7 +109,7 @@ class Encoder(nn.Module):
         w = F.softmax(layer_weights, dim=0)  # [N]
         o = (w[:, None, None, None] * s).sum(0)  # [B, L, D]
 
-        return norm(o).unsqueeze(0)
+        return norm(o).unsqueeze(-1)
 
 
 
