@@ -227,7 +227,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         c0 = self.proj_con(x_concept)
 
         # ---- Contextual gating ----
-        ctx = torch.cat([x, x_slide, x_concept], dim=-1)
+        ctx = torch.cat([x_patch, x_slide, x_concept], dim=-1)
         gates = self.gate_net(ctx)                         # [B,L,3D]
         gates = gates.view(B, L, H, 3, d_h)
 

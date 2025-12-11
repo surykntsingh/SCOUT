@@ -36,7 +36,7 @@ class DecoderLayer(nn.Module):
         x_fused, alpha = self.gate_fusion(x_self, x_patch, x_slide, x_concept)
 
         out = self.sublayer[4](x_fused, self.ff_1)
-        return out, None
+        return out, alpha
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
@@ -53,6 +53,7 @@ class Decoder(nn.Module):
             attn_maps.append(alpha)
             # attn_img_all.append(attn_img)
             # attn_con_all.append(attn_con)
+
 
         # attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
         # attn_con_all = torch.stack(attn_con_all)
