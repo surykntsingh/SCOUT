@@ -55,7 +55,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
         features = {
-            'slide': pad_sequence(slide_embedding,atch_first=True).to(device),
+            'slide': pad_sequence(slide_embedding,batch_first=True).to(device),
             'patch': pad_sequence(patch_embeddings,batch_first=True).to(device),
             'gecko': {
                 'deep': pad_sequence(gecko_deep_embedding,batch_first=True).to(device),
@@ -111,7 +111,7 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
     def collate_fn(batch, device='cuda'):
         slide_ids, slide_embedding, patch_embeddings, gecko_deep_embedding, gecko_concept_embedding= zip(*batch)
         features = {
-            'slide': pad_sequence(slide_embedding, atch_first=True).to(device),
+            'slide': pad_sequence(slide_embedding, batch_first=True).to(device),
             'patch': pad_sequence(patch_embeddings, batch_first=True).to(device),
             'gecko': {
                 'deep': pad_sequence(gecko_deep_embedding, batch_first=True).to(device),
