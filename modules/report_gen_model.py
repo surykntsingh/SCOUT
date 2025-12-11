@@ -123,7 +123,7 @@ class ReportGenModel(nn.Module):
         d1 = args.d1
         d2 = args.d2
         gd = args.gd
-        # gcd = args.gcd
+        gcd = args.gcd
         self.mlp_slide_adapter = nn.Sequential(
             nn.Linear(d1, 2 * d1),
             nn.ReLU(),
@@ -151,35 +151,44 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
 
+        self.mlp_gecko_concept_adapter = nn.Sequential(
+            nn.Linear(gcd, 2 * gcd),
+            nn.ReLU(),
+            nn.Linear(2 * gcd, 2 * d),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(2 * d, d)
+        )
+
         # self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
         # self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
         # self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
         # self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
-        self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
+        # self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
-        dm =args.d_model
-        self.gecko_mlp = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
-            nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
-            nn.ReLU(),
-            nn.Dropout(args.dropout_mlp),
-            nn.Linear(4 * dm, 2*dm),
-            nn.ReLU(),
-            nn.Linear(2 * dm, dm),
-        )
-
-        self.gecko_encoder = nn.Sequential(
-            nn.Linear(dm, 2 * dm),
-            nn.ReLU(),
-            nn.Linear(2 * dm, 4 * dm),
-            nn.ReLU(),
-            nn.Linear(4 * dm, 2*dm),
-            nn.ReLU(),
-            nn.Dropout(args.dropout_mlp),
-            nn.Linear(2*dm, dm)
-        )
+        # dm =args.d_model
+        # self.gecko_mlp = nn.Sequential(
+        #     nn.Linear(dm, 2 * dm),
+        #     nn.ReLU(),
+        #     nn.Linear(2 * dm, 4 * dm),
+        #     nn.ReLU(),
+        #     nn.Dropout(args.dropout_mlp),
+        #     nn.Linear(4 * dm, 2*dm),
+        #     nn.ReLU(),
+        #     nn.Linear(2 * dm, dm),
+        # )
+        #
+        # self.gecko_encoder = nn.Sequential(
+        #     nn.Linear(dm, 2 * dm),
+        #     nn.ReLU(),
+        #     nn.Linear(2 * dm, 4 * dm),
+        #     nn.ReLU(),
+        #     nn.Linear(4 * dm, 2*dm),
+        #     nn.ReLU(),
+        #     nn.Dropout(args.dropout_mlp),
+        #     nn.Linear(2*dm, dm)
+        # )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
@@ -190,7 +199,7 @@ class ReportGenModel(nn.Module):
         slide_embeddings = self.mlp_slide_adapter(features['slide'])
         gecko_deep_embeddings = self.mlp_gecko_deep_adapter(features['gecko']['deep'])
         slide_embeddings = self.slide_encoder(torch.cat([slide_embeddings,gecko_deep_embeddings], dim=-1))
-        concept_embeddings = features['gecko']['concept']
+        concept_embeddings = self.mlp_gecko_concept_adapter(features['gecko']['concept'], dim=-1)
 
         att_feats = torch.cat([self.prompt, patch_embeddings], dim=1)
         # att_feats = self.prompt
