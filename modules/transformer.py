@@ -476,6 +476,7 @@ class EncoderDecoder(AttModel):
         self.args = args
         self.num_layers = args.num_layers
         self.d_model = args.d_model
+        self.d_concept = args.gcd
         self.d_ff = args.d_ff
         self.num_heads = args.num_heads
         self.dropout = args.dropout
@@ -523,7 +524,7 @@ class EncoderDecoder(AttModel):
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # Concept embedding module
             LayerNorm(self.d_model),
-            LayerNorm(self.gcd)
+            LayerNorm(self.d_concept)
         )
         return model
 
