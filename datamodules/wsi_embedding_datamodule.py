@@ -41,12 +41,12 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
     @staticmethod
     def collate_fn(batch, device='cuda'):
-        slide_ids, feats_1, feats_2, emb_g, emb_gc, attn_gc, report_ids, report_masks, seq_length = zip(*batch)
-        feats1_pad = pad_sequence(feats_1, batch_first=True).to(device)
-        feats2_pad = pad_sequence(feats_2, batch_first=True).to(device)
-        emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
-        emb_gc_pad = pad_sequence(emb_gc, batch_first=True).to(device)
-        attn_gc_pad = pad_sequence(attn_gc, batch_first=True).to(device)
+        slide_ids, features, report_ids, report_masks = zip(*batch)
+        # feats1_pad = pad_sequence(feats_1, batch_first=True).to(device)
+        # feats2_pad = pad_sequence(feats_2, batch_first=True).to(device)
+        # emb_g_pad = pad_sequence(emb_g, batch_first=True).to(device)
+        # emb_gc_pad = pad_sequence(emb_gc, batch_first=True).to(device)
+        # attn_gc_pad = pad_sequence(attn_gc, batch_first=True).to(device)
         report_ids = torch.LongTensor(report_ids).to(device)
         # dummy_feat = torch.randn(patch_feats_pad.shape)
         # coord_feats_pad =  pad_sequence(coord_feats, batch_first=True)
@@ -54,8 +54,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         # for i, p in enumerate(patch_feats):
         #     patch_mask[i, :p.shape[0]] = 1
         # print(slide_ids, len(patch_feats1), len(patch_feats2))
-        return (slide_ids, feats1_pad, feats2_pad, emb_g_pad, emb_gc_pad, attn_gc_pad, report_ids,
-                torch.FloatTensor(report_masks), seq_length)
+        return slide_ids, features, report_ids, torch.FloatTensor(report_masks)
 
 
 class EmbeddingDataModule(PatchEmbeddingDataModule):
@@ -100,13 +99,13 @@ class PatchEmbeddingDataPredictModule(pl.LightningDataModule):
         return DataLoader(self.predict_ds, batch_size=self.__batch_size, shuffle=self.__shuffle, collate_fn = self.collate_fn)
 
 
-    @staticmethod
-    def collate_fn(batch, device='cuda'):
-        slide_ids, feats_1, feats_2,emb_g,emb_gc, attn_gc= zip(*batch)
-        feats1_pad = feats_1.to(device)
-        feats2_pad = feats_2.to(device)
-        emb_g_pad = emb_g.to(device)
-        emb_gc_pad = emb_gc.to(device)
-        attn_gc_pad = attn_gc.to(device)
-
-        return slide_ids, feats1_pad, feats2_pad, emb_g_pad, emb_gc_pad, attn_gc_pad
+    # @staticmethod
+    # def collate_fn(batch, device='cuda'):
+    #     slide_ids, features= zip(*batch)
+    #     feats1_pad = feats_1.to(device)
+    #     feats2_pad = feats_2.to(device)
+    #     emb_g_pad = emb_g.to(device)
+    #     emb_gc_pad = emb_gc.to(device)
+    #     attn_gc_pad = attn_gc.to(device)
+    #
+    #     return slide_ids, feats1_pad, feats2_pad, emb_g_pad, emb_gc_pad, attn_gc_pad

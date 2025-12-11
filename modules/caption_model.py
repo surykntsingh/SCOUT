@@ -198,7 +198,7 @@ class CaptionModel(nn.Module):
 
                     it = beam_seq_table[divm][:, :, t - divm].reshape(-1)
                     logprobs_table[divm], state_table[divm],_,_ = self.get_logprobs_state(it, *(
-                            args[divm] + [state_table[divm]]), gc_feats=gc_feats)
+                            args[divm] + [state_table[divm]]))
                     logprobs_table[divm] = F.log_softmax(logprobs_table[divm] / temperature, dim=-1)
 
         # all beams are sorted by their log-probabilities

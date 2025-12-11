@@ -113,10 +113,7 @@ class ReportGenModel(nn.Module):
         self.prompt = nn.Parameter(torch.randn(1, 1, args.d_vf))
 
         d = args.d_vf
-        self.encoder = nn.Sequential(
-            nn.Linear(d, 2 * d),
-            nn.ReLU(),
-            nn.LayerNorm(2*d),
+        self.slide_encoder = nn.Sequential(
             nn.Linear(2 * d, d),
             nn.LayerNorm(d),
             nn.ReLU(),
@@ -125,7 +122,9 @@ class ReportGenModel(nn.Module):
         )
         d1 = args.d1
         d2 = args.d2
-        self.adapter_mlp_1 = nn.Sequential(
+        gd = args.gd
+        # gcd = args.gcd
+        self.mlp_slide_adapter = nn.Sequential(
             nn.Linear(d1, 2 * d1),
             nn.ReLU(),
             nn.Linear(2 * d1, 2*d),
@@ -134,7 +133,7 @@ class ReportGenModel(nn.Module):
             nn.Linear(2*d, d)
         )
 
-        self.adapter_mlp_2 = nn.Sequential(
+        self.mlp_patch_adapter = nn.Sequential(
             nn.Linear(d2, 2 * d2),
             nn.ReLU(),
             nn.Linear(2 * d2, 2 * d),
@@ -143,10 +142,19 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
 
-        self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
-        self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
-        self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
-        self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
+        self.mlp_gecko_deep_adapter = nn.Sequential(
+            nn.Linear(gd, 2 * gd),
+            nn.ReLU(),
+            nn.Linear(2 * gd, 2 * d),
+            nn.ReLU(),
+            nn.Dropout(args.dropout_mlp),
+            nn.Linear(2 * d, d)
+        )
+
+        # self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
+        # self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
+        # self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
+        # self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
         self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
 
         # gd = args.gd
@@ -176,48 +184,24 @@ class ReportGenModel(nn.Module):
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
 
-    def freeze_deep_features(self):
-        print('Freezing concept parameters')
-        for param in self.concept_encoder.parameters():
-            param.requires_grad = False
+    def forward(self, features, report_ids=None, mode='train'):
 
-        for param in self.concept_supervision_head.parameters():
-            param.requires_grad = False
+        patch_embeddings = self.mlp_patch_adapter(features['patch'])
+        slide_embeddings = self.mlp_slide_adapter(features['slide'])
+        gecko_deep_embeddings = self.mlp_gecko_deep_adapter(features['gecko']['deep'])
+        slide_embeddings = self.slide_encoder(torch.cat([slide_embeddings,gecko_deep_embeddings], dim=-1))
+        concept_embeddings = features['gecko']['concept']
 
-        for param in self.encoder_decoder.model.concept_embed.parameters():
-            param.requires_grad = False
-
-        for param in self.encoder_decoder.gc_embed.parameters():
-            param.requires_grad = False
-
-
-    def forward(self, image_embeddings1, image_embeddings2, emb_g, emb_gc, attn_gc, report_ids=None, patch_masks=None, mode='train'):
-        # coords_encoded = self.positional_encoder(pos_embeddings)
-        # patch_feats = image_embeddings # + coords_encoded
-        # print(f'image_embeddings1: {image_embeddings1}')
-        patch_masks=None
-        image_embeddings1 = self.adapter_mlp_1(self.slide_encoder(image_embeddings1))
-        image_embeddings2 = self.adapter_mlp_2(image_embeddings2)
-
-        emb_gc_proj = self.gecko_mlp(self.gecko_projector(emb_gc))
-
-        gecko_embeddings = self.gecko_encoder(torch.cat([self.gecko_deep_projector(emb_g),emb_gc_proj], dim=1))
-
-        # gecko_embeddings = self.gecko_encoder(emb_g)
-
-        patch_feats = torch.cat([image_embeddings1, image_embeddings2, gecko_embeddings], dim=1)
-        # patch_feats = self.encoder(gecko_embeddings)
-        att_feats = torch.cat([self.prompt, patch_feats], dim=1)
+        att_feats = torch.cat([self.prompt, patch_embeddings], dim=1)
         # att_feats = self.prompt
         fc_feats = torch.sum(att_feats, dim=1)
-        attn_gc = self.concept_encoder(attn_gc)
 
         if mode == 'train':
-            output, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, report_ids, mode='forward')
+            output, attn_maps = self.encoder_decoder(fc_feats, att_feats, slide_embeddings,concept_embeddings , report_ids, mode='forward')
         elif mode == 'sample':
-            output, _, concept_attn_maps, concept_tokens = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='sample')
+            output, _, attn_maps = self.encoder_decoder(fc_feats, att_feats, slide_embeddings,concept_embeddings, mode='sample')
         elif mode == 'encode':
-            output = self.encoder_decoder(fc_feats, att_feats, attn_gc, mode='encode')
+            output = self.encoder_decoder(fc_feats, att_feats, slide_embeddings,concept_embeddings, mode='encode')
 
             logits = self.fc(output[0, 0, :]).unsqueeze(0)
             Y_hat = torch.argmax(logits, dim=1)
@@ -226,4 +210,4 @@ class ReportGenModel(nn.Module):
         else:
             raise ValueError
 
-        return output, concept_attn_maps, concept_tokens
+        return output, attn_maps

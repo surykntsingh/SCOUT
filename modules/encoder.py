@@ -1,3 +1,5 @@
+from pyexpat import features
+
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -6,39 +8,86 @@ from modules.common import LayerNorm, SublayerConnection, ConceptSublayer
 from utils import utils
 from utils.utils import clones
 
+class FilmFusion(nn.Module):
+    def __init__(self, D, D_s, hidden=1024, dropout=0.2):
+        super().__init__()
+        self.gamma_beta = nn.Sequential(
+            nn.Linear(D_s, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, D),
+            nn.Dropout(dropout),
+            nn.ReLU(),
+            nn.Linear(D, 2 * D)     # gamma, beta
+        )
+        self.layernorm = nn.LayerNorm(D)
+
+    def forward(self, patch, slide):
+        # patch: [B,M,D], slide:[B,D_s]
+        gb = self.gamma_beta(slide)  # [B, 2D]
+        gamma, beta = gb.chunk(2, dim=-1)  # [B,D], [B,D]
+        gamma = gamma.unsqueeze(1)  # [B,1,D]
+        beta = beta.unsqueeze(1)
+        out = self.layernorm(patch * (1 + gamma) + beta)
+        return out  # [B,M,D]
 
 class Encoder(nn.Module):
     def __init__(self, layer, N, PAM, concept_fusion):
         super().__init__()
         self.layers = clones(layer, N)
-        self.norm = LayerNorm(layer.d_model)
+        self.patch_norm = LayerNorm(layer.d_model)
+        self.slide_norm = LayerNorm(layer.d_model)
+        self.concept_norm = LayerNorm(layer.d_model)
+
         self.PAM = clones(PAM, N)
         self.N = N
         # self.concept_fusion = concept_fusion
-        self.concept_sublayer = ConceptSublayer(layer.d_model, concept_fusion)
-        self.layer_weights = nn.Parameter(torch.ones(N))
+        slide_fusions = FilmFusion(768,768)
+        concept_fusions = FilmFusion(768, 768)
+        self.slide_fusion_layer = clones(slide_fusions, self.N)
+        self.concept_fusion_layer = clones(concept_fusions, self.N)
+        self.patch_layer_weights = nn.Parameter(torch.ones(N))
+        self.slide_layer_weights = nn.Parameter(torch.ones(N))
+        self.concept_layer_weights = nn.Parameter(torch.ones(N))
 
-    def forward(self, x, mask, concepts):
-        s=[]
+
+
+    def forward(self, patch, slide, concept, mask):
+        patches = []
+        slides = []
+        concepts = []
+
         for i,layer in enumerate(self.layers):
-            # x = self.concept_fusion(self.norm(x), concepts)
-            x = layer(self.norm(x), mask)
-            x = self.PAM[i](x)
 
-            if i==self.N-1:
-                x = self.concept_sublayer(x, concepts)
+            patch = layer(self.norm(patch), mask)
+            patch = self.PAM[i](patch)
+            slide = self.slide_fusion_layer[i](patch, slide)
+            concept = self.concept_fusion_layer[i](patch, concept)
 
-            s.append(x)
+            patches.append(patch)
+            slides.append(slide)
+            concepts.append(concept)
 
-        # x = self.concept_sublayer(x, concepts)
-        # s.append(x)
+        features = {
+            'patch': self.aggregate_weights(patches,self.patch_layer_weights, self.patch_norm),
+            'slide': self.aggregate_weights(slides,self.slide_layer_weights, self.slide_norm),
+            'concept': self.aggregate_weights(concepts, self.concept_layer_weights, self.concept_norm)
+        }
+        features = torch.stack([
+            self.aggregate_weights(patches, self.patch_layer_weights, self.patch_norm),
+            self.aggregate_weights(slides, self.slide_layer_weights, self.slide_norm),
+            self.aggregate_weights(concepts, self.concept_layer_weights, self.concept_norm)
+        ], dim = 0)
 
-            # Weighted sum of layer outputs
+        return features
+
+    def aggregate_weights(self, s, layer_weights, norm):
         s = torch.stack(s, dim=0)  # [N, B, L, D]
-        w = F.softmax(self.layer_weights, dim=0)  # [N]
+        w = F.softmax(layer_weights, dim=0)  # [N]
         o = (w[:, None, None, None] * s).sum(0)  # [B, L, D]
 
-        return self.norm(o)
+        return norm(o)
+
+
 
 
 class EncoderLayer(nn.Module):

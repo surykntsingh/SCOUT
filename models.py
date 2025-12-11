@@ -33,17 +33,6 @@ class ReportModel(pl.LightningModule):
         self.test_rouge = ROUGEScore()
         self.reg_evaluator = REG_Evaluator()
 
-        # bleu = evaluate.load("bleu")
-        # rouge = evaluate.load("rouge")
-        # meteor = evaluate.load("meteor")
-        # bertscore = evaluate.load("bertscore")
-
-        # self.evaluate_metrics = {
-        #     'bleu':  lambda x,y: bleu.compute(predictions=x,references=y)['bleu'],
-        #     'rouge': lambda x,y: rouge.compute(predictions=x,references=y)['rougeL'],
-        #     'meteor': lambda x,y: meteor.compute(predictions=x,references=y)['meteor'],
-        #     # 'bertscore': lambda x,y: bertscore.compute(predictions=x,references=y, lang="en")['f1']
-        # }
         self.predictions = {}
 
         self.reports = {
@@ -67,10 +56,10 @@ class ReportModel(pl.LightningModule):
 
         return lambda_entropy * entropy + lambda_balance * balance
 
-    def loss_fn(self, output, reports_ids, reports_masks, concept_tokens, gecko_concepts, attns):
+    def loss_fn(self, output, reports_ids, reports_masks, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
-        concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
+        # concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
         # attn_reg = self.get_attn_regularization(attns)
         #
         # with torch.no_grad():
@@ -79,14 +68,14 @@ class ReportModel(pl.LightningModule):
         #     scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
         total_loss = caption_loss #  + self.concept_lambda * concept_loss * scale + attn_reg
-        return total_loss, concept_loss
+        return total_loss
 
 
     def training_step(self, batch, batch_idx):
         # print('train ---------->')
         gc.collect()
-        _, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
-        output,attn, concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+        _, features, report_ids, report_masks, patch_masks = batch
+        output,attn = self.model(features, report_ids, patch_masks, mode='train')
         # print(f'train output: {output}')
         loss,concept_loss = self.loss_fn(output, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -98,20 +87,20 @@ class ReportModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
+        slide_ids, features, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_,attn,concept_tokens = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
+            output_,attn = self.model(features, report_ids, patch_masks, mode='train')
 
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens,gecko_concepts_acts, attn)
+            loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
+            # self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
         if batch_idx % 10==0:
             with torch.no_grad():
-                output, concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+                output, concept_attn_maps, _ = self.model(features, report_ids, patch_masks, mode='sample')
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -120,25 +109,21 @@ class ReportModel(pl.LightningModule):
                 self.__print_results(slide_ids, pred_texts, ground_truths)
                 rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-                del output
-                del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
-                gc.collect()
-                torch.cuda.empty_cache()
+
 
 
     def test_step(self, batch, batch_idx):
-        slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts, report_ids, report_masks, patch_masks = batch
+        slide_ids, features, report_ids, report_masks, patch_masks = batch
 
         with torch.no_grad():
-            output_,attn,concept_tokens  = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='train')
-            loss, concept_loss = self.loss_fn(output_, report_ids, report_masks, concept_tokens, gecko_concepts_acts, attn)
+            output_,attn  = self.model(features, report_ids, patch_masks, mode='train')
+            loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('test_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
-            self.log('test_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
             del output_
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, patch_masks, mode='sample')
+            output,concept_attn_maps = self.model(features, report_ids, patch_masks, mode='sample')
             output = output.detach().cpu().numpy()
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -149,16 +134,13 @@ class ReportModel(pl.LightningModule):
 
             rouge_score = self.test_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
             self.log('test_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
-            del output
-            del feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, report_ids, report_masks, patch_masks
-            gc.collect()
-            torch.cuda.empty_cache()
+
 
 
     def predict_step(self, batch):
-        slide_ids, feats1, feats2, gecko_deep_feats, gecko_concept_feats, gecko_concepts_acts = batch
+        slide_ids, features = batch
         with torch.no_grad():
-            output,concept_attn_maps, _ = self.model(feats1, feats2, gecko_deep_feats, gecko_concept_feats,gecko_concepts_acts, mode='sample')
+            output,concept_attn_maps = self.model(features, mode='sample')
         pred_texts = self.tokenizer.batch_decode(output.detach().cpu().numpy())
         target_texts = [self.reports[slide_id] for slide_id in slide_ids]
 

@@ -47,7 +47,7 @@ class EmbeddingDataset(Dataset):
                 report_ids.extend(padding)
 
             report_masks = [1] * len(report_ids)
-            seq_length = len(report_ids)
+            # seq_length = len(report_ids)
 
         with h5py.File(f'{self.__embeddings_path_2}/{slide_id}.h5', "r") as h5_file:
             embeddings_np = h5_file["features"][:]
@@ -63,8 +63,18 @@ class EmbeddingDataset(Dataset):
             emb_gc = torch.tensor(bag_feats_np)
             attn_gc = torch.tensor(bag_feat_attn_np)
 
+        features = {
+            'slide': embedding1,
+            'patch': embedding2,
+            'gecko': {
+                'deep': emb_g,
+                'concepts': emb_gc,
+                'activations': attn_gc
+            }
+        }
+
         # coords = None
-        return slide_id, embedding1, embedding2, emb_g, emb_gc, attn_gc, report_ids, report_masks, seq_length
+        return slide_id, features, report_ids, report_masks
 
 
 class EmbeddingPredictDataset(Dataset):
@@ -113,7 +123,17 @@ class EmbeddingPredictDataset(Dataset):
             emb_g = torch.tensor(bag_feats_deep_np)
             emb_gc = torch.tensor(bag_feats_np)
             attn_gc = torch.tensor(bag_feat_attn_np)
-        return slide_id, embedding1, embedding2, emb_g, emb_gc, attn_gc
+
+            features = {
+                'slide': embedding1,
+                'patch': embedding2,
+                'gecko': {
+                    'deep': emb_g,
+                    'concepts': emb_gc,
+                    'attention': attn_gc
+                }
+            }
+        return slide_id, features
 
 
 

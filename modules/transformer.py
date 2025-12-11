@@ -13,25 +13,25 @@ from utils.utils import pad_tokens, pack_wrapper, clones
 
 
 class Transformer(nn.Module):
-    def __init__(self, encoder, decoder, src_embed, tgt_embed, concept_embed):
+    def __init__(self, encoder, decoder, src_embed, tgt_embed,slide_embed, concept_embed):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.src_embed = src_embed
         self.tgt_embed = tgt_embed
         self.concept_embed = concept_embed
+        self.slide_embed = slide_embed
 
 
-    def forward(self, src, concepts, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(src,concepts, src_mask), concepts, src_mask, tgt, tgt_mask)
+    def forward(self, patch, slide, concepts, tgt, src_mask, tgt_mask):
+        return self.decode(self.encode(patch, slide,concepts, src_mask), src_mask, tgt, tgt_mask)
 
-    def encode(self, src,concepts, src_mask):
+    def encode(self, patch, slide,concepts, src_mask):
         # print(f'src: {src.shape}')
-        return self.encoder(self.src_embed(src), src_mask, self.concept_embed(concepts))
+        return self.encoder(self.src_embed(patch),self.slide_embed(slide), self.concept_embed(concepts), src_mask)
 
-    def decode(self, hidden_states, concepts, src_mask, tgt, tgt_mask):
-        concepts = self.concept_embed(concepts)
-        return self.decoder(self.tgt_embed(tgt), hidden_states, concepts, src_mask, tgt_mask), concepts
+    def decode(self, hidden_states, src_mask, tgt, tgt_mask):
+        return self.decoder(self.tgt_embed(tgt), hidden_states, src_mask, tgt_mask)
 
 
 class MultiHeadedAttention(nn.Module):
@@ -217,26 +217,26 @@ class MultiHeadGatedFusionV3(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x, x_self, x_img, x_con):
+    def forward(self, x, x_patch, x_slide, x_concept):
         B, L, D = x.shape
         H, d_h = self.num_heads, self.head_dim
 
         # ---- Per-head projections ----
-        s0 = self.proj_self(x_self)
-        i0 = self.proj_img(x_img)
-        c0 = self.proj_con(x_con)
+        s0 = self.proj_self(x_patch)
+        i0 = self.proj_img(x_slide)
+        c0 = self.proj_con(x_concept)
 
         # ---- Contextual gating ----
-        ctx = torch.cat([x, x_img, x_con], dim=-1)
+        ctx = torch.cat([x, x_slide, x_concept], dim=-1)
         gates = self.gate_net(ctx)                         # [B,L,3D]
         gates = gates.view(B, L, H, 3, d_h)
 
         # Temperature-scaled softmax
         weights = F.softmax(gates / self.temperature, dim=3)
 
-        w_self = weights[:, :, :, 0]
-        w_img  = weights[:, :, :, 1]
-        w_con  = weights[:, :, :, 2]
+        w_patch = weights[:, :, :, 0]
+        w_slide  = weights[:, :, :, 1]
+        w_concept  = weights[:, :, :, 2]
 
         # ---- Reshape modalities ----
         s0 = s0.view(B, L, H, d_h)
@@ -244,7 +244,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         c0 = c0.view(B, L, H, d_h)
 
         # ---- Weighted fusion ----
-        fused = w_self * s0 + w_img * i0 + w_con * c0
+        fused = w_patch * s0 + w_slide * i0 + w_concept * c0
         fused = fused.view(B, L, D)
 
         # ---- Projection + residual + normalization ----
@@ -494,9 +494,8 @@ class EncoderDecoder(AttModel):
         ff = PositionwiseFeedForward(self.d_model, self.d_ff, self.dropout)
         position = PositionalEncoding(self.d_model, self.dropout)
         pp = PAM(self.d_model)
-        mgf = MultiHeadGatedFusionV4(self.d_model, self.num_heads, dropout=self.dropout)
+        mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
-
 
         model = Transformer(
             Encoder(
@@ -512,8 +511,7 @@ class EncoderDecoder(AttModel):
                 DecoderLayer(
                     self.d_model,
                     deepcopy(attn),  # self-attn
-                    deepcopy(attn),  # cross-attn (visual)
-                    deepcopy(attn),  # cross-attn (concept)
+                    clones(attn, 3),     # src-attns [patch, slide, concept]
                     deepcopy(ff),  # feed-forward
                     deepcopy(mgf), # multi head gate fusion
                     self.dropout
@@ -524,13 +522,8 @@ class EncoderDecoder(AttModel):
             # Target token embedding + position
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # Concept embedding module
-            nn.Sequential(
-                nn.Linear(self.d_model, self.d_model),  # map GECKO feature dim → transformer dim
-                nn.LayerNorm(self.d_model),
-                # nn.ReLU(),
-                nn.Dropout(self.dropout)
-                # no positional encoding, concepts are unordered
-            )
+            LayerNorm(self.d_model),
+            LayerNorm(self.d_model)
         )
         return model
 
@@ -543,21 +536,21 @@ class EncoderDecoder(AttModel):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def _prepare_feature(self, fc_feats, att_feats, att_masks, gc_feats, meshes=None):
+    def _prepare_feature(self, fc_feats, att_feats, att_masks, slide_embeddings,concept_embeddings, meshes=None):
         att_feats = pad_tokens(att_feats)
-        att_feats, gc_feats, seq, _, att_masks, seq_mask, _ = self._prepare_feature_forward(
-            att_feats, gc_feats, att_masks, meshes
+        att_feats, seq, _, att_masks, seq_mask, _ = self._prepare_feature_forward(
+            att_feats, att_masks, meshes
         )
 
-        memory = self.model.encode(att_feats,gc_feats, att_masks)
+        memory = self.model.encode(att_feats, slide_embeddings,concept_embeddings, att_masks)
 
-        return fc_feats[..., :1], att_feats[..., :1], memory, gc_feats, att_masks
+        return fc_feats[..., :1], att_feats[..., :1], memory, att_masks
 
-    def _prepare_feature_mesh(self, att_feats, gc_feats, att_masks=None, meshes=None):
+    def _prepare_feature_mesh(self, att_feats, att_masks=None, meshes=None):
         att_feats = pad_tokens(att_feats)
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-        gc_feats = pack_wrapper(self.gc_embed, gc_feats)
+        # gc_feats = pack_wrapper(self.gc_embed, gc_feats)
 
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
@@ -574,13 +567,12 @@ class EncoderDecoder(AttModel):
         else:
             meshes_mask = None
 
-        return att_feats, gc_feats, meshes, att_masks, meshes_mask
+        return att_feats, meshes, att_masks, meshes_mask
 
-    def _prepare_feature_forward(self, att_feats, gc_feats, att_masks=None, meshes=None, seq=None):
+    def _prepare_feature_forward(self, att_feats, att_masks=None, meshes=None, seq=None):
 
         att_feats, att_masks = self.clip_att(att_feats, att_masks)
         att_feats = pack_wrapper(self.att_embed, att_feats, att_masks)
-        gc_feats = pack_wrapper(self.gc_embed, gc_feats)
         if att_masks is None:
             att_masks = att_feats.new_ones(att_feats.shape[:2], dtype=torch.long)
         att_masks = att_masks.unsqueeze(-2)
@@ -607,29 +599,29 @@ class EncoderDecoder(AttModel):
         else:
             meshes_mask = None
 
-        return att_feats, gc_feats, seq, meshes, att_masks, seq_mask, meshes_mask
+        return att_feats, seq, meshes, att_masks, seq_mask, meshes_mask
 
-    def _forward(self, fc_feats, att_feats, gc_feats, report_ids, att_masks=None):
+    def _forward(self, fc_feats, att_feats, slide_embeddings,concept_embeddings, report_ids, att_masks=None):
         # log_message(fc_feats, att_feats, report_ids, att_masks)
-        att_feats, gc_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
-            att_feats, gc_feats, att_masks, report_ids
+        att_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
+            att_feats, att_masks, report_ids
         )
-        (out, concept_attn_maps), concept_tokens = self.model(att_feats, gc_feats, report_ids, att_masks, report_mask)
+        out, attn_maps = self.model(att_feats, slide_embeddings,concept_embeddings, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
         outputs = F.log_softmax(self.logit(out), dim=-1)
         # print(f'outputs: {outputs}')
 
-        return outputs, concept_attn_maps, concept_tokens
+        return outputs, attn_maps
 
-    def core(self, it, fc_feats_ph, att_feats_ph, memory, gc_feats, state, mask):
+    def core(self, it, fc_feats_ph, att_feats_ph, memory, state, mask):
 
         if len(state) == 0:
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        (out, concept_attn_maps), concept_tokens = self.model.decode(memory, gc_feats, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
-        return out[:, -1], [ys.unsqueeze(0)], concept_attn_maps, concept_tokens
+        out, attn_maps = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory.device))
+        return out[:, -1], [ys.unsqueeze(0)], attn_maps
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):
 
