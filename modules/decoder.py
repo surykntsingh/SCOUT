@@ -23,10 +23,10 @@ class DecoderLayer(nn.Module):
         # m = hidden_states
         x_self, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
 
-        # print(f'hidden_states: {hidden_states.shape}')
-        patch_features = hidden_states[...,0]
-        slide_features = hidden_states[...,1]
-        concept_features = hidden_states[...,2]
+        print(f'hidden_states: {hidden_states.shape}')
+        patch_features = hidden_states[0]
+        slide_features = hidden_states[1]
+        concept_features = hidden_states[2]
         # print(f'patch_features: {patch_features.shape}, src_mask: {src_mask.shape}')
 
         x_patch, _ = self.sublayer[1](x_self, lambda x: self.src_attn[0](x, patch_features, patch_features, src_mask))
