@@ -28,9 +28,9 @@ class DecoderLayer(nn.Module):
         concept_features = hidden_states[2]
         print(f'patch_features: {patch_features.shape}, src_mask: {src_mask.shape}')
 
-        x_patch, _ = self.sublayer[1](x_self, lambda x: self.src_attn[0](x, patch_features, patch_features, src_mask))
-        x_slide, _ = self.sublayer[2](x_self, lambda x: self.src_attn[1](x, slide_features, slide_features, src_mask))
-        x_concept, _ = self.sublayer[3](x_self, lambda x: self.src_attn[2](x, concept_features, concept_features, src_mask))
+        x_patch, _ = self.sublayer[1](x_self, lambda x: self.src_attn[0](x, patch_features, patch_features))
+        x_slide, _ = self.sublayer[2](x_self, lambda x: self.src_attn[1](x, slide_features, slide_features))
+        x_concept, _ = self.sublayer[3](x_self, lambda x: self.src_attn[2](x, concept_features, concept_features))
 
         x_fused, alpha = self.gate_fusion(x_self, x_patch, x_slide, x_concept)
 

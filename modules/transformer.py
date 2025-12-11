@@ -606,6 +606,7 @@ class EncoderDecoder(AttModel):
         att_feats, report_ids, att_masks, report_mask = self._prepare_feature_mesh(
             att_feats, att_masks, report_ids
         )
+        # print(f'att_masks: {att_masks}')
         out, attn_maps = self.model(att_feats, slide_embeddings,concept_embeddings, report_ids, att_masks, report_mask)
 
         # print(f'out: {out}')
