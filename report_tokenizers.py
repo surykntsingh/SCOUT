@@ -53,8 +53,8 @@ class Tokenizer:
         # text = text.lower()
         # return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
 
-        # return [m.group(0) for m in self.__pattern.finditer(text)]
-        return text.split()
+        return [m.group(0) for m in self.__pattern.finditer(text)]
+        # return text.split()
 
     def __call__(self, report):
         tokens = self.__split_text(self.clean_report(report))
@@ -69,8 +69,8 @@ class Tokenizer:
         txt = ''
         for i, idx in enumerate(ids):
             if idx > 0:
-                if i >= 1:
-                    txt += ' '
+                # if i >= 1:
+                #     txt += ' '
                 txt += self.get_token_by_id(idx)
             else:
                 break
