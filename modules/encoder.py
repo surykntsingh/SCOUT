@@ -69,11 +69,11 @@ class Encoder(nn.Module):
             slides.append(x_slide)
             concepts.append(x_concept)
 
-        features = [
+        features = torch.stack([
             self.aggregate_weights(patches, self.patch_layer_weights, self.patch_norm),
             self.aggregate_weights(slides, self.slide_layer_weights, self.slide_norm),
             self.aggregate_weights(concepts, self.concept_layer_weights, self.concept_norm)
-        ]
+        ], dim =-1)
 
         return features
 
