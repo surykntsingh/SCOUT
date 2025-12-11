@@ -53,7 +53,8 @@ class Tokenizer:
         # text = text.lower()
         # return re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
 
-        return [m.group(0) for m in self.__pattern.finditer(text)]
+        # return [m.group(0) for m in self.__pattern.finditer(text)]
+        return text.split()
 
     def __call__(self, report):
         tokens = self.__split_text(self.clean_report(report))
@@ -118,7 +119,7 @@ class Tokenizer:
         # -------------------------------------------------------
         text = re.sub(
             r'\b(?:\d+(?:\.\d+)?\s*(?:x|×|by)\s*){2,}\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
@@ -126,7 +127,7 @@ class Tokenizer:
         # Remove 2D only (A x B cm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:x|×|by)\s*\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
@@ -134,7 +135,7 @@ class Tokenizer:
         # Remove single measurements (A cm, A mm)
         text = re.sub(
             r'\b\d+(?:\.\d+)?\s*(?:cm|mm|µm|um)\b',
-            '<x units>',
+            'x units',
             text,
             flags=re.IGNORECASE
         )
@@ -151,7 +152,7 @@ class Tokenizer:
         # 4. Clean each sentence: remove punctuation, quotes, noise
         # -------------------------------------------------------
         def clean_sentence(s):
-            s = re.sub(r'[#,?;*!^&_:\[\]{}]', '', s)
+            s = re.sub(r'[#,?;*!^&_+():\-\[\]{}]', '', s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
 
