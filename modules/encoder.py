@@ -11,23 +11,24 @@ from utils.utils import clones
 class FilmFusion(nn.Module):
     def __init__(self, D, D_s, hidden=1024, dropout=0.6):
         super().__init__()
-        self.gamma_beta = nn.Sequential(
+        self.alpha_gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
             nn.ReLU(),
             nn.Linear(hidden, D),
             nn.Dropout(dropout),
             nn.ReLU(),
-            nn.Linear(D, 2 * D)     # gamma, beta
+            nn.Linear(D, 3 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
 
     def forward(self, patch, slide):
         # patch: [B,M,D], slide:[B,D_s]
         gb = self.gamma_beta(slide)  # [B, 2D]
-        gamma, beta = gb.chunk(2, dim=-1)  # [B,D], [B,D]
+        alpha, gamma, beta = gb.chunk(3, dim=-1)  # [B,D], [B,D]
+        alpha = alpha.unsqueeze(1)
         gamma = gamma.unsqueeze(1)  # [B,1,D]
         beta = beta.unsqueeze(1)
-        out = self.layernorm(patch * (1 + gamma) + beta)
+        out = self.layernorm(patch*patch*(1+alpha) + patch * (1 + gamma) + beta)
         return out  # [B,M,D]
 
 class Encoder(nn.Module):
