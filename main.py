@@ -20,7 +20,7 @@ torch.autograd.set_detect_anomaly(True)
 def train(config_file_path: str='histai_config.yaml', notes: str=''):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.80, 0.1, 0.1]
-    tokenizer = Tokenizer(args.reports_json_path)
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
     if args.resume:
         print(f'Resuming training... Loading model from {args.model_load_path}')
         model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
