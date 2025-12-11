@@ -75,7 +75,7 @@ class ReportModel(pl.LightningModule):
         # print(f'train ----------> {features}')
         gc.collect()
         _, features, report_ids, report_masks = batch
-        print(f'train features: {features}')
+        # print(f'train features: {features}')
         output,attn = self.model(features, report_ids, mode='train')
 
         loss = self.loss_fn(output, report_ids, report_masks, attn)
@@ -88,7 +88,7 @@ class ReportModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         slide_ids, features, report_ids, report_masks = batch
-        print(f'val features: {features}')
+        # print(f'val features: {features}')
         with torch.no_grad():
             output_,attn = self.model(features, report_ids, mode='train')
 

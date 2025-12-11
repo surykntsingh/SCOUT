@@ -523,7 +523,7 @@ class EncoderDecoder(AttModel):
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # Concept embedding module
             LayerNorm(self.d_model),
-            LayerNorm(self.d_model)
+            LayerNorm(self.gcd)
         )
         return model
 
