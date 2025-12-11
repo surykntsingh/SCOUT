@@ -37,6 +37,7 @@ class Encoder(nn.Module):
         self.patch_norm = LayerNorm(layer.d_model)
         self.slide_norm = LayerNorm(layer.d_model)
         self.concept_norm = LayerNorm(layer.d_model)
+        self.norm = LayerNorm(layer.d_model)
 
         self.PAM = clones(PAM, N)
         self.N = N
@@ -67,11 +68,6 @@ class Encoder(nn.Module):
             slides.append(slide)
             concepts.append(concept)
 
-        features = {
-            'patch': self.aggregate_weights(patches,self.patch_layer_weights, self.patch_norm),
-            'slide': self.aggregate_weights(slides,self.slide_layer_weights, self.slide_norm),
-            'concept': self.aggregate_weights(concepts, self.concept_layer_weights, self.concept_norm)
-        }
         features = torch.stack([
             self.aggregate_weights(patches, self.patch_layer_weights, self.patch_norm),
             self.aggregate_weights(slides, self.slide_layer_weights, self.slide_norm),
