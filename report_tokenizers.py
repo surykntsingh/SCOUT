@@ -152,7 +152,7 @@ class Tokenizer:
         # 4. Clean each sentence: remove punctuation, quotes, noise
         # -------------------------------------------------------
         def clean_sentence(s):
-            s = re.sub(r'[#,?;*!^&_+():\-\[\]{}]', '', s)
+            s = re.sub(r'[#,?;*!^&_+:\-\[\]{}]', '', s)
             s = s.replace('"', '').replace("'", "").replace("\\", "")
             return s.strip().lower()
 
