@@ -89,11 +89,13 @@ class ReportGenModel(nn.Module):
 
         d = args.d_vf
         self.slide_encoder = nn.Sequential(
+            nn.Linear(2 * d,2*d),
+            nn.ReLU(),
             nn.Linear(2 * d, d),
-            nn.LayerNorm(d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(d, d)
+            nn.Linear(d, d),
+            nn.LayerNorm(d),
         )
         d1 = args.d1
         d2 = args.d2

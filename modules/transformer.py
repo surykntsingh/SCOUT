@@ -200,9 +200,11 @@ class MultiHeadGatedFusionV3(nn.Module):
 
         # Contextual gating network
         self.gate_net = nn.Sequential(
-            nn.Linear(3 * d_model, d_model),
+            nn.Linear(d_model, 2*d_model),
             nn.ReLU(),
-            nn.Linear(d_model, 3 * d_model)
+            nn.Linear(2*d_model, 3*d_model),
+            nn.ReLU(),
+            nn.Linear(3*d_model, 3 * d_model)
         )
 
         # Fusion + normalization
@@ -227,7 +229,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         c0 = self.proj_con(x_concept)
 
         # ---- Contextual gating ----
-        ctx = torch.cat([x_patch, x_slide, x_concept], dim=-1)
+        ctx = torch.cat(x_concept, dim=-1)
         gates = self.gate_net(ctx)                         # [B,L,3D]
         gates = gates.view(B, L, H, 3, d_h)
 
