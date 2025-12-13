@@ -44,12 +44,12 @@ class Decoder(nn.Module):
         self.layers = clones(layer, N)
         self.norm = LayerNorm(layer.d_model)
 
-    def forward(self, x, hidden_states, src_mask, tgt_mask):
+    def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
         attn_maps = []
         # attn_img_all = []
         # attn_con_all = []
         for layer in self.layers:
-            x, alpha = layer(x, hidden_states, src_mask, tgt_mask)
+            x, alpha = layer(x, patch_features, slide_features, concept_features, src_mask, tgt_mask)
             attn_maps.append(alpha)
             # attn_img_all.append(attn_img)
             # attn_con_all.append(attn_con)
