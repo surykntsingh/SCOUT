@@ -24,14 +24,14 @@ class Transformer(nn.Module):
 
 
     def forward(self, patch, slide, concepts, tgt, src_mask, tgt_mask):
-        return self.decode(self.encode(patch, slide,concepts, src_mask), src_mask, tgt, tgt_mask)
+        return self.decode(*self.encode(patch, slide,concepts, src_mask), src_mask, tgt, tgt_mask)
 
     def encode(self, patch, slide,concepts, src_mask):
         # print(f'src: {src.shape}')
         return self.encoder(self.src_embed(patch),self.slide_embed(slide), self.concept_embed(concepts), src_mask)
 
-    def decode(self, hidden_states, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), hidden_states, src_mask, tgt_mask)
+    def decode(self, patch, slide, concept, src_mask, tgt, tgt_mask):
+        return self.decoder(self.tgt_embed(tgt), patch, slide, concept, src_mask, tgt_mask)
 
 
 class MultiHeadedAttention(nn.Module):
@@ -617,13 +617,13 @@ class EncoderDecoder(AttModel):
 
         return outputs, attn_maps
 
-    def core(self, it, fc_feats_ph, att_feats_ph, memory, state, mask):
+    def core(self, it, fc_feats_ph, att_feats_ph, patch, slide, concept, state, mask):
 
         if len(state) == 0:
             ys = it.long().unsqueeze(1)
         else:
             ys = torch.cat([state[0][0], it.unsqueeze(1)], dim=1)
-        out, attn_maps = self.model.decode(memory, mask, ys, subsequent_mask(ys.size(1)).to(memory[0].device))
+        out, attn_maps = self.model.decode(patch, slide, concept, mask, ys, subsequent_mask(ys.size(1)).to(patch.device))
         return out[:, -1], [ys.unsqueeze(0)], attn_maps
 
     def _encode(self, fc_feats, gc_feats, att_feats, att_masks=None):

@@ -66,11 +66,11 @@ class AttModel(CaptionModel):
         # gc_feats = self.ctx2att(gc_feats)
         return fc_feats, att_feats, p_att_feats, att_masks
 
-    def get_logprobs_state(self, it, fc_feats, att_feats, p_att_feats, att_masks, state, output_logsoftmax=1):
+    def get_logprobs_state(self, it, fc_feats, att_feats, patch, slide, concept, att_masks, state, output_logsoftmax=1):
         # 'it' contains a word index
         xt = self.embed(it)
 
-        output, state, concept_attn_maps= self.core(xt, fc_feats, att_feats, p_att_feats, state, att_masks)
+        output, state, concept_attn_maps= self.core(xt, fc_feats, att_feats, patch, slide, concept, state, att_masks)
         if output_logsoftmax:
             logprobs = F.log_softmax(self.logit(output), dim=1)
         else:
@@ -100,14 +100,16 @@ class AttModel(CaptionModel):
         # first step, feed bos
         it = fc_feats.new_full([batch_size], self.bos_idx, dtype=torch.long)
 
-        logprobs, state, concept_attn_maps = self.get_logprobs_state(it, p_fc_feats, p_att_feats, encoded_features, p_att_masks, state)
+        p_patch, p_slide, p_concept = encoded_features
 
-        p_fc_feats, p_att_feats, pp_att_feats, p_att_masks = utils.repeat_tensors(beam_size,
+        logprobs, state, concept_attn_maps = self.get_logprobs_state(it, p_fc_feats, p_att_feats, p_patch, p_slide, p_concept, p_att_masks, state)
+
+        p_fc_feats, p_att_feats, _patch, p_slide, p_concept, p_att_masks = utils.repeat_tensors(beam_size,
                                                                                   [p_fc_feats, p_att_feats,
-                                                                                   encoded_features, p_att_masks]
+                                                                                   p_patch, p_slide, p_concept, p_att_masks]
                                                                                   )
         done_beams = self.beam_search(
-            state, logprobs, p_fc_feats, p_att_feats, pp_att_feats, p_att_masks, opt=opt
+            state, logprobs, p_fc_feats, p_att_feats, _patch, p_slide, p_concept, p_att_masks, opt=opt
         )
 
         for k in range(batch_size):
