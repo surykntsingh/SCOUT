@@ -481,7 +481,7 @@ class EncoderDecoder(AttModel):
         self.d_model = args.d_model
         self.d_ff = args.d_ff
         self.num_heads = args.num_heads
-        self.dropout = args.dropout
+        self.dropout = args.dropout_mlp
 
         tgt_vocab = self.vocab_size + 1
 
