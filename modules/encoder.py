@@ -9,7 +9,7 @@ from utils import utils
 from utils.utils import clones
 
 class FilmFusion(nn.Module):
-    def __init__(self, D, D_s, hidden=1024, dropout=0.4):
+    def __init__(self, D, D_s, hidden=1024, dropout=0.4, mod_alpha=0.5):
         super().__init__()
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
@@ -20,6 +20,7 @@ class FilmFusion(nn.Module):
             nn.Linear(D, 2 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
+        self.mod_alpha = mod_alpha
 
     def forward(self, patch, slide):
         # patch: [B,M,D], slide:[B,D_s]
@@ -27,7 +28,7 @@ class FilmFusion(nn.Module):
         gamma, beta = gb.chunk(2, dim=-1)  # [B,D], [B,D]
         gamma = gamma.unsqueeze(1)  # [B,1,D]
         beta = beta.unsqueeze(1)
-        out = self.layernorm(patch * (1 + gamma) + beta)
+        out = self.layernorm(patch * (1 + self.mod_alpha * gamma) + beta)
         return out  # [B,M,D]
 
 # class ChannelProjector(nn.Module):
