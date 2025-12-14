@@ -9,7 +9,7 @@ from utils import utils
 from utils.utils import clones
 
 class FilmFusion(nn.Module):
-    def __init__(self, D, D_s, hidden=1024, dropout=0.4, mod_alpha=0.7):
+    def __init__(self, D, D_s, hidden=1024, dropout=0.4, mod_alpha=0.4):
         super().__init__()
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
@@ -61,7 +61,7 @@ class FilmFusion(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, layer, N, PAM, concept_fusion):
         super().__init__()
-        self.patch_layers = clones(layer, N)
+        self.layers = clones(layer, N)
         self.patch_norm = LayerNorm(layer.d_model)
         self.slide_norm = LayerNorm(layer.d_model)
         self.concept_norm = LayerNorm(layer.d_model)
@@ -88,7 +88,7 @@ class Encoder(nn.Module):
         x_patch = patch
         for i in range(self.N):
 
-            x_patch = self.patch_layers[i](self.norm(x_patch), mask)
+            x_patch = self.layers[i](self.norm(x_patch), mask)
             x_patch = self.PAM[i](x_patch)
             x_slide = self.slide_fusion_layer[i](x_patch, slide)
             x_concept = self.concept_fusion_layer[i](x_patch, concept)
