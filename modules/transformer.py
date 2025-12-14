@@ -204,7 +204,8 @@ class MultiHeadGatedFusionV3(nn.Module):
             nn.ReLU(),
             nn.Linear( 2* d_model, 3*d_model),
             nn.ReLU(),
-            nn.Linear(3*d_model, 3 * d_model)
+            nn.Linear(3*d_model, 3 * d_model),
+            nn.Dropout(dropout)
         )
 
         # Fusion + normalization
@@ -498,6 +499,13 @@ class EncoderDecoder(AttModel):
         pp = PAM(self.d_model)
         mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
+        feature_embed = nn.Sequential(
+            nn.Linear(self.d_model, self.d_model),
+            nn.ReLU(),
+            nn.Linear(self.d_model, self.d_model),
+            nn.ReLU(),
+            nn.Dropout(self.dropout)
+        )
 
         model = Transformer(
             Encoder(
@@ -520,12 +528,12 @@ class EncoderDecoder(AttModel):
                 ),
                 self.num_layers
             ),
-            LayerNorm(self.d_model),
+            deepcopy(feature_embed),
             # Target token embedding + position
             nn.Sequential(Embeddings(self.d_model, tgt_vocab), deepcopy(position)),
             # Concept embedding module
-            LayerNorm(self.d_model),
-            LayerNorm(self.d_model)
+            deepcopy(feature_embed),
+            deepcopy(feature_embed)
         )
         return model
 
