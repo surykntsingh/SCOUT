@@ -61,7 +61,9 @@ class FilmFusion(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, layer, N, PAM, concept_fusion):
         super().__init__()
-        self.layers = clones(layer, N)
+        self.patch_layers = clones(layer, N)
+        self.concept_layers = clones(layer, N)
+        self.slide_layers = clones(layer, N)
         self.patch_norm = LayerNorm(layer.d_model)
         self.slide_norm = LayerNorm(layer.d_model)
         self.concept_norm = LayerNorm(layer.d_model)
@@ -86,12 +88,15 @@ class Encoder(nn.Module):
         concepts = []
 
         x_patch = patch
-        for i,layer in enumerate(self.layers):
+        for i in range(self.N):
 
-            x_patch = layer(self.norm(x_patch), mask)
+            x_patch = self.patch_layers[i](self.norm(x_patch), mask)
             x_patch = self.PAM[i](x_patch)
             x_slide = self.slide_fusion_layer[i](x_patch, slide)
             x_concept = self.concept_fusion_layer[i](x_patch, concept)
+
+            x_slide = self.slide_layers[i](x_slide, mask)
+            x_concept = self.concept_layers[i](x_concept, mask)
 
             patches.append(x_patch)
             slides.append(x_slide)

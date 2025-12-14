@@ -504,7 +504,8 @@ class EncoderDecoder(AttModel):
             nn.ReLU(),
             nn.Linear(self.d_model, self.d_model),
             nn.ReLU(),
-            nn.Dropout(self.dropout)
+            nn.Dropout(self.dropout),
+            nn.LayerNorm(self.d_model)
         )
 
         model = Transformer(
