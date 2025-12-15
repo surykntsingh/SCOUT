@@ -6,14 +6,14 @@ from utils import utils
 from utils.utils import clones
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, self_attn, src_attn, ff_1,gate_fusion, dropout):
+    def __init__(self, d_model, self_attn, src_attn, feed_forward,gate_fusion, dropout):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
         self.src_attns = src_attn
         # self.feed_forward = feed_forward
         self.gate_fusion = gate_fusion
-        self.ff_1 = ff_1
+        self.feed_forward = feed_forward
         # self.ff_2 = ff_2
         self.n = 6
         self.sublayers = clones(SublayerConnection(d_model, dropout), self.n)
