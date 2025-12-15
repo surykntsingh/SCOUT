@@ -14,10 +14,10 @@ class FilmFusion(nn.Module):
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
             nn.ReLU(),
-            nn.Linear(hidden, D),
+            nn.Linear(hidden, 2*D),
             nn.Dropout(dropout),
             nn.ReLU(),
-            nn.Linear(D, 2 * D)     # gamma, beta
+            nn.Linear(2*D, 2 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
         self.mod_alpha = mod_alpha
