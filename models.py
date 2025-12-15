@@ -164,8 +164,8 @@ class ReportModel(pl.LightningModule):
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = torch.optim.AdamW(d_params, lr=self.learning_rate, weight_decay=self.__weight_decay)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=self.__lr_patience)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
+        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=self.__lr_patience)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
     def __print_results(self, slide_ids, pred_texts, target_texts):
