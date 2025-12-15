@@ -11,7 +11,7 @@ class ReportGenModel(nn.Module):
         super().__init__()
         self.__tokenizer = tokenizer
 
-        self.prompt = nn.Parameter(torch.randn(1, 1, args.d_vf))
+        # self.prompt = nn.Parameter(torch.randn(1, 1, args.d_vf))
 
         d = args.d_vf
         self.slide_encoder = nn.Sequential(
@@ -64,36 +64,6 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d, d)
         )
 
-        # self.concept_encoder = ConceptEncoder(args.gcd, args.d_model, args.dropout_mlp)
-        # self.slide_encoder = ChannelProjector(args.d1, args.d_model, args.dropout_mlp)
-        # self.gecko_projector = ChannelProjector(args.gcd, args.d_model, args.dropout_mlp)
-        # self.gecko_deep_projector = ChannelProjector(args.gd, args.d_model, args.dropout_mlp)
-        # self.concept_supervision_head = ConceptSupervisionHead(args.d_model, args.gcd, args.dropout_mlp)
-
-        # gd = args.gd
-        # dm =args.d_model
-        # self.gecko_mlp = nn.Sequential(
-        #     nn.Linear(dm, 2 * dm),
-        #     nn.ReLU(),
-        #     nn.Linear(2 * dm, 4 * dm),
-        #     nn.ReLU(),
-        #     nn.Dropout(args.dropout_mlp),
-        #     nn.Linear(4 * dm, 2*dm),
-        #     nn.ReLU(),
-        #     nn.Linear(2 * dm, dm),
-        # )
-        #
-        # self.gecko_encoder = nn.Sequential(
-        #     nn.Linear(dm, 2 * dm),
-        #     nn.ReLU(),
-        #     nn.Linear(2 * dm, 4 * dm),
-        #     nn.ReLU(),
-        #     nn.Linear(4 * dm, 2*dm),
-        #     nn.ReLU(),
-        #     nn.Dropout(args.dropout_mlp),
-        #     nn.Linear(2*dm, dm)
-        # )
-
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
 
 
@@ -105,7 +75,7 @@ class ReportGenModel(nn.Module):
         slide_embeddings = self.slide_encoder(torch.cat([slide_embeddings,gecko_deep_embeddings], dim=-1))
         concept_embeddings = self.mlp_gecko_concept_adapter(features['gecko']['concept'])
 
-        att_feats = torch.cat([self.prompt, patch_embeddings], dim=1)
+        att_feats = patch_embeddings #torch.cat([self.prompt, patch_embeddings], dim=1)
         # att_feats = self.prompt
         fc_feats = torch.sum(att_feats, dim=1)
 

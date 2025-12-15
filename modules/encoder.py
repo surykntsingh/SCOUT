@@ -31,33 +31,6 @@ class FilmFusion(nn.Module):
         out = self.layernorm(patch * (1 + self.mod_alpha * gamma) + beta)
         return out  # [B,M,D]
 
-# class ChannelProjector(nn.Module):
-#     def __init__(self, n_concepts, d_model, dropout, hidden=256):
-#         super().__init__()
-#         # Option A: per-concept learned embedding table (concept id -> vector)
-#         self.id_embed = nn.Embedding(n_concepts, d_model)
-#         # Projection from scalar activation (score) to scale per concept
-#         self.score_proj = nn.Sequential(
-#             nn.Linear(1, hidden),
-#             # nn.ReLU(),
-#             nn.Linear(hidden, d_model),
-#             nn.Dropout(dropout),
-#             # nn.ReLU(),
-#             nn.Linear(d_model, d_model)
-#         )
-#         self.layernorm = nn.LayerNorm(d_model)
-#
-#     def forward(self, scores):
-#         # scores: [B, M] (float activations from GECKO)
-#         B, M = scores.shape
-#         ids = torch.arange(M, device=scores.device).unsqueeze(0).expand(B, M)  # [B, M]
-#         base = self.id_embed(ids)  # [B, M, d_model]
-#         # project scalar score per concept to a vector and use as multiplicative gating
-#         scales = self.score_proj(scores.unsqueeze(-1))  # [B, M, d_model]
-#         concept_tokens = base * (1 + scales)  # broadcast multiply
-#         concept_tokens = self.layernorm(concept_tokens)
-#         return concept_tokens  # [B, M, d_model]
-
 class Encoder(nn.Module):
     def __init__(self, layer, N, PAM, concept_fusion):
         super().__init__()

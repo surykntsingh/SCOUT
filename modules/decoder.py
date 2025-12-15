@@ -15,13 +15,13 @@ class DecoderLayer(nn.Module):
         self.gate_fusion = gate_fusion
         self.ff_1 = ff_1
         # self.ff_2 = ff_2
-        self.n = 5
+        self.n = 6
         self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
 
 
-    def forward(self, feats, patch_features, slide_features, concept_features, src_mask, tgt_mask):
+    def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
         # m = hidden_states
-        x_self, _ = self.sublayer[0](feats, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x, _ = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
 
         # print(f'hidden_states: {hidden_states.shape}')
         # patch_features = hidden_states[...,0]
@@ -29,14 +29,40 @@ class DecoderLayer(nn.Module):
         # concept_features = hidden_states[...,2]
         # print(f'patch_features: {patch_features.shape}, slide_features: {slide_features.shape}, concept_features: {concept_features.shape}')
 
-        x_patch, _ = self.sublayer[1](x_self, lambda x: self.src_attn[0](x, patch_features, patch_features, src_mask))
-        x_slide, _ = self.sublayer[2](x_self, lambda x: self.src_attn[1](x, slide_features, slide_features, src_mask))
-        x_concept, _ = self.sublayer[3](x_self, lambda x: self.src_attn[2](x, concept_features, concept_features, src_mask))
+        # 1. Self-attention (causal)
+        x, _ = self.sublayers[0](
+            x,
+            lambda x: self.self_attn(x, x, x, tgt_mask)[0]
+        )
 
-        x_fused, alpha = self.gate_fusion(x_self, x_patch, x_slide, x_concept)
+        # 2. Cross-attention: patch
+        x_patch, _ = self.sublayers[1](
+            x,
+            lambda x: self.src_attns[0](x, patch_features, patch_features, src_mask)[0]
+        )
 
-        out = self.sublayer[4](x_fused, self.ff_1)
-        return out, alpha
+        # 3. Cross-attention: slide
+        x_slide, _ = self.sublayers[2](
+            x,
+            lambda x: self.src_attns[1](x, slide_features, slide_features, src_mask)[0]
+        )
+
+        # 4. Cross-attention: concept
+        x_concept, _ = self.sublayers[3](
+            x,
+            lambda x: self.src_attns[2](x, concept_features, concept_features, src_mask)[0]
+        )
+
+        # 5. Gated multimodal fusion (residual inside)
+        x, weights = self.sublayers[4](
+            x,
+            lambda x: self.gate_fusion(x, x_patch, x_slide, x_concept)[0]
+        )
+
+        # 6. Feed-forward
+        x = self.sublayers[5](x, self.feed_forward)
+
+        return x, weights
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
