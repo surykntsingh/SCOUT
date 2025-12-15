@@ -16,7 +16,7 @@ class DecoderLayer(nn.Module):
         self.ff_1 = ff_1
         # self.ff_2 = ff_2
         self.n = 6
-        self.sublayer = clones(SublayerConnection(d_model, dropout), self.n)
+        self.sublayers = clones(SublayerConnection(d_model, dropout), self.n)
 
 
     def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
