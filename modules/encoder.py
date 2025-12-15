@@ -16,7 +16,7 @@ class FilmFusion(nn.Module):
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.ReLU(),
-            nn.Linear(2*D, 2 * D)     # gamma, beta
+            nn.Linear(hidden, 2 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
         self.mod_alpha = mod_alpha
