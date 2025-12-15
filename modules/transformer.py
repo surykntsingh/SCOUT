@@ -507,7 +507,7 @@ class EncoderDecoder(AttModel):
         #     nn.Dropout(self.dropout),
         #     nn.LayerNorm(self.d_model)
         # )
-        feature_embed = lambda x:x
+        feature_embed = LayerNorm(self.d_model)
 
         model = Transformer(
             Encoder(
