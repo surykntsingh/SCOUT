@@ -9,12 +9,11 @@ from utils import utils
 from utils.utils import clones
 
 class FilmFusion(nn.Module):
-    def __init__(self, D, D_s, hidden=1024, dropout=0.4, mod_alpha=0.4):
+    def __init__(self, D, D_s, hidden=1024, dropout=0.4, mod_alpha=0.5):
         super().__init__()
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
             nn.ReLU(),
-            nn.Linear(hidden, 2*D),
             nn.Dropout(dropout),
             nn.ReLU(),
             nn.Linear(2*D, 2 * D)     # gamma, beta
