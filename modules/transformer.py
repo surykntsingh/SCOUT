@@ -499,14 +499,15 @@ class EncoderDecoder(AttModel):
         pp = PAM(self.d_model)
         mgf = MultiHeadGatedFusionV3(self.d_model, self.num_heads, dropout=self.dropout)
         concept_fusion = ConceptInfusionBlockV2(self.num_heads, self.d_model, dropout=self.dropout)
-        feature_embed = nn.Sequential(
-            nn.Linear(self.d_model, self.d_model),
-            nn.ReLU(),
-            nn.Linear(self.d_model, self.d_model),
-            nn.ReLU(),
-            nn.Dropout(self.dropout),
-            nn.LayerNorm(self.d_model)
-        )
+        # feature_embed = nn.Sequential(
+        #     nn.Linear(self.d_model, self.d_model),
+        #     nn.ReLU(),
+        #     nn.Linear(self.d_model, self.d_model),
+        #     nn.ReLU(),
+        #     nn.Dropout(self.dropout),
+        #     nn.LayerNorm(self.d_model)
+        # )
+        feature_embed = lambda x:x
 
         model = Transformer(
             Encoder(
