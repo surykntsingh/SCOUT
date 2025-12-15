@@ -10,7 +10,7 @@ class DecoderLayer(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.self_attn = self_attn
-        self.src_attn = src_attn
+        self.src_attns = src_attn
         # self.feed_forward = feed_forward
         self.gate_fusion = gate_fusion
         self.ff_1 = ff_1
@@ -21,7 +21,7 @@ class DecoderLayer(nn.Module):
 
     def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
         # m = hidden_states
-        x, _ = self.sublayers[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x, _ = self.sublayers[0](x, lambda x: self.self_attns(x, x, x, tgt_mask))
 
         # print(f'hidden_states: {hidden_states.shape}')
         # patch_features = hidden_states[...,0]
