@@ -53,18 +53,18 @@ class Encoder(nn.Module):
 
 
 
-    def forward(self, patch, slide, concept, mask):
+    def forward(self, x_patch, x_slide, x_concept, mask):
         patches = []
         slides = []
         concepts = []
 
-        x_patch = patch
+        # x_patch = patch
         for i in range(self.N):
 
             x_patch = self.layers[i](self.norm(x_patch), mask)
             x_patch = self.PAM[i](x_patch)
-            x_slide = self.slide_fusion_layer[i](x_patch, slide)
-            x_concept = self.concept_fusion_layer[i](x_patch, concept)
+            x_slide = self.slide_fusion_layer[i](x_patch, x_slide)
+            x_concept = self.concept_fusion_layer[i](x_patch, x_concept)
 
             patches.append(x_patch)
             slides.append(x_slide)
