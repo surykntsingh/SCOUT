@@ -75,7 +75,7 @@ class ReportGenModel(nn.Module):
         slide_embeddings = self.slide_encoder(torch.cat([slide_embeddings,gecko_deep_embeddings], dim=-1))
         concept_embeddings = self.mlp_gecko_concept_adapter(features['gecko']['concept'])
 
-        att_feats = patch_embeddings #torch.cat([self.prompt, patch_embeddings], dim=1)
+        att_feats = torch.cat([self.prompt, patch_embeddings], dim=1)
         # att_feats = self.prompt
         fc_feats = torch.sum(att_feats, dim=1)
 
