@@ -59,6 +59,8 @@ class Encoder(nn.Module):
         concepts = []
 
         x_patch = patch
+        x_slide = None
+        x_concepts = None
 
         for i in range(self.N):
 
