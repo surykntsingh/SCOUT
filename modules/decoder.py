@@ -20,14 +20,7 @@ class DecoderLayer(nn.Module):
 
 
     def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
-        # m = hidden_states
-        x, _ = self.sublayers[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
-
-        # print(f'hidden_states: {hidden_states.shape}')
-        # patch_features = hidden_states[...,0]
-        # slide_features = hidden_states[...,1]
-        # concept_features = hidden_states[...,2]
-        # print(f'patch_features: {patch_features.shape}, slide_features: {slide_features.shape}, concept_features: {concept_features.shape}')
+        # x = self.sublayers[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))[0]
 
         # 1. Self-attention (causal)
         x = self.sublayers[0](

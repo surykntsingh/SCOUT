@@ -14,9 +14,10 @@ class FilmFusion(nn.Module):
         self.gamma_beta = nn.Sequential(
             nn.Linear(D_s, hidden),
             nn.ReLU(),
+            nn.Linear(hidden, 2*D),
             nn.Dropout(dropout),
             nn.ReLU(),
-            nn.Linear(hidden, 2 * D)     # gamma, beta
+            nn.Linear(2*D, 2 * D)     # gamma, beta
         )
         self.layernorm = nn.LayerNorm(D)
         self.mod_alpha = mod_alpha
@@ -31,7 +32,7 @@ class FilmFusion(nn.Module):
         return out  # [B,M,D]
 
 class Encoder(nn.Module):
-    def __init__(self, layer, N, PAM, concept_fusion):
+    def __init__(self, layer, N, PAM):
         super().__init__()
         self.layers = clones(layer, N)
         self.patch_norm = LayerNorm(layer.d_model)
