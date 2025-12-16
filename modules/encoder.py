@@ -59,13 +59,17 @@ class Encoder(nn.Module):
         concepts = []
 
         x_patch = patch
-        x_slide = patch
-        x_concept = patch
+
         for i in range(self.N):
 
             x_patch = self.layers[i](self.norm(x_patch), mask)
             x_patch = self.PAM[i](x_patch)
+            if not x_slide:
+                x_slide = x_patch
             x_slide = self.slide_fusion_layer[i](x_slide, slide)
+
+            if not x_concepts:
+                x_concepts = x_patch
             x_concept = self.concept_fusion_layer[i](x_concept, concept)
 
             patches.append(x_patch)
