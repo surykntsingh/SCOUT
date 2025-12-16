@@ -60,7 +60,7 @@ class Encoder(nn.Module):
 
         x_patch = patch
         x_slide = None
-        x_concepts = None
+        x_concept = None
 
         for i in range(self.N):
 
@@ -70,8 +70,8 @@ class Encoder(nn.Module):
                 x_slide = x_patch
             x_slide = self.slide_fusion_layer[i](x_slide, slide)
 
-            if not x_concepts:
-                x_concepts = x_patch
+            if not x_concept:
+                x_concept = x_patch
             x_concept = self.concept_fusion_layer[i](x_concept, concept)
 
             patches.append(x_patch)
