@@ -11,7 +11,7 @@ class ReportGenModel(nn.Module):
         super().__init__()
         self.__tokenizer = tokenizer
 
-        # self.prompt = nn.Parameter(torch.randn(1, 1, args.d_vf))
+        self.prompt = nn.Parameter(torch.randn(1, 1, args.d_vf))
 
         d = args.d_vf
         self.slide_encoder = nn.Sequential(
