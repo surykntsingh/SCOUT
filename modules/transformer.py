@@ -221,7 +221,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         )
 
     def forward(self, x_patch, x_slide, x_concept):
-        B, L, D = x.shape
+        B, L, D = x_patch.shape
         H, d_h = self.num_heads, self.head_dim
 
         # ---- Per-head projections ----
