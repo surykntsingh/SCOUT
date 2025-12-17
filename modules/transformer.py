@@ -251,7 +251,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         fused = fused.view(B, L, D)
 
         # ---- Projection + residual + normalization ----
-        out = x + self.out_proj(fused)
+        out = self.out_proj(fused)
         out = self.norm(out)
 
         # ---- Extra FFN ----

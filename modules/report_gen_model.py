@@ -33,7 +33,8 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * d1, 2*d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2*d, d)
+            nn.Linear(2*d, d),
+            nn.LayerNorm(d)
         )
 
         self.mlp_patch_adapter = nn.Sequential(
@@ -52,7 +53,8 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * gd, 2 * d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2 * d, d)
+            nn.Linear(2 * d, d),
+            nn.LayerNorm(d)
         )
 
         self.mlp_gecko_concept_adapter = nn.Sequential(
@@ -61,7 +63,8 @@ class ReportGenModel(nn.Module):
             nn.Linear(2 * gcd, 2 * d),
             nn.ReLU(),
             nn.Dropout(args.dropout_mlp),
-            nn.Linear(2 * d, d)
+            nn.Linear(2 * d, d),
+            nn.LayerNorm(d)
         )
 
         self.encoder_decoder = EncoderDecoder(args, tokenizer)
