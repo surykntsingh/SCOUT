@@ -49,7 +49,7 @@ class DecoderLayer(nn.Module):
         # 5. Gated multimodal fusion (residual inside)
         x, weights = self.sublayers[4](
             x,
-            lambda x: self.gate_fusion(x, x_patch, x_slide, x_concept)
+            lambda x: self.gate_fusion(x_patch, x_slide, x_concept)
         )
 
         # 6. Feed-forward
