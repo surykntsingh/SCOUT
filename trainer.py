@@ -59,7 +59,7 @@ class Trainer:
             callbacks=[checkpoint_callback, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
-            strategy='ddp_find_unused_parameters_true',
+            strategy='ddp',
             enable_progress_bar=True,
             log_every_n_steps=1,
             fast_dev_run=fast_dev_run
@@ -128,7 +128,7 @@ class Trainer:
 
         trainer = pl.Trainer(
             # precision="bf16-mixed",
-            accelerator='ddp_find_unused_parameters_true',
+            accelerator='gpu',
             devices=self.devices,
             strategy='ddp',
             enable_progress_bar=True,

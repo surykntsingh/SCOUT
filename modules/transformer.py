@@ -220,8 +220,8 @@ class MultiHeadGatedFusionV3(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x_patch, x_slide, x_concept):
-        B, L, D = x_patch.shape
+    def forward(self,x , x_patch, x_slide, x_concept):
+        B, L, D = x.shape
         H, d_h = self.num_heads, self.head_dim
 
         # ---- Per-head projections ----
@@ -251,7 +251,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         fused = fused.view(B, L, D)
 
         # ---- Projection + residual + normalization ----
-        out = self.out_proj(fused)
+        out = x + self.out_proj(fused)
         out = self.norm(out)
 
         # ---- Extra FFN ----
