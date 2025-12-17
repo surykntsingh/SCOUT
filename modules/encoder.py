@@ -70,9 +70,9 @@ class Encoder(nn.Module):
                 x_slide = patch
                 x_concept = patch
 
-            x_slide = self.slide_fusion_layer[i](x_slide, slide)
+            x_slide = self.slide_fusion_layer[i](x_patch, slide)
 
-            x_concept = self.concept_fusion_layer[i](x_concept, concept)
+            x_concept = self.concept_fusion_layer[i](x_patch, concept)
 
             patches.append(x_patch)
             slides.append(x_slide)
