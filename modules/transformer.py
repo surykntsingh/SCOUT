@@ -251,7 +251,7 @@ class MultiHeadGatedFusionV3(nn.Module):
         fused = fused.view(B, L, D)
 
         # ---- Projection + residual + normalization ----
-        out = x + self.out_proj(fused)
+        out = x_patch + self.out_proj(fused)
         out = self.norm(out)
 
         # ---- Extra FFN ----
@@ -368,18 +368,6 @@ class PAM(nn.Module):
 
         return x
 
-class PAM_(nn.Module):
-    def __init__(self, dim=512):
-        super().__init__()
-        self.proj = nn.Sequential(
-            nn.Linear(dim, dim),
-            nn.ReLU(),)
-
-    def forward(self, x):
-        # B, H, C = x.shape
-        x = self.proj(x)
-
-        return x
 
 class CrossAttentionBlock(nn.Module):
     def __init__(self, n_heads,d_model, dropout):
