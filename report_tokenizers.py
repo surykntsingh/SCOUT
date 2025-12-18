@@ -103,7 +103,7 @@ class Tokenizer:
         # -------------------------------------------------------
         # 0. Remove invalid UTF-8 characters
         # -------------------------------------------------------
-        report = report.encode("utf-8", "ignore").decode("utf-8")+' '
+        report = report.encode("utf-8", "ignore").decode("utf-8")
 
         # -------------------------------------------------------
         # 1. Normalize whitespace and remove section numbering
@@ -141,7 +141,7 @@ class Tokenizer:
         )
 
         # Normalize spaces again
-        text = re.sub(r"\s+", " ", text).strip().lower()
+        text = re.sub(r"\s+", " ", text).strip().lower()+' '
 
         # -------------------------------------------------------
         # 3. Split into sentences by ". "
