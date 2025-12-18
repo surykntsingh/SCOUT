@@ -161,5 +161,5 @@ class Tokenizer:
         # -------------------------------------------------------
         # 5. Re-join cleaned sentences
         # -------------------------------------------------------
-        return " . ".join(cleaned)
+        return " . ".join(cleaned) + " ."
     
