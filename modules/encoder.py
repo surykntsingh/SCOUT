@@ -59,8 +59,6 @@ class Encoder(nn.Module):
         concepts = []
 
         x_patch = patch
-        x_slide = patch
-        x_concept = patch
 
         for i in range(self.N):
 
@@ -68,8 +66,9 @@ class Encoder(nn.Module):
             x_patch = self.PAM[i](x_patch)
 
             x_slide = self.slide_fusion_layer[i](x_patch, slide)
-
+            slide = x_slide.mean(dim=1)
             x_concept = self.concept_fusion_layer[i](x_patch, concept)
+            concept = x_concept.mean(dim=1)
 
             patches.append(x_patch)
             slides.append(x_slide)
