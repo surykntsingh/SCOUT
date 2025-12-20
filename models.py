@@ -92,6 +92,8 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output_,attn = self.model(features, report_ids, mode='train')
 
+            print()
+
             loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
@@ -100,7 +102,8 @@ class ReportModel(pl.LightningModule):
 
         if batch_idx % 10==0:
             with torch.no_grad():
-                output, concept_attn_maps = self.model(features, report_ids, mode='sample')
+                output, attn = self.model(features, report_ids, mode='sample')
+                self.__visualize_attn(attn)
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -123,8 +126,9 @@ class ReportModel(pl.LightningModule):
             torch.cuda.empty_cache()
 
         with torch.no_grad():
-            output,concept_attn_maps = self.model(features, report_ids, mode='sample')
+            output,attn = self.model(features, report_ids, mode='sample')
             output = output.detach().cpu().numpy()
+            self.__visualize_attn(attn)
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
             ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
@@ -214,3 +218,10 @@ class ReportModel(pl.LightningModule):
             self.log(
                 f'{stage}_{metric_type}_{metric_name}', metric_score, on_epoch=True, prog_bar=prog_bar, sync_dist=True
             )
+
+    def __visualize_attn(self, weights):
+        w_patch = weights[:, :, :, 0].mean(0,1,2)
+        w_slide = weights[:, :, :, 1].mean(0,1,2)
+        w_concept = weights[:, :, :, 2].mean(0,1,2)
+
+        print(f'w_patch: {w_patch}, w_slide: {w_slide}, w_concept: {w_concept}')

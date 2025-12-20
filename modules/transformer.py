@@ -69,99 +69,99 @@ class MultiHeadedAttention(nn.Module):
             p_attn = dropout(p_attn)
         return torch.matmul(p_attn, value), p_attn
 
-
-class MultiHeadGatedFusion(nn.Module):
-    def __init__(self, d_model, num_heads, dropout):
-        super().__init__()
-        self.num_heads = num_heads
-        self.head_dim = d_model // num_heads
-        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
-
-        # gating network per head
-        self.gate_net_1 = nn.Sequential(
-            nn.Linear(d_model, d_model),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_model, d_model),
-            nn.Sigmoid()
-        )
-
-        self.gate_net_2 = nn.Sequential(
-            nn.Linear(d_model, d_model),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_model, d_model),
-            nn.Sigmoid()
-        )
-
-        self.out_proj = nn.Linear(d_model, d_model)
-
-    def forward(self, x, x_self, x_img, x_con):
-        """
-        x: [B, L, D] - decoder token
-        x_img: [B, L, D] - attended image features
-        x_con: [B, L, D] - attended concept features
-        """
-        B, L, D = x.shape
-        H = self.num_heads
-        d_h = self.head_dim
-
-        # compute per-head gating
-        alpha = self.gate_net_1(x).view(B, L, H, d_h)   # [B, L, H, d_h]
-        beta = self.gate_net_2(x).view(B, L, H, d_h)  # [B, L, H, d_h]
-
-        # reshape inputs to [B, L, H, d_h]
-        x_self = x_self.view(B, L, H, d_h)
-        x_img = x_img.view(B, L, H, d_h)
-        x_con = x_con.view(B, L, H, d_h)
-
-        # fuse per head
-        fused = beta * x_img + alpha * x_con + (1-alpha-beta) * x_self
-
-        # reshape back and project
-        fused = fused.view(B, L, D)
-        out = self.out_proj(fused)  # residual connection + projection
-        return out, alpha
-
-
-class MultiHeadGatedFusionV2(nn.Module):
-    def __init__(self, d_model, num_heads, dropout):
-        super().__init__()
-        H = num_heads
-        d_h = d_model // H
-        self.num_heads = H
-        self.head_dim = d_h
-
-        # produce 3 logits for gating per head
-        self.gate_net = nn.Sequential(
-            nn.Linear(d_model, d_model),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_model, 3 * d_model)   # 3-way gating
-        )
-
-        self.out_proj = nn.Linear(d_model, d_model)
-
-    def forward(self, x, x_self, x_img, x_con):
-        B, L, D = x.shape
-        H, d_h = self.num_heads, self.head_dim
-
-        gates = self.gate_net(x).view(B, L, H, 3, d_h)     # [B,L,H,3,d_h]
-        weights = gates.softmax(dim=3)                     # [B,L,H,3,d_h]
-
-        w_self = weights[:, :, :, 0]
-        w_img  = weights[:, :, :, 1]
-        w_con  = weights[:, :, :, 2]
-
-        # reshape inputs
-        x_self = x_self.view(B, L, H, d_h)
-        x_img  = x_img.view(B, L, H, d_h)
-        x_con  = x_con.view(B, L, H, d_h)
-
-        fused = w_self * x_self + w_img * x_img + w_con * x_con
-
-        fused = fused.view(B, L, D)
-        return self.out_proj(fused), weights
+#
+# class MultiHeadGatedFusion(nn.Module):
+#     def __init__(self, d_model, num_heads, dropout):
+#         super().__init__()
+#         self.num_heads = num_heads
+#         self.head_dim = d_model // num_heads
+#         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+#
+#         # gating network per head
+#         self.gate_net_1 = nn.Sequential(
+#             nn.Linear(d_model, d_model),
+#             nn.ReLU(),
+#             nn.Dropout(dropout),
+#             nn.Linear(d_model, d_model),
+#             nn.Sigmoid()
+#         )
+#
+#         self.gate_net_2 = nn.Sequential(
+#             nn.Linear(d_model, d_model),
+#             nn.ReLU(),
+#             nn.Dropout(dropout),
+#             nn.Linear(d_model, d_model),
+#             nn.Sigmoid()
+#         )
+#
+#         self.out_proj = nn.Linear(d_model, d_model)
+#
+#     def forward(self, x, x_self, x_img, x_con):
+#         """
+#         x: [B, L, D] - decoder token
+#         x_img: [B, L, D] - attended image features
+#         x_con: [B, L, D] - attended concept features
+#         """
+#         B, L, D = x.shape
+#         H = self.num_heads
+#         d_h = self.head_dim
+#
+#         # compute per-head gating
+#         alpha = self.gate_net_1(x).view(B, L, H, d_h)   # [B, L, H, d_h]
+#         beta = self.gate_net_2(x).view(B, L, H, d_h)  # [B, L, H, d_h]
+#
+#         # reshape inputs to [B, L, H, d_h]
+#         x_self = x_self.view(B, L, H, d_h)
+#         x_img = x_img.view(B, L, H, d_h)
+#         x_con = x_con.view(B, L, H, d_h)
+#
+#         # fuse per head
+#         fused = beta * x_img + alpha * x_con + (1-alpha-beta) * x_self
+#
+#         # reshape back and project
+#         fused = fused.view(B, L, D)
+#         out = self.out_proj(fused)  # residual connection + projection
+#         return out, alpha
+#
+#
+# class MultiHeadGatedFusionV2(nn.Module):
+#     def __init__(self, d_model, num_heads, dropout):
+#         super().__init__()
+#         H = num_heads
+#         d_h = d_model // H
+#         self.num_heads = H
+#         self.head_dim = d_h
+#
+#         # produce 3 logits for gating per head
+#         self.gate_net = nn.Sequential(
+#             nn.Linear(d_model, d_model),
+#             nn.ReLU(),
+#             nn.Dropout(dropout),
+#             nn.Linear(d_model, 3 * d_model)   # 3-way gating
+#         )
+#
+#         self.out_proj = nn.Linear(d_model, d_model)
+#
+#     def forward(self, x, x_self, x_img, x_con):
+#         B, L, D = x.shape
+#         H, d_h = self.num_heads, self.head_dim
+#
+#         gates = self.gate_net(x).view(B, L, H, 3, d_h)     # [B,L,H,3,d_h]
+#         weights = gates.softmax(dim=3)                     # [B,L,H,3,d_h]
+#
+#         w_self = weights[:, :, :, 0]
+#         w_img  = weights[:, :, :, 1]
+#         w_con  = weights[:, :, :, 2]
+#
+#         # reshape inputs
+#         x_self = x_self.view(B, L, H, d_h)
+#         x_img  = x_img.view(B, L, H, d_h)
+#         x_con  = x_con.view(B, L, H, d_h)
+#
+#         fused = w_self * x_self + w_img * x_img + w_con * x_con
+#
+#         fused = fused.view(B, L, D)
+#         return self.out_proj(fused), weights
 
 
 class PositionwiseFeedForward(nn.Module):
@@ -258,80 +258,80 @@ class MultiHeadGatedFusionV3(nn.Module):
         out = out + self.ffn(out)
 
         return out, weights
-
-class MultiHeadGatedFusionV4(nn.Module):
-    def __init__(self, d_model, num_heads, dropout=0.2, temperature=1.0):
-        super().__init__()
-        H = num_heads
-        d_h = d_model // H
-
-        self.num_heads = H
-        self.head_dim = d_h
-        self.temperature = nn.Parameter(torch.tensor(temperature))
-
-        # Per-head projections
-        self.proj_self = nn.Linear(d_model, d_model)
-        self.proj_img  = nn.Linear(d_model, d_model)
-        self.proj_con  = nn.Linear(d_model, d_model)
-
-        # Contextual gating network
-        self.gate_net = nn.Sequential(
-            nn.Linear(2 * d_model, 4*d_model),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(4 * d_model, 2*d_model)
-        )
-
-        # Fusion + normalization
-        self.out_proj = nn.Linear(d_model, d_model)
-        self.norm = nn.LayerNorm(d_model)
-
-        # Small FFN for extra expressiveness
-        self.ffn = nn.Sequential(
-            nn.Linear(d_model, 4 * d_model),
-            nn.GELU(),
-            nn.Linear(4 * d_model, d_model),
-            nn.Dropout(dropout)
-        )
-
-    def forward(self, x_self, x_img, x_con):
-        B, L, D = x_self.shape
-        H, d_h = self.num_heads, self.head_dim
-
-        # ---- Per-head projections ----
-        # s0 = self.proj_self(x_self)
-        i0 = self.proj_img(x_img)
-        c0 = self.proj_con(x_con)
-
-        # ---- Contextual gating ----
-        ctx = torch.cat([x_img, x_con], dim=-1)
-        gates = self.gate_net(ctx)                         # [B,L,3D]
-        gates = gates.view(B, L, H, 2, d_h)
-
-        # Temperature-scaled softmax
-        weights = F.softmax(gates / self.temperature, dim=3)
-
-        # w_self = weights[:, :, :, 0]
-        w_img  = weights[:, :, :, 0]
-        w_con  = weights[:, :, :, 1]
-
-        # ---- Reshape modalities ----
-        # s0 = s0.view(B, L, H, d_h)
-        i0 = i0.view(B, L, H, d_h)
-        c0 = c0.view(B, L, H, d_h)
-
-        # ---- Weighted fusion ----
-        fused = w_img * i0 + w_con * c0
-        fused = fused.view(B, L, D)
-
-        # ---- Projection + residual + normalization ----
-        out = x_self + self.out_proj(fused)
-        out = self.norm(out)
-
-        # ---- Extra FFN ----
-        out = out + self.ffn(out)
-
-        return out, weights
+#
+# class MultiHeadGatedFusionV4(nn.Module):
+#     def __init__(self, d_model, num_heads, dropout=0.2, temperature=1.0):
+#         super().__init__()
+#         H = num_heads
+#         d_h = d_model // H
+#
+#         self.num_heads = H
+#         self.head_dim = d_h
+#         self.temperature = nn.Parameter(torch.tensor(temperature))
+#
+#         # Per-head projections
+#         self.proj_self = nn.Linear(d_model, d_model)
+#         self.proj_img  = nn.Linear(d_model, d_model)
+#         self.proj_con  = nn.Linear(d_model, d_model)
+#
+#         # Contextual gating network
+#         self.gate_net = nn.Sequential(
+#             nn.Linear(2 * d_model, 4*d_model),
+#             nn.ReLU(),
+#             nn.Dropout(dropout),
+#             nn.Linear(4 * d_model, 2*d_model)
+#         )
+#
+#         # Fusion + normalization
+#         self.out_proj = nn.Linear(d_model, d_model)
+#         self.norm = nn.LayerNorm(d_model)
+#
+#         # Small FFN for extra expressiveness
+#         self.ffn = nn.Sequential(
+#             nn.Linear(d_model, 4 * d_model),
+#             nn.GELU(),
+#             nn.Linear(4 * d_model, d_model),
+#             nn.Dropout(dropout)
+#         )
+#
+#     def forward(self, x_self, x_img, x_con):
+#         B, L, D = x_self.shape
+#         H, d_h = self.num_heads, self.head_dim
+#
+#         # ---- Per-head projections ----
+#         # s0 = self.proj_self(x_self)
+#         i0 = self.proj_img(x_img)
+#         c0 = self.proj_con(x_con)
+#
+#         # ---- Contextual gating ----
+#         ctx = torch.cat([x_img, x_con], dim=-1)
+#         gates = self.gate_net(ctx)                         # [B,L,3D]
+#         gates = gates.view(B, L, H, 2, d_h)
+#
+#         # Temperature-scaled softmax
+#         weights = F.softmax(gates / self.temperature, dim=3)
+#
+#         # w_self = weights[:, :, :, 0]
+#         w_img  = weights[:, :, :, 0]
+#         w_con  = weights[:, :, :, 1]
+#
+#         # ---- Reshape modalities ----
+#         # s0 = s0.view(B, L, H, d_h)
+#         i0 = i0.view(B, L, H, d_h)
+#         c0 = c0.view(B, L, H, d_h)
+#
+#         # ---- Weighted fusion ----
+#         fused = w_img * i0 + w_con * c0
+#         fused = fused.view(B, L, D)
+#
+#         # ---- Projection + residual + normalization ----
+#         out = x_self + self.out_proj(fused)
+#         out = self.norm(out)
+#
+#         # ---- Extra FFN ----
+#         out = out + self.ffn(out)
+#
+#         return out, weights
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout, max_len=5000):
@@ -368,95 +368,95 @@ class PAM(nn.Module):
 
         return x
 
-
-class CrossAttentionBlock(nn.Module):
-    def __init__(self, n_heads,d_model, dropout):
-        super().__init__()
-        self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
-        self.norm = LayerNorm(d_model)
-        self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
-
-    def forward(self, x, concepts):
-        x2, attn_x2c = self.cross_attn(x, concepts, concepts)
-        c2, _ = self.cross_attn(concepts, x, x)
-        c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
-        x_fused = self.norm(x + self.ff(x2 + c2_to_x))
-        return x_fused
-
-class ConceptInfusionBlockV2(nn.Module):
-    """
-    Stable bidirectional concept infusion with:
-      - shared Q/K/V projections
-      - lightweight concept update
-      - safe pooled concept context injection
-      - cooperative gating (not competitive)
-    """
-
-    def __init__(self, n_heads, d_model, dropout=0.1, concept_update=True):
-        super().__init__()
-        self.n_heads = n_heads
-        self.d_model = d_model
-        self.concept_update = concept_update
-
-        # ---- 1) Shared cross-attention projections -------------------------
-        self.x_attn = MultiHeadedAttention(n_heads, d_model, dropout)
-        self.c_attn = MultiHeadedAttention(n_heads, d_model, dropout)
-
-        # ---- 2) Feed-forwards ----------------------------------------------
-        self.ff_x = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
-        self.ff_c = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
-
-        # ---- 3) Norms ------------------------------------------------------
-        self.norm_x = nn.LayerNorm(d_model)
-        self.norm_c = nn.LayerNorm(d_model)
-
-        # ---- 4) Concept pooling (learned) ---------------------------------
-        self.pool = nn.Sequential(
-            nn.Linear(d_model, d_model),
-            nn.Tanh()
-        )
-
-        # ---- 5) Cooperative gate (only scales concept signal) ------------
-        self.gate = nn.Sequential(
-            nn.Linear(d_model, d_model),
-            nn.SiLU(),
-            nn.Linear(d_model, d_model),
-            nn.Sigmoid()
-        )
-
-        # ---- 6) Output projection -----------------------------------------
-        self.out_proj = nn.Linear(d_model, d_model)
-
-    def forward(self, x, concepts):
-        """
-        x:        [B, L, D]
-        concepts: [B, M, D]
-        """
-
-        # ----------- A) Main: X attends to Concept Tokens -------------------
-        x2c, att_x2c = self.x_attn(x, concepts, concepts)   # X <- Concepts
-        x = self.norm_x(x + x2c)
-        x = self.ff_x(x)
-
-        # ----------- B) Optional Concept Update -----------------------------
-        if self.concept_update:
-            c2x, att_c2x = self.c_attn(concepts, x, x)  # C <- X
-            concepts = self.norm_c(concepts + c2x)
-            concepts = self.ff_c(concepts)
-        else:
-            att_c2x = None
-
-        # ----------- C) Pool Concepts to a Small Context Vector ------------
-        # [B, M, D] → [B, 1, D]
-        c_pooled = self.pool(concepts.mean(dim=1, keepdim=True))
-
-        # ----------- D) Cooperative Fusion ---------------------------------
-        # gate ∈ [0,1] expands concept info but never suppresses x
-        g = self.gate(x)                       # [B, L, D]
-        fused = x + g * c_pooled               # additive, cooperative
-        fused = self.out_proj(fused)
-
-        return fused, att_x2c, att_c2x
+#
+# class CrossAttentionBlock(nn.Module):
+#     def __init__(self, n_heads,d_model, dropout):
+#         super().__init__()
+#         self.cross_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+#         self.norm = LayerNorm(d_model)
+#         self.ff = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+#
+#     def forward(self, x, concepts):
+#         x2, attn_x2c = self.cross_attn(x, concepts, concepts)
+#         c2, _ = self.cross_attn(concepts, x, x)
+#         c2_to_x = torch.matmul(attn_x2c.mean(1), c2)
+#         x_fused = self.norm(x + self.ff(x2 + c2_to_x))
+#         return x_fused
+#
+# class ConceptInfusionBlockV2(nn.Module):
+#     """
+#     Stable bidirectional concept infusion with:
+#       - shared Q/K/V projections
+#       - lightweight concept update
+#       - safe pooled concept context injection
+#       - cooperative gating (not competitive)
+#     """
+#
+#     def __init__(self, n_heads, d_model, dropout=0.1, concept_update=True):
+#         super().__init__()
+#         self.n_heads = n_heads
+#         self.d_model = d_model
+#         self.concept_update = concept_update
+#
+#         # ---- 1) Shared cross-attention projections -------------------------
+#         self.x_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+#         self.c_attn = MultiHeadedAttention(n_heads, d_model, dropout)
+#
+#         # ---- 2) Feed-forwards ----------------------------------------------
+#         self.ff_x = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+#         self.ff_c = PositionwiseFeedForward(d_model, 4 * d_model, dropout)
+#
+#         # ---- 3) Norms ------------------------------------------------------
+#         self.norm_x = nn.LayerNorm(d_model)
+#         self.norm_c = nn.LayerNorm(d_model)
+#
+#         # ---- 4) Concept pooling (learned) ---------------------------------
+#         self.pool = nn.Sequential(
+#             nn.Linear(d_model, d_model),
+#             nn.Tanh()
+#         )
+#
+#         # ---- 5) Cooperative gate (only scales concept signal) ------------
+#         self.gate = nn.Sequential(
+#             nn.Linear(d_model, d_model),
+#             nn.SiLU(),
+#             nn.Linear(d_model, d_model),
+#             nn.Sigmoid()
+#         )
+#
+#         # ---- 6) Output projection -----------------------------------------
+#         self.out_proj = nn.Linear(d_model, d_model)
+#
+#     def forward(self, x, concepts):
+#         """
+#         x:        [B, L, D]
+#         concepts: [B, M, D]
+#         """
+#
+#         # ----------- A) Main: X attends to Concept Tokens -------------------
+#         x2c, att_x2c = self.x_attn(x, concepts, concepts)   # X <- Concepts
+#         x = self.norm_x(x + x2c)
+#         x = self.ff_x(x)
+#
+#         # ----------- B) Optional Concept Update -----------------------------
+#         if self.concept_update:
+#             c2x, att_c2x = self.c_attn(concepts, x, x)  # C <- X
+#             concepts = self.norm_c(concepts + c2x)
+#             concepts = self.ff_c(concepts)
+#         else:
+#             att_c2x = None
+#
+#         # ----------- C) Pool Concepts to a Small Context Vector ------------
+#         # [B, M, D] → [B, 1, D]
+#         c_pooled = self.pool(concepts.mean(dim=1, keepdim=True))
+#
+#         # ----------- D) Cooperative Fusion ---------------------------------
+#         # gate ∈ [0,1] expands concept info but never suppresses x
+#         g = self.gate(x)                       # [B, L, D]
+#         fused = x + g * c_pooled               # additive, cooperative
+#         fused = self.out_proj(fused)
+#
+#         return fused, att_x2c, att_c2x
 
 
 
