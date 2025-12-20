@@ -220,8 +220,8 @@ class ReportModel(pl.LightningModule):
             )
 
     def __visualize_attn(self, weights):
-        w_patch = weights[:, :, :, 0].mean(0,1,2)
-        w_slide = weights[:, :, :, 1].mean(0,1,2)
-        w_concept = weights[:, :, :, 2].mean(0,1,2)
+        w_patch = weights[:, :, :, 0].mean((0,1,2))
+        w_slide = weights[:, :, :, 1].mean((0,1,2))
+        w_concept = weights[:, :, :, 2].mean((0,1,2))
 
         print(f'w_patch: {w_patch}, w_slide: {w_slide}, w_concept: {w_concept}')
