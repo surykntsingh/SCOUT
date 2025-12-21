@@ -19,6 +19,7 @@ class Trainer:
 
     def __init__(self, args, tokenizer, split_frac):
         self.best_model_path = None
+        self.last_model_path = None
         self.best=0
         self.ckpt_path = args.ckpt_path
         self.max_epochs = args.max_epochs
@@ -43,10 +44,10 @@ class Trainer:
             filename="model_{epoch:02d}_{val_loss:.5f}_{val_rouge:.5f}",  # Naming convention
             monitor="val_loss",  # Metric to monitor for saving best checkpoints
             mode="min",  # Whether to minimize or maximize the monitored metric
-            save_top_k=1,  # Number of best checkpoints to keep
+            save_top_k=3,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
+        # early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
 
         # suggested_lr = self.find_lr(model, datamodule)
         # print(f'setting lr: {suggested_lr}')
@@ -56,7 +57,7 @@ class Trainer:
         self.trainer = pl.Trainer(
             # precision="bf16-mixed",
             max_epochs=self.max_epochs,
-            callbacks=[checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback], #, early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp',
@@ -90,39 +91,39 @@ class Trainer:
         print(f'suggested lr: {suggested_lr}')
 
         return suggested_lr
-
-    def tune(self, model, datamodule, fast_dev_run=False):
-        model.model.freeze_deep_features()
-
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=self.args.ckpt_path,  # Directory to save checkpoints
-            filename="model_tune_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
-            monitor="val_loss",  # Metric to monitor for saving best checkpoints
-            mode="min",  # Whether to minimize or maximize the monitored metric
-            save_top_k=1,  # Number of best checkpoints to keep
-            save_last=True  # Save the last checkpoint regardless of the monitored metric
-        )
-        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
-
-        self.trainer = pl.Trainer(
-            max_epochs=30,
-            callbacks=[checkpoint_callback, early_stop_callback],
-            accelerator='gpu',
-            devices=self.devices,
-            strategy='ddp',
-            enable_progress_bar=True,
-            log_every_n_steps=1,
-            fast_dev_run=fast_dev_run
-        )
-        model.hparams.lr = 5e-6
-        self.trainer.fit(
-            model, datamodule=datamodule
-        )
-
-        tune_metrics = self.trainer.logged_metrics
-
-        self.best_model_path = checkpoint_callback.best_model_path
-        return tune_metrics, self.trainer
+    #
+    # def tune(self, model, datamodule, fast_dev_run=False):
+    #     model.model.freeze_deep_features()
+    #
+    #     checkpoint_callback = ModelCheckpoint(
+    #         dirpath=self.args.ckpt_path,  # Directory to save checkpoints
+    #         filename="model_tune_{epoch:02d}_{val_loss:.5f}_{val_reg:.5f}",  # Naming convention
+    #         monitor="val_loss",  # Metric to monitor for saving best checkpoints
+    #         mode="min",  # Whether to minimize or maximize the monitored metric
+    #         save_top_k=1,  # Number of best checkpoints to keep
+    #         save_last=True  # Save the last checkpoint regardless of the monitored metric
+    #     )
+    #     # early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
+    #
+    #     self.trainer = pl.Trainer(
+    #         max_epochs=30,
+    #         callbacks=[checkpoint_callback],
+    #         accelerator='gpu',
+    #         devices=self.devices,
+    #         strategy='ddp',
+    #         enable_progress_bar=True,
+    #         log_every_n_steps=1,
+    #         fast_dev_run=fast_dev_run
+    #     )
+    #     model.hparams.lr = 5e-6
+    #     self.trainer.fit(
+    #         model, datamodule=datamodule
+    #     )
+    #
+    #     tune_metrics = self.trainer.logged_metrics
+    #
+    #     self.best_model_path = checkpoint_callback.best_model_path
+    #     return tune_metrics, self.trainer
 
     def test(self, model, datamodule, fast_dev_run=False):
 
