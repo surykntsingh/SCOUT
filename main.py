@@ -89,11 +89,11 @@ def tune_gecko_features(args, tokenizer,best_model_path, trainer, datamodule):
 
 
 @app.command()
-def test(config_file_path: str='histai_config.yaml', reg_threshold: float=0.8):
+def test(config_file_path: str='histai_config.yaml', notes: str=''):
 
     args = get_params_for_key(config_file_path, "train")
-    split_frac = [0, 0, 1]
-    tokenizer = Tokenizer(args.reports_json_path)
+    split_frac = [0.80, 0.1, 0.1]
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
     datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
     trainer = Trainer(args, tokenizer, split_frac)
 
