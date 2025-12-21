@@ -65,9 +65,9 @@ class Encoder(nn.Module):
             x_patch = self.layers[i](self.norm(x_patch), mask)
             x_patch = self.PAM[i](x_patch)
 
-            x_slide = self.slide_fusion_layer[i](x_patch, slide)
+            x_slide = self.slide_fusion_layer[i](x_patch, slide.detach())
             slide = x_slide.mean(dim=1)
-            x_concept = self.concept_fusion_layer[i](x_patch, concept)
+            x_concept = self.concept_fusion_layer[i](x_patch, concept.detach())
             concept = x_concept.mean(dim=1)
 
             patches.append(x_patch)
