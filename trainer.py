@@ -47,7 +47,7 @@ class Trainer:
             save_top_k=3,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
-        # early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=5, verbose=True, mode="min")
+        early_stop_callback = EarlyStopping(monitor="val_loss", min_delta=1e-5, patience=20, verbose=True, mode="min")
 
         # suggested_lr = self.find_lr(model, datamodule)
         # print(f'setting lr: {suggested_lr}')
@@ -57,7 +57,7 @@ class Trainer:
         self.trainer = pl.Trainer(
             # precision="bf16-mixed",
             max_epochs=self.max_epochs,
-            callbacks=[checkpoint_callback], #, early_stop_callback],
+            callbacks=[checkpoint_callback,early_stop_callback],
             accelerator='gpu',
             devices=self.devices,
             strategy='ddp',
