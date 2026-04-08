@@ -80,7 +80,7 @@ class Tokenizer:
                 txt += self.get_token_by_id(idx)
             else:
                 break
-        print(self.get_token_by_id)
+        print(self.__idx2token)
         print(f'ids: {ids}, txt: {txt}')
         return txt
 
