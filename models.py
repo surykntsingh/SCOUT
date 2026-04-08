@@ -35,8 +35,9 @@ class ReportModel(pl.LightningModule):
 
         self.predictions = {}
 
+        reports = read_json_file(args.reports_json_path)
         self.reports = {
-            report['id'].split('.')[0]: report['report'] for report in read_json_file(args.reports_json_path)
+            report['id'].split('.')[0]: report['report']  for split in reports for report in reports[split]
         }
         # torch.cuda.set_device(self.trainer.local_rank)
 
