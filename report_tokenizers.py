@@ -80,6 +80,8 @@ class Tokenizer:
                 txt += self.get_token_by_id(idx)
             else:
                 break
+        print(self.get_token_by_id)
+        print(f'ids: {ids}, txt: {txt}')
         return txt
 
     def batch_decode(self, ids_batch):

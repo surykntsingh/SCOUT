@@ -41,7 +41,7 @@ class EmbeddingDataset(Dataset):
             # coords = torch.tensor(coords_np).float()
             slide_embedding = torch.tensor(embeddings_np)
             report_text = self.__reports[slide_id]
-            print(f'report_text: {report_text}')
+            # print(f'report_text: {report_text}')
             report_ids = self.__tokenizer(report_text)
 
             if len(report_ids) < self.__max_seq_length:
