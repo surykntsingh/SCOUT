@@ -67,6 +67,8 @@ class Tokenizer:
         ids = []
         for token in tokens:
             ids.append(self.get_id_by_token(token))
+
+        print(f'tokens: {tokens}, ids: {ids}')
         ids = [0] + ids + [0]
         return ids
 
