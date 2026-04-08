@@ -30,13 +30,13 @@ class Tokenizer:
 
         for split in reports:
             for example in reports[split]:
-                tokens = self.clean_report(example['report']).split()
+                tokens =  self.__split_text(self.clean_report(example['report']))
                 total_tokens.extend(tokens)
 
         counter = Counter(total_tokens)
         vocab = [k for k, v in counter.items() if v >= self.__threshold] + ['<unk>']
         vocab.sort()
-        print(f'vocab: {vocab}')
+        # print(f'vocab: {vocab}')
         token2idx, idx2token = {}, {}
         for idx, token in enumerate(vocab):
             token2idx[token] = idx + 1
@@ -68,7 +68,7 @@ class Tokenizer:
         for token in tokens:
             ids.append(self.get_id_by_token(token))
 
-        print(f'tokens: {tokens}, ids: {ids}')
+        # print(f'tokens: {tokens}, ids: {ids}, report: {self.clean_report(report)}')
         ids = [0] + ids + [0]
         return ids
 
@@ -82,8 +82,8 @@ class Tokenizer:
                 txt += self.get_token_by_id(idx)
             else:
                 break
-        print(self.__idx2token)
-        print(f'ids: {ids}, txt: {txt}')
+        # print(self.__idx2token)
+        # print(f'ids: {ids}, txt: {txt}')
         return txt
 
     def batch_decode(self, ids_batch):
