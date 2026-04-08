@@ -25,10 +25,21 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
         self.gecko_emb_path = args.gecko_emb_path
 
     def setup(self, stage=None):
-        dataset = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
-                              self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path)
+        # if type(self.reports_json_path) == dict:
+        #     self.train_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+        #                       self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path)
+
+        self.train_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+                              self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path, 'train')
+
+        self.val_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+                                         self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path, 'val')
+        self.val_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+                                         self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path, 'test')
+
+
         # print(dataset[0][1])
-        self.train_ds, self.val_ds, self.test_ds = random_split(dataset, self.split_frac)
+        # self.train_ds, self.val_ds, self.val_ds = random_split(dataset, self.split_frac)
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=self.shuffle, collate_fn = self.collate_fn)

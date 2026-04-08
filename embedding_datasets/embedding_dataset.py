@@ -8,8 +8,9 @@ from utils.utils import read_json_file
 
 class EmbeddingDataset(Dataset):
 
-    def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length, embeddings_path_2, gecko_emb_path):
-        reports = read_json_file(reports_json_path)
+    def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length,
+                 embeddings_path_2, gecko_emb_path, dataset_type):
+        reports = read_json_file(reports_json_path)[dataset_type]
         self.__reports = {report['id'].split('.')[0]: report['report'] for report in reports}
         self.__tokenizer = tokenizer
         self.__embeddings_path = embeddings_path
