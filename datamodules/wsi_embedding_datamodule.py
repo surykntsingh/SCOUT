@@ -34,7 +34,7 @@ class PatchEmbeddingDataModule(pl.LightningDataModule):
 
         self.val_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
                                          self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path, 'val')
-        self.val_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
+        self.test_ds = EmbeddingDataset(self.embeddings_path, self.reports_json_path, self.tokenizer,
                                          self.max_seq_length, self.embeddings_path_2, self.gecko_emb_path, 'test')
 
 
