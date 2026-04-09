@@ -25,7 +25,7 @@ class EmbeddingDataset(Dataset):
         # print(slides)
         # self.__slides = [file.split('.')[0] for file in files if file in files_1 and file in files_2 and file.split('.')[0] in slides]
         self.__slides = list(self.__reports.keys())
-        print(f'self.__slides: {self.__slides}')
+        # print(f'self.__slides: {self.__slides}')
         self.__slides = [file.split('.')[0] for file in files if
                          file in files_1 and file in files_2 and file.split('.')[0] in self.__slides]
         print(f'files: {len(files)}, files_1: {len(files_1)}, files_2: {len(files_2)} slides: {len(self.__slides)}')
