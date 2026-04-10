@@ -12,7 +12,7 @@ class Tokenizer:
         self.__threshold = threshold
         self.__pattern = re.compile(r'\s+|[\w]+|[^\w\s]', re.UNICODE)
         self.clean_report = lambda x: x
-        if dataset_type == 'tcga_brca':
+        if dataset_type == 'tcga_brca' or dataset_type == 'histai':
             self.clean_report = self.clean_report_brca_v2
         self.__token2idx, self.__idx2token = self.create_vocabulary(reports_json_path)
 
