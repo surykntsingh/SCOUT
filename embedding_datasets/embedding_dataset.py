@@ -40,6 +40,8 @@ class EmbeddingDataset(Dataset):
 
         print(f'dataset_type: {dataset_type}, files: {files[:4]}, files_1: {files_1[:4]}, files_2: {files_2[:4]} slides: {self.__slides[:4]}')
 
+        print(f'self.__reports: {self.__reports}')
+        
     def __len__(self):
         return len(self.__slides)
 
