@@ -113,7 +113,7 @@ class ReportModel(pl.LightningModule):
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
                 ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
                 self.__save_predictions(slide_ids, pred_texts, ground_truths)
-                self.__print_results(slide_ids, pred_texts, ground_truths)
+                # self.__print_results(slide_ids, pred_texts, ground_truths)
                 rouge_score = self.val_rouge(pred_texts, target_texts)['rouge1_fmeasure'].to(self.device)
                 self.log('val_rouge', rouge_score, on_epoch=True, prog_bar=True, sync_dist=True)
 
