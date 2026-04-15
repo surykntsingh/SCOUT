@@ -24,8 +24,8 @@ class EmbeddingDataset(Dataset):
         # slides = self.__reports.keys()
 
         # self.__slides = [file.split('.')[0] for file in files if file in files_1 and file in files_2 and file.split('.')[0] in slides]
-        slides = list(self.__reports.keys())
-
+        # slides = list(self.__reports.keys())
+        slides = [slide for slide in self.__reports.keys() if slide != 'TCGA-A2-A1G0-01Z-00-DX1.9ECB0B8A-EF4E-45A9-82AC-EF36375DEF65']
         print(f'slides: {slides}')
 
         # self.__slides = [file.split('.')[0] for file in self.__reports.keys()]
@@ -40,8 +40,8 @@ class EmbeddingDataset(Dataset):
 
         print(f'dataset_type: {dataset_type}, files: {files[:4]}, files_1: {files_1[:4]}, files_2: {files_2[:4]} slides: {self.__slides[:4]}')
 
-        print(f'self.__reports: {self.__reports}')
-        
+        # print(f'self.__reports: {self.__reports}')
+
     def __len__(self):
         return len(self.__slides)
 
