@@ -11,7 +11,7 @@ class EmbeddingDataset(Dataset):
     def __init__(self, embeddings_path, reports_json_path, tokenizer, max_seq_length,
                  embeddings_path_2, gecko_emb_path, dataset_type):
         reports = read_json_file(reports_json_path)[dataset_type]
-        self.__reports = {'.'.join(report['id'].split('.')[:-1]) : report['report'] for report in reports}
+        self.__reports = {report['id'] : report['report'] for report in reports}
         self.__tokenizer = tokenizer
         self.__embeddings_path = embeddings_path
         self.__max_seq_length = max_seq_length
