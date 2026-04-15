@@ -24,17 +24,17 @@ class EmbeddingDataset(Dataset):
         # slides = self.__reports.keys()
 
         # self.__slides = [file.split('.')[0] for file in files if file in files_1 and file in files_2 and file.split('.')[0] in slides]
-        self.__slides = list(self.__reports.keys())
+        slides = list(self.__reports.keys())
 
-        print(f'self.__slides: {self.__slides}')
+        print(f'slides: {slides}')
 
         # self.__slides = [file.split('.')[0] for file in self.__reports.keys()]
-        print(f'dataset_type: {dataset_type} self.__slides: {len(self.__slides)}')
+        print(f'dataset_type: {dataset_type} self.__slides: {len(slides)}')
         # self.__slides = [file.split('.')[0] for file in files if
         #                  file in files_1 and f'{file[:12]}.h5' in files_2 and file.split('.')[0] in self.__slides]
 
         self.__slides = ['.'.join(file.split('.')[:-1]) for file in files if
-                         file in files_1 and f'{file[:12]}.h5' in files_2 and file.split('.')[0] in self.__slides]
+                         file in files_1 and f'{file[:12]}.h5' in files_2 and '.'.join(file.split('.')[:-1]) in self.__slides]
         print(f'dataset_type: {dataset_type}, files: {len(files)}, files_1: {len(files_1)}, files_2: {len(files_2)} slides: {len(self.__slides)}')
 
         print(f'dataset_type: {dataset_type}, files: {files[:4]}, files_1: {files_1[:4]}, files_2: {files_2[:4]} slides: {self.__slides[:4]}')
