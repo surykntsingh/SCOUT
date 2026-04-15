@@ -34,7 +34,7 @@ class EmbeddingDataset(Dataset):
         #                  file in files_1 and f'{file[:12]}.h5' in files_2 and file.split('.')[0] in self.__slides]
 
         self.__slides = ['.'.join(file.split('.')[:-1]) for file in files if
-                         file in files_1 and f'{file[:12]}.h5' in files_2 and '.'.join(file.split('.')[:-1]) in self.__slides]
+                         file in files_1 and f'{file[:12]}.h5' in files_2 and '.'.join(file.split('.')[:-1]) in slides]
         print(f'dataset_type: {dataset_type}, files: {len(files)}, files_1: {len(files_1)}, files_2: {len(files_2)} slides: {len(self.__slides)}')
 
         print(f'dataset_type: {dataset_type}, files: {files[:4]}, files_1: {files_1[:4]}, files_2: {files_2[:4]} slides: {self.__slides[:4]}')
