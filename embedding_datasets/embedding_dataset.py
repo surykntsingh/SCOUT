@@ -31,7 +31,7 @@ class EmbeddingDataset(Dataset):
         # self.__slides = [file.split('.')[0] for file in self.__reports.keys()]
         print(f'dataset_type: {dataset_type} self.__slides: {len(slides)}')
         self.__slides = [file.split('.')[0] for file in files if
-                         file in files_1 and file in files_2 and file.split('.')[0] in self.__slides]
+                         file in files_1 and file in files_2 and file.split('.')[0] in slides]
         # self.__slides = [slide for slide in slides if f'{slide}.h5' in files and f'{slide}.h5' in files_1 and f'{slide[:12]}.h5' in files_2]
 
         # self.__slides = ['.'.join(file.split('.')[:-1]) for file in files if
