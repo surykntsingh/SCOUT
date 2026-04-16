@@ -68,7 +68,7 @@ class EmbeddingDataset(Dataset):
             embeddings_np = h5_file["features"][:]
             patch_embedding = torch.tensor(embeddings_np)
 
-        with h5py.File(f'{self.__gecko_emb_path}/{slide_id[:12]}.h5', "r") as h5_file:
+        with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
