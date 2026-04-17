@@ -102,7 +102,7 @@ class ReportModel(pl.LightningModule):
             del output_
             torch.cuda.empty_cache()
 
-        if batch_idx % 1==0:
+        if batch_idx % 10==0:
             with torch.no_grad():
                 output, attn = self.model(features, report_ids, mode='sample')
                 # self.__visualize_attn(attn)
