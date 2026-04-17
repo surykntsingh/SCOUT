@@ -96,8 +96,6 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output_,attn = self.model(features, report_ids, mode='train')
 
-            print()
-
             loss = self.loss_fn(output_, report_ids, report_masks, attn)
             self.log('val_loss', loss, on_epoch=True, prog_bar=True, sync_dist=True)
             # self.log('val_c_loss', concept_loss, on_epoch=True, prog_bar=True, sync_dist=True)
