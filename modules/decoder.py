@@ -35,27 +35,27 @@ class DecoderLayer(nn.Module):
         )
 
         # 3. Cross-attention: slide
-        # x_slide = self.sublayers[2](
-        #     x,
-        #     lambda x: self.src_attns[1](x, slide_features, slide_features, src_mask)[0]
-        # )
-        #
-        # # 4. Cross-attention: concept
-        # x_concept = self.sublayers[3](
-        #     x,
-        #     lambda x: self.src_attns[2](x, concept_features, concept_features, src_mask)[0]
-        # )
-        #
-        # # 5. Gated multimodal fusion (residual inside)
-        # x, weights = self.sublayers[4](
-        #     x,
-        #     lambda x: self.gate_fusion(x, x_patch, x_slide, x_concept)
-        # )
+        x_slide = self.sublayers[2](
+            x,
+            lambda x: self.src_attns[1](x, slide_features, slide_features, src_mask)[0]
+        )
+
+        # 4. Cross-attention: concept
+        x_concept = self.sublayers[3](
+            x,
+            lambda x: self.src_attns[2](x, concept_features, concept_features, src_mask)[0]
+        )
+
+        # 5. Gated multimodal fusion (residual inside)
+        x, weights = self.sublayers[4](
+            x,
+            lambda x: self.gate_fusion(x, x_patch, x_slide, x_concept)
+        )
 
         # 6. Feed-forward
-        x = self.sublayers[5](x_patch, self.feed_forward)
+        x = self.sublayers[5](x, self.feed_forward)
 
-        return x, None
+        return x, weights
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
@@ -76,5 +76,5 @@ class Decoder(nn.Module):
 
         # attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
         # attn_con_all = torch.stack(attn_con_all)
-        # attn_maps = torch.stack(attn_maps).mean(0)
+        attn_maps = torch.stack(attn_maps).mean(0)
         return self.norm(x), attn_maps #(attn_maps, attn_img_all, attn_con_all)
