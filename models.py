@@ -130,7 +130,7 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output,attn = self.model(features, report_ids, mode='sample')
             output = output.detach().cpu().numpy()
-            self.__visualize_attn(attn)
+            # self.__visualize_attn(attn)
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
             ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
