@@ -45,33 +45,24 @@ class ReportModel(pl.LightningModule):
         # torch.cuda.set_device(self.trainer.local_rank)
 
 
-    def get_attn_regularization(self, attns, lambda_entropy=1e-3, lambda_balance=5e-2):
+    def get_attn_regularization(self, weights, eps=1e-8):
         # Attention Regularization
-        _, attn_img, attn_con = attns
-        # Mean over layers and heads
 
-        attn_con_mean = attn_con.mean(dim=(0, 1, 2))  # (seq_len, num_concepts)
-        attn_img_mean = attn_img.mean(dim=(0, 1, 2))
-        # (a) Sparsity regularization (entropy)
-        entropy = - (attn_con_mean * torch.log(attn_con_mean + 1e-8)).sum(-1).mean()
-
-        # (b) Balance regularization
-        balance = (attn_img_mean.mean() - attn_con_mean.mean()).abs()
-
-        return lambda_entropy * entropy + lambda_balance * balance
+        entropy = - (weights * (weights + eps).log()).sum(dim=-1)  # [B, L, H]
+        return entropy.mean()
 
     def loss_fn(self, output, reports_ids, reports_masks, attns):
         language_criterion = LanguageModelCriterion()
         caption_loss = language_criterion(output, reports_ids[:, 1:], reports_masks[:, 1:]).mean()
         # concept_loss = self.model.concept_supervision_head(concept_tokens, gecko_concepts)
-        # attn_reg = self.get_attn_regularization(attns)
+        attn_reg = self.get_attn_regularization(attns)
         #
         # with torch.no_grad():
         #     caption_magnitude = caption_loss.detach()
         #     concept_magnitude = concept_loss.detach() + 1e-8
         #     scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss #  + self.concept_lambda * concept_loss * scale + attn_reg
+        total_loss = caption_loss + self.concept_lambda * attn_reg
         return total_loss
 
 
@@ -105,7 +96,7 @@ class ReportModel(pl.LightningModule):
         if batch_idx % 10==0:
             with torch.no_grad():
                 output, attn = self.model(features, report_ids, mode='sample')
-                # self.__visualize_attn(attn)
+                self.__visualize_attn(attn)
                 output = output.detach().cpu().numpy()
                 pred_texts = self.tokenizer.batch_decode(output)
                 target_texts = [self.reports[slide_id] for slide_id in slide_ids]
@@ -130,7 +121,7 @@ class ReportModel(pl.LightningModule):
         with torch.no_grad():
             output,attn = self.model(features, report_ids, mode='sample')
             output = output.detach().cpu().numpy()
-            # self.__visualize_attn(attn)
+            self.__visualize_attn(attn)
             pred_texts = self.tokenizer.batch_decode(output)
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
             ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())

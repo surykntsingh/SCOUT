@@ -81,7 +81,7 @@ class Trainer:
             # precision="16-mixed",
             accelerator='gpu',
             devices=self.devices,
-            strategy='ddp',
+            strategy='ddp_find_unused_parameters_true',
             enable_progress_bar=True
         )
         tuner = Tuner(trainer)
