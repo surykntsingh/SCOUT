@@ -43,8 +43,8 @@ class Encoder(nn.Module):
         self.PAM = clones(PAM, N)
         self.N = N
         # self.concept_fusion = concept_fusion
-        slide_fusions = FilmFusion(768,768)
-        concept_fusions = FilmFusion(768, 768)
+        slide_fusions = FilmFusion(layer.d_model,layer.d_model)
+        concept_fusions = FilmFusion(layer.d_model, layer.d_model)
         self.slide_fusion_layer = clones(slide_fusions, self.N)
         self.concept_fusion_layer = clones(concept_fusions, self.N)
         self.patch_layer_weights = nn.Parameter(torch.ones(N))
