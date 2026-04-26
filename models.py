@@ -44,6 +44,7 @@ class ReportModel(pl.LightningModule):
             report['id']: report['report'] for split in reports for report in reports[split]
         }
         # torch.cuda.set_device(self.trainer.local_rank)
+        self.__output_dir = args.output_dir
 
 
     def get_attn_regularization(self, weights, eps=1e-8):
@@ -201,7 +202,9 @@ class ReportModel(pl.LightningModule):
             }
 
     def __write_predictions(self):
-        write_json_file(self.predictions, 'output/predictions.json')
+        if not os.path.exists(self.__output_dir):
+            os.makedirs(self.__output_dir, exist_ok=True)
+        write_json_file(self.predictions, f'{self.__output_dir}/predictions.json')
 
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
