@@ -17,7 +17,7 @@ class EmbeddingDataset(Dataset):
         self.__max_seq_length = max_seq_length
         self.__embeddings_path_2 = embeddings_path_2
         self.__gecko_emb_path = gecko_emb_path
-        self.get_slides_brca(dataset_type, reports_json_path, embeddings_path, embeddings_path_2,gecko_emb_path)
+        self.get_slides(dataset_type, reports_json_path, embeddings_path, embeddings_path_2,gecko_emb_path)
 
 
 
@@ -110,7 +110,7 @@ class EmbeddingDataset(Dataset):
             embeddings_np = h5_file["features"][:]
             patch_embedding = torch.tensor(embeddings_np)
 
-        with h5py.File(f'{self.__gecko_emb_path}/{slide_id[:12]}.h5', "r") as h5_file:
+        with h5py.File(f'{self.__gecko_emb_path}/{slide_id}.h5', "r") as h5_file:
             # coords_np = h5_file["coords"][:]
             bag_feats_deep_np = h5_file["bag_feats_deep"][:]
             bag_feats_np = h5_file["bag_feats"][:]
