@@ -10,7 +10,8 @@ import evaluate
 from modules.loss import LanguageModelCriterion
 from modules.metrics import REG_Evaluator, compute_coco_scores
 from modules.report_gen_model import ReportGenModel
-from utils.utils import extract_fields, read_json_file
+from utils.utils import extract_fields, read_json_file, write_json_file
+
 
 class ReportModel(pl.LightningModule):
 
@@ -36,12 +37,12 @@ class ReportModel(pl.LightningModule):
         self.predictions = {}
 
         reports = read_json_file(args.reports_json_path)
-        self.reports = {
-            report['id'].split('.')[0]: report['report']  for split in reports for report in reports[split]
-        }
         # self.reports = {
-        #     report['id']: report['report'] for split in reports for report in reports[split]
+        #     report['id'].split('.')[0]: report['report']  for split in reports for report in reports[split]
         # }
+        self.reports = {
+            report['id']: report['report'] for split in reports for report in reports[split]
+        }
         # torch.cuda.set_device(self.trainer.local_rank)
 
 
@@ -156,6 +157,7 @@ class ReportModel(pl.LightningModule):
         torch.cuda.empty_cache()
         self.__log_reg_metrics('test', 'reg', self.reg_evaluator.get_metrics, False)
         self.__log_reg_metrics('test', 'coco', compute_coco_scores, True)
+        self.__write_predictions()
         self.predictions.clear()
 
     def configure_optimizers(self):
@@ -197,6 +199,9 @@ class ReportModel(pl.LightningModule):
                 'pred': pred_texts[i],
                 'target': ground_truths[i]
             }
+
+    def __write_predictions(self):
+        write_json_file(self.predictions, 'output/predictions.json')
 
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):

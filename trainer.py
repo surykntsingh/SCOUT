@@ -44,7 +44,7 @@ class Trainer:
             filename="model_{epoch:02d}_{val_loss:.5f}_{val_coco_BLEU_4:.5f}",  # Naming convention
             monitor="val_coco_BLEU_1",  # Metric to monitor for saving best checkpoints
             mode="max",  # Whether to minimize or maximize the monitored metric
-            save_top_k=3,  # Number of best checkpoints to keep
+            save_top_k=1,  # Number of best checkpoints to keep
             save_last=True  # Save the last checkpoint regardless of the monitored metric
         )
         early_stop_callback = EarlyStopping(monitor="val_coco_BLEU_1", min_delta=1e-5, patience=20, verbose=True, mode="max")
