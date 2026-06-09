@@ -160,6 +160,27 @@ class Trainer:
         )
         return preds
 
+    def predict_single_case(self, model, case_index=0, output_dir=None, layer_idx=-1):
+        """
+        Run one test example through the model and render modality overlays.
+        """
+        self.datamodule.setup(stage='test')
+        sample = self.datamodule.test_ds[case_index]
+        device = next(model.parameters()).device
+
+        slide_ids, features, report_ids, report_masks = self.datamodule.collate_fn(
+            [sample], device=device
+        )
+        slide_id = slide_ids[0]
+        return model.predict_single_case_with_heatmaps(
+            slide_id=slide_id,
+            features=features,
+            report_ids=report_ids,
+            report_masks=report_masks,
+            output_dir=output_dir,
+            layer_idx=layer_idx,
+        )
+
     @rank_zero_only
     def save_model(self,trainer, model_path):
 
@@ -268,7 +289,6 @@ class KFoldTrainer(Trainer):
 
             print(f'Finished!')
             print("*"*100)
-
 
 
 

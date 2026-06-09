@@ -147,6 +147,22 @@ def predict(config_file_path='histai_config.yaml', pt=False):
 
     save_results(results, results_dir)
 
+@app.command()
+def predict_case(config_file_path='histai_config.yaml', case_index: int = 0, output_dir: str = '', layer_idx: int = -1):
+    args = get_params_for_key(config_file_path, "train")
+    split_frac = [0.80, 0.1, 0.1]
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
+    trainer = Trainer(args, tokenizer, split_frac)
+
+    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
+    result = trainer.predict_single_case(
+        model,
+        case_index=case_index,
+        output_dir=output_dir or None,
+        layer_idx=layer_idx,
+    )
+    print(result)
+
 def get_prediction(model, trainer, args, tokenizer):
     # slides = ['TCGA-CH-5764', 'TCGA-V1-A8MM', 'TCGA-V1-A9Z7', 'TCGA-EJ-5518', 'TCGA-HC-7232']
     datamodule = PatchEmbeddingDataPredictModule(args, tokenizer)

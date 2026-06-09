@@ -1,8 +1,14 @@
 import json
 import gc
 import os
+import math
+from pathlib import Path
+
+import numpy as np
 import torch
 import pytorch_lightning as pl
+from PIL import Image, ImageFilter
+from matplotlib import cm
 from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
@@ -50,6 +56,12 @@ class ReportModel(pl.LightningModule):
     def get_attn_regularization(self, weights, eps=1e-8):
         # Attention Regularization
 
+        if isinstance(weights, dict):
+            weights = weights.get("fusion", weights)
+        if weights.dim() == 6:
+            weights = weights.mean(dim=-1)
+        if weights.dim() == 5:
+            weights = weights.mean(dim=0)
         entropy = - (weights * (weights + eps).log()).sum(dim=-1)  # [B, L, H]
         return entropy.mean()
 
@@ -222,9 +234,238 @@ class ReportModel(pl.LightningModule):
             )
 
     def __visualize_attn(self, weights):
+        if isinstance(weights, dict):
+            fusion = weights.get("fusion")
+            if fusion is None:
+                return
+            fusion = fusion.detach().cpu()
+            if fusion.dim() == 6:
+                fusion = fusion.mean(dim=-1)
+            if fusion.dim() == 5:
+                fusion = fusion.mean(dim=0)
+            if fusion.dim() >= 3:
+                fusion = fusion.mean(dim=(0, 1, 2))
+            print(
+                f"fusion weights summary - patch: {fusion[..., 0].mean().item():.4f}, "
+                f"slide: {fusion[..., 1].mean().item():.4f}, "
+                f"concept: {fusion[..., 2].mean().item():.4f}"
+            )
+            return
+
         weights = weights.detach().cpu()
+        if weights.dim() == 6:
+            weights = weights.mean(dim=-1)
+        if weights.dim() == 5:
+            weights = weights.mean(dim=0)
         w_patch = weights[:, :, :, 0].mean().numpy()
         w_slide = weights[:, :, :, 1].mean().numpy()
         w_concept = weights[:, :, :, 2].mean().numpy()
 
         print(f'w_patch: {w_patch}, w_slide: {w_slide}, w_concept: {w_concept}')
+
+    def predict_single_case_with_heatmaps(self, slide_id, features, report_ids=None, report_masks=None,
+                                          output_dir=None, layer_idx=-1):
+        """
+        Run one case through the model, return the sampled prediction, and save
+        modality overlays for the chosen decoder layer.
+        """
+        self.eval()
+        device = next(self.parameters()).device
+
+        if report_ids is not None and report_ids.device != device:
+            report_ids = report_ids.to(device)
+        if report_masks is not None and report_masks.device != device:
+            report_masks = report_masks.to(device)
+        for key in ("slide", "patch"):
+            if key in features and features[key].device != device:
+                features[key] = features[key].to(device)
+        if "gecko" in features:
+            for key in ("deep", "concept"):
+                if key in features["gecko"] and features["gecko"][key].device != device:
+                    features["gecko"][key] = features["gecko"][key].to(device)
+
+        with torch.no_grad():
+            sample_output, _ = self.model(features, mode='sample')
+            pred_text = self.tokenizer.batch_decode(sample_output.detach().cpu().numpy())[0]
+
+            if report_ids is None:
+                raise ValueError(
+                    "report_ids are required to compute decoder attention maps for heatmaps."
+                )
+
+            target_text = self.tokenizer.batch_decode(report_ids[:, 1:].detach().cpu().numpy())[0]
+            _, attn_maps = self.model(features, report_ids, mode='train')
+
+        save_root = Path(output_dir or self.__output_dir)
+        save_root.mkdir(parents=True, exist_ok=True)
+        case_dir = save_root / str(slide_id)
+        case_dir.mkdir(parents=True, exist_ok=True)
+
+        thumbnail_path = self._find_thumbnail_path(slide_id)
+        overlay_paths = self._save_attention_overlays(
+            slide_id=slide_id,
+            thumbnail_path=thumbnail_path,
+            attn_maps=attn_maps,
+            output_dir=case_dir,
+            layer_idx=layer_idx,
+        )
+
+        return {
+            "slide_id": slide_id,
+            "prediction": pred_text,
+            "target": target_text,
+            "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
+            "overlay_paths": {k: str(v) for k, v in overlay_paths.items()},
+            "attn_summary": self._summarize_attention_maps(attn_maps, layer_idx=layer_idx),
+        }
+
+    def _summarize_attention_maps(self, attn_maps, layer_idx=-1):
+        summary = {}
+        if not isinstance(attn_maps, dict):
+            return summary
+
+        for modality in ("patch", "slide", "concept"):
+            attn = attn_maps.get(modality)
+            if attn is None:
+                continue
+            attn = attn[layer_idx].detach().cpu()  # [B, H, T, S]
+            attn = attn.mean(dim=1).mean(dim=1)  # [B, S]
+            summary[modality] = attn.squeeze(0).numpy()
+
+        fusion = attn_maps.get("fusion")
+        if fusion is not None:
+            fusion = fusion[layer_idx].detach().cpu()
+            if fusion.dim() == 5:
+                fusion = fusion.mean(dim=-1)
+            summary["fusion"] = fusion.mean(dim=(1, 2)).squeeze(0).numpy()
+
+        return summary
+
+    def _save_attention_overlays(self, slide_id, thumbnail_path, attn_maps, output_dir, layer_idx=-1):
+        overlays = {}
+        for modality in ("patch", "slide", "concept"):
+            if modality not in attn_maps or attn_maps[modality] is None:
+                continue
+            attn = attn_maps[modality][layer_idx].detach().cpu()  # [B, H, T, S]
+            attn = attn.mean(dim=1).mean(dim=1).squeeze(0)  # [S]
+            overlay_path = output_dir / f"{slide_id}_{modality}_overlay.png"
+            coords = self._load_coords_for_modality(slide_id, modality)
+            self._render_attention_overlay(thumbnail_path, attn, overlay_path, coords=coords)
+            overlays[modality] = overlay_path
+
+        return overlays
+
+    def _render_attention_overlay(self, thumbnail_path, scores, output_path, coords=None):
+        if thumbnail_path is None:
+            raise FileNotFoundError(
+                "Could not locate a thumbnail for overlay rendering."
+            )
+
+        base_image = Image.open(thumbnail_path).convert("RGB")
+        heatmap = self._attention_to_heatmap(scores, base_image.size, coords=coords)
+        blended = Image.blend(base_image, heatmap, alpha=0.45)
+        blended.save(output_path)
+
+    def _attention_to_heatmap(self, scores, size, coords=None):
+        scores = scores.detach().cpu().float().numpy().reshape(-1)
+        if scores.size == 0:
+            return Image.new("RGB", size, color=(0, 0, 0))
+
+        if coords is not None and len(coords) == scores.size:
+            coords = np.asarray(coords)
+            if coords.ndim >= 2 and coords.shape[1] >= 2:
+                canvas = np.zeros((size[1], size[0]), dtype=np.float32)
+                x = coords[:, 0].astype(np.float32)
+                y = coords[:, 1].astype(np.float32)
+                x = (x - x.min()) / (x.max() - x.min() + 1e-8)
+                y = (y - y.min()) / (y.max() - y.min() + 1e-8)
+                xi = np.clip((x * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
+                yi = np.clip((y * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
+                np.maximum.at(canvas, (yi, xi), scores)
+                canvas = canvas - canvas.min()
+                denom = canvas.max()
+                if denom > 0:
+                    canvas = canvas / denom
+                colored = cm.get_cmap("jet")(canvas)[..., :3]
+                colored = (colored * 255).astype(np.uint8)
+                heatmap = Image.fromarray(colored)
+                return heatmap.filter(ImageFilter.GaussianBlur(radius=6))
+
+        grid = int(math.ceil(math.sqrt(scores.size)))
+        padded = np.zeros(grid * grid, dtype=np.float32)
+        padded[:scores.size] = scores
+        padded = padded.reshape(grid, grid)
+        padded = padded - padded.min()
+        denom = padded.max()
+        if denom > 0:
+            padded = padded / denom
+
+        colored = cm.get_cmap("jet")(padded)[..., :3]
+        colored = (colored * 255).astype(np.uint8)
+        heatmap = Image.fromarray(colored).resize(size, resample=Image.BILINEAR)
+        return heatmap
+
+    def _load_coords_for_modality(self, slide_id, modality):
+        args = self.model.encoder_decoder.args
+        path_map = {
+            "patch": getattr(args, "embeddings_path_2", None),
+            "slide": getattr(args, "embeddings_path", None),
+            "concept": getattr(args, "gecko_emb_path", None),
+        }
+        data_dir = path_map.get(modality)
+        if not data_dir:
+            return None
+
+        h5_path = Path(data_dir) / f"{slide_id}.h5"
+        if not h5_path.exists():
+            return None
+
+        try:
+            import h5py
+        except Exception:
+            return None
+
+        coord_keys = ("coords", "patch_coords", "bag_coords")
+        with h5py.File(h5_path, "r") as h5_file:
+            for key in coord_keys:
+                if key in h5_file:
+                    coords = h5_file[key][:]
+                    return coords
+        return None
+
+    def _find_thumbnail_path(self, slide_id):
+        base_id = str(slide_id)
+        id_variants = {
+            base_id,
+            base_id.split(".")[0],
+            base_id[:12] if len(base_id) > 12 else base_id,
+        }
+        candidates = [
+            f"{variant}.png"
+            for variant in id_variants
+        ] + [
+            f"{variant}.jpg"
+            for variant in id_variants
+        ] + [
+            f"{variant}.jpeg"
+            for variant in id_variants
+        ]
+        search_roots = [Path.cwd(), Path(self.__output_dir).parent, Path(self.__output_dir)]
+
+        for root in search_roots:
+            if not root.exists():
+                continue
+            for candidate in candidates:
+                candidate_path = root / candidate
+                if candidate_path.exists():
+                    return candidate_path
+
+        for root in search_roots:
+            if not root.exists():
+                continue
+            for candidate in candidates:
+                matches = list(root.rglob(candidate))
+                if matches:
+                    return matches[0]
+
+        return None

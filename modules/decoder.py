@@ -29,21 +29,21 @@ class DecoderLayer(nn.Module):
         )
 
         # 2. Cross-attention: patch
-        x_patch = self.sublayers[1](
+        x_patch, patch_attn = self.sublayers[1](
             x,
-            lambda x: self.src_attns[0](x, patch_features, patch_features, src_mask)[0]
+            lambda x: self.src_attns[0](x, patch_features, patch_features, src_mask)
         )
 
         # 3. Cross-attention: slide
-        x_slide = self.sublayers[2](
+        x_slide, slide_attn = self.sublayers[2](
             x,
-            lambda x: self.src_attns[1](x, slide_features, slide_features, src_mask)[0]
+            lambda x: self.src_attns[1](x, slide_features, slide_features, src_mask)
         )
 
         # 4. Cross-attention: concept
-        x_concept = self.sublayers[3](
+        x_concept, concept_attn = self.sublayers[3](
             x,
-            lambda x: self.src_attns[2](x, concept_features, concept_features, src_mask)[0]
+            lambda x: self.src_attns[2](x, concept_features, concept_features, src_mask)
         )
 
         # 5. Gated multimodal fusion (residual inside)
@@ -55,7 +55,12 @@ class DecoderLayer(nn.Module):
         # 6. Feed-forward
         x = self.sublayers[5](x, self.feed_forward)
 
-        return x, weights
+        return x, {
+            "patch": patch_attn,
+            "slide": slide_attn,
+            "concept": concept_attn,
+            "fusion": weights,
+        }
 
 class Decoder(nn.Module):
     def __init__(self, layer, N):
@@ -65,16 +70,15 @@ class Decoder(nn.Module):
 
     def forward(self, x, patch_features, slide_features, concept_features, src_mask, tgt_mask):
         attn_maps = []
-        # attn_img_all = []
-        # attn_con_all = []
         for layer in self.layers:
-            x, alpha = layer(x, patch_features, slide_features, concept_features, src_mask, tgt_mask)
-            attn_maps.append(alpha)
-            # attn_img_all.append(attn_img)
-            # attn_con_all.append(attn_con)
+            x, layer_attn = layer(x, patch_features, slide_features, concept_features, src_mask, tgt_mask)
+            attn_maps.append(layer_attn)
 
-
-        # attn_img_all = torch.stack(attn_img_all)  # (layers, batch, heads, seq_len, src_len)
-        # attn_con_all = torch.stack(attn_con_all)
-        attn_maps = torch.stack(attn_maps).mean(0)
-        return self.norm(x), attn_maps #(attn_maps, attn_img_all, attn_con_all)
+        stacked_attn_maps = {}
+        for key in attn_maps[0]:
+            values = [layer_attn[key] for layer_attn in attn_maps]
+            if values[0] is None:
+                stacked_attn_maps[key] = None
+            else:
+                stacked_attn_maps[key] = torch.stack(values)
+        return self.norm(x), stacked_attn_maps #(attn_maps, attn_img_all, attn_con_all)
