@@ -9,6 +9,8 @@ import torch
 import pytorch_lightning as pl
 from PIL import Image, ImageFilter
 from matplotlib import cm
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from torchmetrics.text.rouge import ROUGEScore
 from torchmetrics.text.bleu import BLEUScore
 import evaluate
@@ -50,7 +52,8 @@ class ReportModel(pl.LightningModule):
             report['id']: report['report'] for split in reports for report in reports[split]
         }
         # torch.cuda.set_device(self.trainer.local_rank)
-        self.__output_dir = args.output_dir
+        self.__output_dir = getattr(args, 'output_dir', None) or getattr(args, 'results_path', 'results')
+        self.__results_dir = getattr(args, 'results_path', self.__output_dir)
 
 
     def get_attn_regularization(self, weights, eps=1e-8):
@@ -214,9 +217,16 @@ class ReportModel(pl.LightningModule):
             }
 
     def __write_predictions(self):
-        if not os.path.exists(self.__output_dir):
-            os.makedirs(self.__output_dir, exist_ok=True)
-        write_json_file(self.predictions, f'{self.__output_dir}/predictions.json')
+        os.makedirs(self.__results_dir, exist_ok=True)
+        predictions = [
+            {
+                'id': slide_id,
+                'predicted': prediction['pred'],
+                'ground_trurth': prediction['target']
+            }
+            for slide_id, prediction in self.predictions.items()
+        ]
+        write_json_file(predictions, f'{self.__results_dir}/predictions.json')
 
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
@@ -296,7 +306,7 @@ class ReportModel(pl.LightningModule):
             target_text = self.tokenizer.batch_decode(report_ids[:, 1:].detach().cpu().numpy())[0]
             _, attn_maps = self.model(features, report_ids, mode='train')
 
-        save_root = Path(output_dir or self.__output_dir)
+        save_root = Path(output_dir or self.__results_dir)
         save_root.mkdir(parents=True, exist_ok=True)
         case_dir = save_root / str(slide_id)
         case_dir.mkdir(parents=True, exist_ok=True)
@@ -309,6 +319,12 @@ class ReportModel(pl.LightningModule):
             output_dir=case_dir,
             layer_idx=layer_idx,
         )
+        gate_chart_path = self._save_gate_contribution_chart(
+            slide_id=slide_id,
+            attn_maps=attn_maps,
+            output_dir=case_dir,
+            layer_idx=layer_idx,
+        )
 
         return {
             "slide_id": slide_id,
@@ -316,6 +332,7 @@ class ReportModel(pl.LightningModule):
             "target": target_text,
             "thumbnail_path": str(thumbnail_path) if thumbnail_path else None,
             "overlay_paths": {k: str(v) for k, v in overlay_paths.items()},
+            "gate_chart_path": str(gate_chart_path) if gate_chart_path else None,
             "attn_summary": self._summarize_attention_maps(attn_maps, layer_idx=layer_idx),
         }
 
@@ -343,10 +360,17 @@ class ReportModel(pl.LightningModule):
 
     def _save_attention_overlays(self, slide_id, thumbnail_path, attn_maps, output_dir, layer_idx=-1):
         overlays = {}
+        if not isinstance(attn_maps, dict):
+            return overlays
+
         for modality in ("patch", "slide", "concept"):
             if modality not in attn_maps or attn_maps[modality] is None:
                 continue
             attn = attn_maps[modality][layer_idx].detach().cpu()  # [B, H, T, S]
+            if attn.dim() != 4:
+                raise ValueError(
+                    f"Expected {modality} attention to have shape [B, H, T, S], got {tuple(attn.shape)}."
+                )
             attn = attn.mean(dim=1).mean(dim=1).squeeze(0)  # [S]
             overlay_path = output_dir / f"{slide_id}_{modality}_overlay.png"
             coords = self._load_coords_for_modality(slide_id, modality)
@@ -354,6 +378,46 @@ class ReportModel(pl.LightningModule):
             overlays[modality] = overlay_path
 
         return overlays
+
+    def _save_gate_contribution_chart(self, slide_id, attn_maps, output_dir, layer_idx=-1):
+        if not isinstance(attn_maps, dict) or attn_maps.get("fusion") is None:
+            return None
+
+        fusion = attn_maps["fusion"][layer_idx].detach().cpu().float()
+        if fusion.dim() != 5:
+            raise ValueError(
+                f"Expected fusion weights to have shape [B, T, H, 3, D_head], got {tuple(fusion.shape)}."
+            )
+
+        contributions = fusion.mean(dim=(0, 1, 2, 4)).numpy()
+        labels = ["Patch", "Slide", "Concept"]
+        colors = ["#d95f02", "#1b9e77", "#7570b3"]
+
+        fig = Figure(figsize=(5.0, 3.2), dpi=160)
+        FigureCanvas(fig)
+        ax = fig.add_subplot(111)
+        bars = ax.bar(labels, contributions, color=colors, width=0.6)
+        ax.set_ylim(0, 1)
+        ax.set_ylabel("Mean gate contribution")
+        ax.set_title(f"{slide_id} modality gates")
+        ax.grid(axis="y", linestyle="--", linewidth=0.6, alpha=0.35)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+        for bar, value in zip(bars, contributions):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                min(value + 0.025, 0.98),
+                f"{value:.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+            )
+
+        fig.tight_layout()
+        chart_path = output_dir / f"{slide_id}_gate_contributions.png"
+        fig.savefig(chart_path)
+        return chart_path
 
     def _render_attention_overlay(self, thumbnail_path, scores, output_path, coords=None):
         if thumbnail_path is None:
