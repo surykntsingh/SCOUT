@@ -1,7 +1,6 @@
 import json
 import gc
 import os
-import math
 from pathlib import Path
 
 import numpy as np
@@ -384,6 +383,7 @@ class ReportModel(pl.LightningModule):
         if not isinstance(attn_maps, dict):
             return overlays
 
+        coords = self._load_patch_coords(slide_id)
         for modality in ("patch", "slide", "concept"):
             if modality not in attn_maps or attn_maps[modality] is None:
                 continue
@@ -394,7 +394,6 @@ class ReportModel(pl.LightningModule):
                 )
             attn = attn.mean(dim=1).mean(dim=1).squeeze(0)  # [S]
             overlay_path = output_dir / f"{slide_id}_{modality}_overlay.png"
-            coords = self._load_coords_for_modality(slide_id, modality)
             attn, coords = self._align_attention_with_coords(attn, coords, modality)
             self._render_attention_overlay(thumbnail_path, attn, overlay_path, coords=coords, wsi_size=wsi_size)
             overlays[modality] = overlay_path
@@ -403,8 +402,7 @@ class ReportModel(pl.LightningModule):
 
     def _align_attention_with_coords(self, scores, coords, modality):
         if coords is None:
-            print(f"No coordinates found for {modality}; using grid heatmap fallback.")
-            return scores, coords
+            raise ValueError("Patch coordinates are required for attention heatmap overlays.")
 
         coords = np.asarray(coords)
         if len(coords) == scores.numel():
@@ -414,11 +412,11 @@ class ReportModel(pl.LightningModule):
             # Patch attention attends over [prompt, patch_1, ...]. Coordinates exist only for real patches.
             return scores[1:], coords
 
-        print(
-            f"Coordinate count mismatch for {modality}: attention={scores.numel()}, coords={len(coords)}; "
-            "using grid heatmap fallback."
+        raise ValueError(
+            f"Cannot overlay {modality} attention: attention token count {scores.numel()} does not match "
+            f"patch coordinate count {len(coords)}. This indicates the {modality} features are not aligned "
+            "with the patch embedding coordinates."
         )
-        return scores, None
 
     def _save_gate_contribution_chart(self, slide_id, attn_maps, output_dir, layer_idx=-1):
         if not isinstance(attn_maps, dict) or attn_maps.get("fusion") is None:
@@ -476,44 +474,38 @@ class ReportModel(pl.LightningModule):
         if scores.size == 0:
             return Image.new("RGB", size, color=(0, 0, 0))
 
-        if coords is not None and len(coords) == scores.size:
-            coords = np.asarray(coords)
-            if coords.ndim >= 2 and coords.shape[1] >= 2:
-                canvas = np.zeros((size[1], size[0]), dtype=np.float32)
-                x = coords[:, 0].astype(np.float32)
-                y = coords[:, 1].astype(np.float32)
-                if wsi_size:
-                    xi = np.clip((x / max(wsi_size[0], 1) * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
-                    yi = np.clip((y / max(wsi_size[1], 1) * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
-                else:
-                    x = (x - x.min()) / (x.max() - x.min() + 1e-8)
-                    y = (y - y.min()) / (y.max() - y.min() + 1e-8)
-                    xi = np.clip((x * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
-                    yi = np.clip((y * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
-                radius = self._infer_heatmap_radius(xi, yi, size)
-                self._splat_scores(canvas, xi, yi, scores, radius)
-                canvas = canvas - canvas.min()
-                denom = canvas.max()
-                if denom > 0:
-                    canvas = canvas / denom
-                colored = self._apply_colormap(canvas)[..., :3]
-                colored = (colored * 255).astype(np.uint8)
-                heatmap = Image.fromarray(colored)
-                return heatmap.filter(ImageFilter.GaussianBlur(radius=6))
+        if coords is None or len(coords) != scores.size:
+            raise ValueError(
+                f"Cannot render heatmap: score count {scores.size} does not match coordinate count "
+                f"{0 if coords is None else len(coords)}."
+            )
 
-        grid = int(math.ceil(math.sqrt(scores.size)))
-        padded = np.zeros(grid * grid, dtype=np.float32)
-        padded[:scores.size] = scores
-        padded = padded.reshape(grid, grid)
-        padded = padded - padded.min()
-        denom = padded.max()
+        coords = np.asarray(coords)
+        if coords.ndim < 2 or coords.shape[1] < 2:
+            raise ValueError(f"Expected coordinates with shape [N, 2+], got {coords.shape}.")
+
+        canvas = np.zeros((size[1], size[0]), dtype=np.float32)
+        x = coords[:, 0].astype(np.float32)
+        y = coords[:, 1].astype(np.float32)
+        if wsi_size:
+            xi = np.clip((x / max(wsi_size[0], 1) * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
+            yi = np.clip((y / max(wsi_size[1], 1) * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
+        else:
+            x = (x - x.min()) / (x.max() - x.min() + 1e-8)
+            y = (y - y.min()) / (y.max() - y.min() + 1e-8)
+            xi = np.clip((x * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
+            yi = np.clip((y * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
+        radius = self._infer_heatmap_radius(xi, yi, size)
+        self._splat_scores(canvas, xi, yi, scores, radius)
+        canvas = canvas - canvas.min()
+        denom = canvas.max()
         if denom > 0:
-            padded = padded / denom
+            canvas = canvas / denom
 
-        colored = self._apply_colormap(padded)[..., :3]
+        colored = self._apply_colormap(canvas)[..., :3]
         colored = (colored * 255).astype(np.uint8)
-        heatmap = Image.fromarray(colored).resize(size, resample=Image.BILINEAR)
-        return heatmap
+        heatmap = Image.fromarray(colored)
+        return heatmap.filter(ImageFilter.GaussianBlur(radius=6))
 
     def _apply_colormap(self, values, name="jet"):
         if hasattr(matplotlib, "colormaps"):
@@ -545,25 +537,20 @@ class ReportModel(pl.LightningModule):
             y1 = min(height, y + radius + 1)
             canvas[y0:y1, x0:x1] = np.maximum(canvas[y0:y1, x0:x1], score)
 
-    def _load_coords_for_modality(self, slide_id, modality):
+    def _load_patch_coords(self, slide_id):
         args = self.model.encoder_decoder.args
-        path_map = {
-            "patch": getattr(args, "embeddings_path_2", None),
-            "slide": getattr(args, "embeddings_path", None),
-            "concept": getattr(args, "gecko_emb_path", None),
-        }
-        data_dir = path_map.get(modality)
+        data_dir = getattr(args, "embeddings_path_2", None)
         if not data_dir:
-            return None
+            raise ValueError("args.embeddings_path_2 is required to load patch coordinates.")
 
         h5_path = Path(data_dir) / f"{slide_id}.h5"
         if not h5_path.exists():
-            return None
+            raise FileNotFoundError(f"Could not find patch embedding H5 for {slide_id}: {h5_path}")
 
         try:
             import h5py
-        except Exception:
-            return None
+        except Exception as exc:
+            raise ImportError("h5py is required to load patch coordinates.") from exc
 
         coord_keys = ("coords", "patch_coords", "bag_coords")
         with h5py.File(h5_path, "r") as h5_file:
@@ -571,7 +558,7 @@ class ReportModel(pl.LightningModule):
                 if key in h5_file:
                     coords = h5_file[key][:]
                     return coords
-        return None
+        raise KeyError(f"No coordinate dataset found in {h5_path}. Tried keys: {coord_keys}")
 
     def _find_thumbnail_path(self, slide_id):
         base_id = str(slide_id)
