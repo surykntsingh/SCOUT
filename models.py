@@ -408,14 +408,16 @@ class ReportModel(pl.LightningModule):
         if len(coords) == scores.numel():
             return scores, coords
 
-        if modality == "patch" and len(coords) == scores.numel() - 1:
-            # Patch attention attends over [prompt, patch_1, ...]. Coordinates exist only for real patches.
-            return scores[1:], coords
+        original_token_count = len(coords) + 1  # learned prompt + original patch tokens
+        padded_token_count = int(np.ceil(np.sqrt(original_token_count)) ** 2)
+        if scores.numel() == padded_token_count:
+            # Encoder padding duplicates tokens after [prompt, patch_1, ...].
+            # Keep only attention over original patch tokens and drop prompt/padding.
+            return scores[1:original_token_count], coords
 
         raise ValueError(
             f"Cannot overlay {modality} attention: attention token count {scores.numel()} does not match "
-            f"patch coordinate count {len(coords)}. This indicates the {modality} features are not aligned "
-            "with the patch embedding coordinates."
+            f"patch coordinate count {len(coords)} or expected padded count {padded_token_count}."
         )
 
     def _save_gate_contribution_chart(self, slide_id, attn_maps, output_dir, layer_idx=-1):
