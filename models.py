@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 from PIL import Image, ImageFilter
-from matplotlib import cm
+import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from torchmetrics.text.rouge import ROUGEScore
@@ -470,7 +470,7 @@ class ReportModel(pl.LightningModule):
                 denom = canvas.max()
                 if denom > 0:
                     canvas = canvas / denom
-                colored = cm.get_cmap("jet")(canvas)[..., :3]
+                colored = self._apply_colormap(canvas)[..., :3]
                 colored = (colored * 255).astype(np.uint8)
                 heatmap = Image.fromarray(colored)
                 return heatmap.filter(ImageFilter.GaussianBlur(radius=6))
@@ -484,10 +484,17 @@ class ReportModel(pl.LightningModule):
         if denom > 0:
             padded = padded / denom
 
-        colored = cm.get_cmap("jet")(padded)[..., :3]
+        colored = self._apply_colormap(padded)[..., :3]
         colored = (colored * 255).astype(np.uint8)
         heatmap = Image.fromarray(colored).resize(size, resample=Image.BILINEAR)
         return heatmap
+
+    def _apply_colormap(self, values, name="jet"):
+        if hasattr(matplotlib, "colormaps"):
+            return matplotlib.colormaps[name](values)
+
+        from matplotlib import pyplot as plt
+        return plt.get_cmap(name)(values)
 
     def _load_coords_for_modality(self, slide_id, modality):
         args = self.model.encoder_decoder.args
