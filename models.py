@@ -165,15 +165,18 @@ class ReportModel(pl.LightningModule):
 
     def on_validation_epoch_end(self):
         torch.cuda.empty_cache()
-        self.__log_reg_metrics('val', 'reg', self.reg_evaluator.get_metrics, False)
-        self.__log_reg_metrics('val', 'coco', compute_coco_scores, True)
+        predictions = self.__collect_predictions()
+        self.__log_reg_metrics('val', 'reg', self.reg_evaluator.get_metrics, False, predictions)
+        self.__log_reg_metrics('val', 'coco', compute_coco_scores, True, predictions)
         self.predictions.clear()
 
     def on_test_epoch_end(self):
         torch.cuda.empty_cache()
-        self.__log_reg_metrics('test', 'reg', self.reg_evaluator.get_metrics, False)
-        self.__log_reg_metrics('test', 'coco', compute_coco_scores, True)
-        self.__write_predictions()
+        predictions = self.__collect_predictions()
+        self.__log_reg_metrics('test', 'reg', self.reg_evaluator.get_metrics, False, predictions)
+        self.__log_reg_metrics('test', 'coco', compute_coco_scores, True, predictions)
+        if self.__is_global_zero():
+            self.__write_predictions(predictions)
         self.predictions.clear()
 
     def configure_optimizers(self):
@@ -216,25 +219,42 @@ class ReportModel(pl.LightningModule):
                 'target': ground_truths[i]
             }
 
-    def __write_predictions(self):
+    def __collect_predictions(self):
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            return dict(self.predictions)
+
+        gathered_predictions = [None for _ in range(torch.distributed.get_world_size())]
+        torch.distributed.all_gather_object(gathered_predictions, dict(self.predictions))
+
+        predictions = {}
+        for rank_predictions in gathered_predictions:
+            if rank_predictions:
+                predictions.update(rank_predictions)
+        return predictions
+
+    def __is_global_zero(self):
+        trainer = getattr(self, "trainer", None)
+        return trainer is None or trainer.is_global_zero
+
+    def __write_predictions(self, predictions):
         os.makedirs(self.__results_dir, exist_ok=True)
-        predictions = [
+        prediction_records = [
             {
                 'id': slide_id,
                 'predicted': prediction['pred'],
                 'ground_trurth': prediction['target']
             }
-            for slide_id, prediction in self.predictions.items()
+            for slide_id, prediction in predictions.items()
         ]
-        write_json_file(predictions, f'{self.__results_dir}/predictions.json')
+        write_json_file(prediction_records, f'{self.__results_dir}/predictions.json')
 
 
-    def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar):
+    def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar, predictions):
         pred_texts = []
         target_texts = []
-        for slide_id in self.predictions:
-            pred_texts.append(self.predictions[slide_id]['pred'])
-            target_texts.append(self.predictions[slide_id]['target'])
+        for slide_id in predictions:
+            pred_texts.append(predictions[slide_id]['pred'])
+            target_texts.append(predictions[slide_id]['target'])
 
         metrics = evaluate_fn(list(zip(pred_texts, target_texts)))
 
