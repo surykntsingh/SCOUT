@@ -148,7 +148,8 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     save_results(results, results_dir)
 
 @app.command()
-def predict_case(config_file_path='histai_config.yaml', case_index: int = 0, output_dir: str = '', layer_idx: int = -1):
+def predict_case(config_file_path='histai_config.yaml', case_index: int = 0, output_dir: str = '',
+                 layer_idx: int = -1, wsi_dir: str = '', thumbnail_max_size: int = 1024):
     args = get_params_for_key(config_file_path, "train")
     split_frac = [0.80, 0.1, 0.1]
     tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
@@ -160,6 +161,8 @@ def predict_case(config_file_path='histai_config.yaml', case_index: int = 0, out
         case_index=case_index,
         output_dir=output_dir or None,
         layer_idx=layer_idx,
+        wsi_dir=wsi_dir or None,
+        thumbnail_max_size=thumbnail_max_size,
     )
     print(result)
 
