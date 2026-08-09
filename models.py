@@ -294,7 +294,7 @@ class ReportModel(pl.LightningModule):
         print(f'w_patch: {w_patch}, w_slide: {w_slide}, w_concept: {w_concept}')
 
     def predict_single_case_with_heatmaps(self, slide_id, features, report_ids=None, report_masks=None,
-                                          output_dir=None, layer_idx=-1, thumbnail_path=None):
+                                          output_dir=None, layer_idx=-1, thumbnail_path=None, wsi_size=None):
         """
         Run one case through the model, return the sampled prediction, and save
         modality overlays for the chosen decoder layer.
@@ -338,6 +338,7 @@ class ReportModel(pl.LightningModule):
             attn_maps=attn_maps,
             output_dir=case_dir,
             layer_idx=layer_idx,
+            wsi_size=wsi_size,
         )
         gate_chart_path = self._save_gate_contribution_chart(
             slide_id=slide_id,
@@ -378,7 +379,7 @@ class ReportModel(pl.LightningModule):
 
         return summary
 
-    def _save_attention_overlays(self, slide_id, thumbnail_path, attn_maps, output_dir, layer_idx=-1):
+    def _save_attention_overlays(self, slide_id, thumbnail_path, attn_maps, output_dir, layer_idx=-1, wsi_size=None):
         overlays = {}
         if not isinstance(attn_maps, dict):
             return overlays
@@ -394,10 +395,30 @@ class ReportModel(pl.LightningModule):
             attn = attn.mean(dim=1).mean(dim=1).squeeze(0)  # [S]
             overlay_path = output_dir / f"{slide_id}_{modality}_overlay.png"
             coords = self._load_coords_for_modality(slide_id, modality)
-            self._render_attention_overlay(thumbnail_path, attn, overlay_path, coords=coords)
+            attn, coords = self._align_attention_with_coords(attn, coords, modality)
+            self._render_attention_overlay(thumbnail_path, attn, overlay_path, coords=coords, wsi_size=wsi_size)
             overlays[modality] = overlay_path
 
         return overlays
+
+    def _align_attention_with_coords(self, scores, coords, modality):
+        if coords is None:
+            print(f"No coordinates found for {modality}; using grid heatmap fallback.")
+            return scores, coords
+
+        coords = np.asarray(coords)
+        if len(coords) == scores.numel():
+            return scores, coords
+
+        if modality == "patch" and len(coords) == scores.numel() - 1:
+            # Patch attention attends over [prompt, patch_1, ...]. Coordinates exist only for real patches.
+            return scores[1:], coords
+
+        print(
+            f"Coordinate count mismatch for {modality}: attention={scores.numel()}, coords={len(coords)}; "
+            "using grid heatmap fallback."
+        )
+        return scores, None
 
     def _save_gate_contribution_chart(self, slide_id, attn_maps, output_dir, layer_idx=-1):
         if not isinstance(attn_maps, dict) or attn_maps.get("fusion") is None:
@@ -439,18 +460,18 @@ class ReportModel(pl.LightningModule):
         fig.savefig(chart_path)
         return chart_path
 
-    def _render_attention_overlay(self, thumbnail_path, scores, output_path, coords=None):
+    def _render_attention_overlay(self, thumbnail_path, scores, output_path, coords=None, wsi_size=None):
         if thumbnail_path is None:
             raise FileNotFoundError(
                 "Could not locate a thumbnail for overlay rendering."
             )
 
         base_image = Image.open(thumbnail_path).convert("RGB")
-        heatmap = self._attention_to_heatmap(scores, base_image.size, coords=coords)
+        heatmap = self._attention_to_heatmap(scores, base_image.size, coords=coords, wsi_size=wsi_size)
         blended = Image.blend(base_image, heatmap, alpha=0.45)
         blended.save(output_path)
 
-    def _attention_to_heatmap(self, scores, size, coords=None):
+    def _attention_to_heatmap(self, scores, size, coords=None, wsi_size=None):
         scores = scores.detach().cpu().float().numpy().reshape(-1)
         if scores.size == 0:
             return Image.new("RGB", size, color=(0, 0, 0))
@@ -461,11 +482,16 @@ class ReportModel(pl.LightningModule):
                 canvas = np.zeros((size[1], size[0]), dtype=np.float32)
                 x = coords[:, 0].astype(np.float32)
                 y = coords[:, 1].astype(np.float32)
-                x = (x - x.min()) / (x.max() - x.min() + 1e-8)
-                y = (y - y.min()) / (y.max() - y.min() + 1e-8)
-                xi = np.clip((x * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
-                yi = np.clip((y * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
-                np.maximum.at(canvas, (yi, xi), scores)
+                if wsi_size:
+                    xi = np.clip((x / max(wsi_size[0], 1) * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
+                    yi = np.clip((y / max(wsi_size[1], 1) * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
+                else:
+                    x = (x - x.min()) / (x.max() - x.min() + 1e-8)
+                    y = (y - y.min()) / (y.max() - y.min() + 1e-8)
+                    xi = np.clip((x * (size[0] - 1)).round().astype(np.int32), 0, size[0] - 1)
+                    yi = np.clip((y * (size[1] - 1)).round().astype(np.int32), 0, size[1] - 1)
+                radius = self._infer_heatmap_radius(xi, yi, size)
+                self._splat_scores(canvas, xi, yi, scores, radius)
                 canvas = canvas - canvas.min()
                 denom = canvas.max()
                 if denom > 0:
@@ -495,6 +521,29 @@ class ReportModel(pl.LightningModule):
 
         from matplotlib import pyplot as plt
         return plt.get_cmap(name)(values)
+
+    def _infer_heatmap_radius(self, xi, yi, size):
+        if xi.size < 2:
+            return max(2, min(size) // 200)
+
+        unique_x = np.unique(xi)
+        unique_y = np.unique(yi)
+        dx = np.diff(np.sort(unique_x))
+        dy = np.diff(np.sort(unique_y))
+        spacing = np.concatenate([dx[dx > 0], dy[dy > 0]])
+        if spacing.size == 0:
+            return max(2, min(size) // 200)
+
+        return max(2, int(round(np.median(spacing) / 2)))
+
+    def _splat_scores(self, canvas, xi, yi, scores, radius):
+        height, width = canvas.shape
+        for x, y, score in zip(xi, yi, scores):
+            x0 = max(0, x - radius)
+            x1 = min(width, x + radius + 1)
+            y0 = max(0, y - radius)
+            y1 = min(height, y + radius + 1)
+            canvas[y0:y1, x0:x1] = np.maximum(canvas[y0:y1, x0:x1], score)
 
     def _load_coords_for_modality(self, slide_id, modality):
         args = self.model.encoder_decoder.args

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
+from PIL import Image
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateFinder
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
@@ -176,10 +177,12 @@ class Trainer:
         )
         slide_id = slide_ids[0]
         thumbnail_path = None
+        wsi_size = None
         if wsi_dir:
             case_dir = Path(output_dir or self.args.results_path) / str(slide_id)
             case_dir.mkdir(parents=True, exist_ok=True)
             wsi_path = self._find_wsi_path(wsi_dir, slide_id)
+            wsi_size = self._get_wsi_size(wsi_path)
             thumbnail_path = generate_thumbnail(
                 wsi_path,
                 output_path=case_dir / f"{slide_id}_thumbnail.jpg",
@@ -194,7 +197,21 @@ class Trainer:
             output_dir=output_dir,
             layer_idx=layer_idx,
             thumbnail_path=thumbnail_path,
+            wsi_size=wsi_size,
         )
+
+    def _get_wsi_size(self, wsi_path):
+        try:
+            import openslide
+
+            slide = openslide.OpenSlide(str(wsi_path))
+            try:
+                return slide.dimensions
+            finally:
+                slide.close()
+        except Exception:
+            with Image.open(wsi_path) as image:
+                return image.size
 
     def _find_wsi_path(self, wsi_dir, slide_id):
         wsi_root = Path(wsi_dir)
@@ -331,6 +348,5 @@ class KFoldTrainer(Trainer):
 
             print(f'Finished!')
             print("*"*100)
-
 
 
