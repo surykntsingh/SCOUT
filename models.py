@@ -294,7 +294,7 @@ class ReportModel(pl.LightningModule):
         print(f'w_patch: {w_patch}, w_slide: {w_slide}, w_concept: {w_concept}')
 
     def predict_single_case_with_heatmaps(self, slide_id, features, report_ids=None, report_masks=None,
-                                          output_dir=None, layer_idx=-1):
+                                          output_dir=None, layer_idx=-1, thumbnail_path=None):
         """
         Run one case through the model, return the sampled prediction, and save
         modality overlays for the chosen decoder layer.
@@ -331,7 +331,7 @@ class ReportModel(pl.LightningModule):
         case_dir = save_root / str(slide_id)
         case_dir.mkdir(parents=True, exist_ok=True)
 
-        thumbnail_path = self._find_thumbnail_path(slide_id)
+        thumbnail_path = Path(thumbnail_path) if thumbnail_path else self._find_thumbnail_path(slide_id)
         overlay_paths = self._save_attention_overlays(
             slide_id=slide_id,
             thumbnail_path=thumbnail_path,

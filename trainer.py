@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
@@ -13,6 +14,7 @@ from pytorch_lightning.tuner.tuning import Tuner
 from sklearn.model_selection import KFold
 
 from models import ReportModel
+from generate_thumbnail import generate_thumbnail
 import torch
 
 class Trainer:
@@ -160,7 +162,8 @@ class Trainer:
         )
         return preds
 
-    def predict_single_case(self, model, case_index=0, output_dir=None, layer_idx=-1):
+    def predict_single_case(self, model, case_index=0, output_dir=None, layer_idx=-1, wsi_dir=None,
+                            thumbnail_max_size=1024):
         """
         Run one test example through the model and render modality overlays.
         """
@@ -172,6 +175,17 @@ class Trainer:
             [sample], device=device
         )
         slide_id = slide_ids[0]
+        thumbnail_path = None
+        if wsi_dir:
+            case_dir = Path(output_dir or self.args.results_path) / str(slide_id)
+            case_dir.mkdir(parents=True, exist_ok=True)
+            wsi_path = self._find_wsi_path(wsi_dir, slide_id)
+            thumbnail_path = generate_thumbnail(
+                wsi_path,
+                output_path=case_dir / f"{slide_id}_thumbnail.jpg",
+                max_size=thumbnail_max_size,
+            )
+
         return model.predict_single_case_with_heatmaps(
             slide_id=slide_id,
             features=features,
@@ -179,7 +193,35 @@ class Trainer:
             report_masks=report_masks,
             output_dir=output_dir,
             layer_idx=layer_idx,
+            thumbnail_path=thumbnail_path,
         )
+
+    def _find_wsi_path(self, wsi_dir, slide_id):
+        wsi_root = Path(wsi_dir)
+        if not wsi_root.exists():
+            raise FileNotFoundError(f"WSI directory does not exist: {wsi_root}")
+
+        base_id = str(slide_id)
+        id_variants = {
+            base_id,
+            base_id.split(".")[0],
+            base_id[:12] if len(base_id) > 12 else base_id,
+        }
+        extensions = (".svs", ".tif", ".tiff", ".ndpi", ".mrxs", ".png", ".jpg", ".jpeg")
+
+        for variant in id_variants:
+            for extension in extensions:
+                candidate = wsi_root / f"{variant}{extension}"
+                if candidate.exists():
+                    return candidate
+
+        for variant in id_variants:
+            for extension in extensions:
+                matches = list(wsi_root.rglob(f"{variant}{extension}"))
+                if matches:
+                    return matches[0]
+
+        raise FileNotFoundError(f"Could not find a WSI for slide id {slide_id} under {wsi_root}")
 
     @rank_zero_only
     def save_model(self,trainer, model_path):
@@ -289,7 +331,6 @@ class KFoldTrainer(Trainer):
 
             print(f'Finished!')
             print("*"*100)
-
 
 
 
