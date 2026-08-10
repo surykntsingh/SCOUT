@@ -42,6 +42,9 @@ class ReportModel(pl.LightningModule):
         self.reg_evaluator = REG_Evaluator()
 
         self.predictions = {}
+        self.gate_contributions = {}
+        self.__save_cohort_gate_plots = False
+        self.__cohort_gate_layer_idx = -1
 
         reports = read_json_file(args.reports_json_path)
         # self.reports = {
@@ -142,6 +145,7 @@ class ReportModel(pl.LightningModule):
             target_texts = [self.reports[slide_id] for slide_id in slide_ids]
             ground_truths = self.tokenizer.batch_decode(report_ids[:, 1:].cpu().numpy())
             self.__save_predictions(slide_ids, pred_texts, ground_truths)
+            self.__save_gate_contributions(slide_ids, attn)
             if batch_idx % 10 == 0:
                 self.__print_results(slide_ids, pred_texts, ground_truths)
 
@@ -174,9 +178,17 @@ class ReportModel(pl.LightningModule):
         predictions = self.__collect_predictions()
         self.__log_reg_metrics('test', 'reg', self.reg_evaluator.get_metrics, False, predictions)
         self.__log_reg_metrics('test', 'coco', compute_coco_scores, True, predictions)
+        gate_contributions = self.__collect_gate_contributions() if self.__save_cohort_gate_plots else {}
         if self.__is_global_zero():
             self.__write_predictions(predictions)
+            if self.__save_cohort_gate_plots:
+                self.__write_cohort_gate_contribution_plots(gate_contributions)
         self.predictions.clear()
+        self.gate_contributions.clear()
+
+    def enable_cohort_gate_plots(self, layer_idx=-1):
+        self.__save_cohort_gate_plots = True
+        self.__cohort_gate_layer_idx = layer_idx
 
     def configure_optimizers(self):
         d_params = filter(lambda p: p.requires_grad, self.parameters())
@@ -218,6 +230,26 @@ class ReportModel(pl.LightningModule):
                 'target': ground_truths[i]
             }
 
+    def __save_gate_contributions(self, slide_ids, attn_maps):
+        if not self.__save_cohort_gate_plots:
+            return
+        if not isinstance(attn_maps, dict) or attn_maps.get("fusion") is None:
+            return
+
+        fusion = attn_maps["fusion"][self.__cohort_gate_layer_idx].detach().cpu().float()
+        if fusion.dim() != 5:
+            raise ValueError(
+                f"Expected fusion weights to have shape [B, T, H, 3, D_head], got {tuple(fusion.shape)}."
+            )
+
+        contributions = fusion.mean(dim=(1, 2, 4)).numpy()  # [B, 3]
+        for i, slide_id in enumerate(slide_ids):
+            self.gate_contributions[slide_id] = {
+                "patch": float(contributions[i, 0]),
+                "slide": float(contributions[i, 1]),
+                "concept": float(contributions[i, 2]),
+            }
+
     def __collect_predictions(self):
         if not torch.distributed.is_available() or not torch.distributed.is_initialized():
             return dict(self.predictions)
@@ -230,6 +262,19 @@ class ReportModel(pl.LightningModule):
             if rank_predictions:
                 predictions.update(rank_predictions)
         return predictions
+
+    def __collect_gate_contributions(self):
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            return dict(self.gate_contributions)
+
+        gathered_contributions = [None for _ in range(torch.distributed.get_world_size())]
+        torch.distributed.all_gather_object(gathered_contributions, dict(self.gate_contributions))
+
+        gate_contributions = {}
+        for rank_contributions in gathered_contributions:
+            if rank_contributions:
+                gate_contributions.update(rank_contributions)
+        return gate_contributions
 
     def __is_global_zero(self):
         trainer = getattr(self, "trainer", None)
@@ -246,6 +291,60 @@ class ReportModel(pl.LightningModule):
             for slide_id, prediction in predictions.items()
         ]
         write_json_file(prediction_records, f'{self.__results_dir}/predictions.json')
+
+    def __write_cohort_gate_contribution_plots(self, gate_contributions):
+        os.makedirs(self.__results_dir, exist_ok=True)
+        records = [
+            {"id": slide_id, **contributions}
+            for slide_id, contributions in gate_contributions.items()
+        ]
+        write_json_file(records, f'{self.__results_dir}/gate_contributions.json')
+
+        if not records:
+            return
+
+        modalities = ["patch", "slide", "concept"]
+        data = [[record[modality] for record in records] for modality in modalities]
+        self.__save_gate_distribution_plot(
+            data,
+            modalities,
+            f'{self.__results_dir}/gate_contribution_boxplot.png',
+            plot_type="box",
+        )
+        self.__save_gate_distribution_plot(
+            data,
+            modalities,
+            f'{self.__results_dir}/gate_contribution_violinplot.png',
+            plot_type="violin",
+        )
+
+    def __save_gate_distribution_plot(self, data, labels, output_path, plot_type):
+        fig = Figure(figsize=(6.0, 4.0), dpi=160)
+        FigureCanvas(fig)
+        ax = fig.add_subplot(111)
+
+        if plot_type == "box":
+            ax.boxplot(data, labels=[label.title() for label in labels], patch_artist=True)
+            ax.set_title("Gate contribution distribution")
+        elif plot_type == "violin":
+            parts = ax.violinplot(data, showmeans=True, showmedians=True)
+            for body in parts["bodies"]:
+                body.set_facecolor("#4c78a8")
+                body.set_edgecolor("#1f2933")
+                body.set_alpha(0.55)
+            ax.set_xticks(np.arange(1, len(labels) + 1))
+            ax.set_xticklabels([label.title() for label in labels])
+            ax.set_title("Gate contribution density")
+        else:
+            raise ValueError(f"Unknown gate distribution plot type: {plot_type}")
+
+        ax.set_ylabel("Mean gate contribution")
+        ax.set_ylim(0, 1)
+        ax.grid(axis="y", linestyle="--", linewidth=0.6, alpha=0.35)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        fig.tight_layout()
+        fig.savefig(output_path)
 
 
     def __log_reg_metrics(self, stage, metric_type, evaluate_fn, prog_bar, predictions):

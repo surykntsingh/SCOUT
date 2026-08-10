@@ -148,6 +148,21 @@ def predict(config_file_path='histai_config.yaml', pt=False):
     save_results(results, results_dir)
 
 @app.command()
+def predict_test_cohort(config_file_path: str='histai_config.yaml', layer_idx: int = -1):
+    args = get_params_for_key(config_file_path, "train")
+    split_frac = [0.80, 0.1, 0.1]
+    tokenizer = Tokenizer(args.reports_json_path, args.dataset_type)
+    datamodule = PatchEmbeddingDataModule(args, tokenizer, split_frac)
+    trainer = Trainer(args, tokenizer, split_frac)
+
+    print(f'loading best model from {args.model_load_path}')
+    model = ReportModel.load_from_checkpoint(args.model_load_path, args=args, tokenizer=tokenizer)
+    model.enable_cohort_gate_plots(layer_idx=layer_idx)
+    test_metrics, _ = trainer.test(model, datamodule, fast_dev_run=args.fast_dev_run)
+    print(f'test_metrics: {test_metrics}')
+    print(f'predictions and gate contribution plots saved at {args.results_path}')
+
+@app.command()
 def predict_case(config_file_path='histai_config.yaml', case_index: int = 0, output_dir: str = '',
                  layer_idx: int = -1, wsi_dir: str = '', thumbnail_max_size: int = 1024):
     args = get_params_for_key(config_file_path, "train")
