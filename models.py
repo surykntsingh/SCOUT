@@ -324,7 +324,13 @@ class ReportModel(pl.LightningModule):
         ax = fig.add_subplot(111)
 
         if plot_type == "box":
-            ax.boxplot(data, labels=[label.title() for label in labels], patch_artist=True)
+            display_labels = [label.title() for label in labels]
+            try:
+                ax.boxplot(data, tick_labels=display_labels, patch_artist=True)
+            except TypeError:
+                ax.boxplot(data, patch_artist=True)
+                ax.set_xticks(np.arange(1, len(display_labels) + 1))
+                ax.set_xticklabels(display_labels)
             ax.set_title("Gate contribution distribution")
         elif plot_type == "violin":
             parts = ax.violinplot(data, showmeans=True, showmedians=True)
