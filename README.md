@@ -170,7 +170,6 @@ train:
   lr: 0.00007
   weight_decay: 0.001
   lr_patience: 5
-  concept_lambda: 0.0
 
   bos_idx: 0
   eos_idx: 0
@@ -254,18 +253,6 @@ python main.py predict-case \
 
 The command generates the report and modality/gate visualizations for one test item. If `wsi_dir` is supplied, SCOUT locates a matching WSI and creates a thumbnail for spatial overlays.
 
-## Training objective and evaluation
-
-The optimization objective combines token-level language-model loss with attention-entropy regularization:
-
-```text
-total loss = caption loss + concept_lambda × attention entropy
-```
-
-The manuscript reports BLEU-1 through BLEU-4, METEOR, and ROUGE-L on all datasets. REG-2025 is additionally evaluated using CRQS from PathReportEval, which combines Clinical Fact Coverage, Key Information Recall, Hallucination Rate, and Clinical Discordance Score. Higher CRQS indicates closer agreement with clinically relevant reference-report content.
-
-The repository's vendored COCO evaluator also exposes CIDEr, and `modules/metrics.py` contains an older REG composite evaluator. These are implementation utilities and should not be confused with the manuscript's CRQS evaluation protocol.
-
 ## Outputs
 
 A training run creates a timestamped directory below `ckpt_path` containing:
@@ -287,4 +274,5 @@ An experiment row is also appended to `<results_path>/experiments/results.csv`. 
 
 ## Acknowledgements
 
-The implementation uses PyTorch Lightning and adapted COCO caption-evaluation components under `modules/pycocoevalcap`, with the original license files preserved. The experimental environment also depends on [TRIDENT](https://github.com/mahmoodlab/TRIDENT) for pathology tooling.
+The implementation uses PyTorch Lightning and adapted COCO caption-evaluation components under `modules/pycocoevalcap`, with the original license files preserved.
+This project builds on  [CONCH](https://github.com/mahmoodlab/CONCH), [TITAN](https://github.com/mahmoodlab/TITAN), [TRIDENT](https://github.com/mahmoodlab/TRIDENT), [GECKO](https://github.com/bmi-imaginelab/GECKO) and [Wsi-Caption](https://github.com/cpystan/Wsi-Caption). We thank the authors for their contribution.
