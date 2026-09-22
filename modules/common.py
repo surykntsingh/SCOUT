@@ -21,9 +21,23 @@ class LayerNorm(nn.Module):
 
 class SublayerConnection(nn.Module):
     def __init__(self, d_model, dropout):
-        super(SublayerConnection, self).__init__()
+        super().__init__()
         self.norm = LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        return x + self.dropout(sublayer(self.norm(x)))
+        y = sublayer(self.norm(x))
+        if type(y)==tuple:
+            return x + self.dropout(y[0]), y[1]
+        else:
+            return x + self.dropout(y)
+
+class ConceptSublayer(nn.Module):
+    def __init__(self, d_model, concept_fusion):
+        super().__init__()
+        self.norm = nn.LayerNorm(d_model)
+        self.fusion = concept_fusion   # expects fused output, same shape as x
+
+    def forward(self, x, concepts):
+        x_infused, _, _ = self.fusion(self.norm(x), concepts)
+        return x + x_infused

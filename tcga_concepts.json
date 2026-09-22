@@ -1,0 +1,316 @@
+{
+  "skcm": [
+    {"concept": "Melanocytic nests", "description": "Aggregates of melanocytes in the epidermis or dermis forming nest-like clusters."},
+    {"concept": "Atypical melanocytes", "description": "Melanocytes with enlarged, irregular, hyperchromatic nuclei suggestive of malignancy."},
+    {"concept": "Pagetoid spread", "description": "Upward single-cell or small-cluster migration of melanocytes into the epidermis."},
+    {"concept": "Epidermal ulceration", "description": "Loss of epidermal surface over tumor often accompanied by fibrin and inflammation."},
+    {"concept": "Melanin pigment", "description": "Brown-black intracytoplasmic pigment within tumor cells or macrophages."},
+    {"concept": "Tumor-infiltrating lymphocytes", "description": "Lymphocytes within or adjacent to tumor indicating host immune response."},
+    {"concept": "Mitotic figures", "description": "Mitotic activity within tumor cells reflecting proliferative rate."},
+    {"concept": "Necrosis", "description": "Coagulative or geographic areas of cell death within the tumor."},
+    {"concept": "Desmoplastic stroma", "description": "Dense fibrous stromal response often surrounding invasive melanoma cells."},
+    {"concept": "Regression", "description": "Fibrosis, melanophages, and vascular proliferation indicating prior tumor loss."}
+  ],
+  "ov": [
+    {"concept": "Papillary structures", "description": "Finger-like fibrovascular cores lined by tumor epithelium (common in serous tumors)."},
+    {"concept": "Psammoma bodies", "description": "Concentric laminated calcified structures often seen in papillary serous tumors."},
+    {"concept": "Solid and glandular areas", "description": "Non-uniform architecture with both solid tumor sheets and gland-forming areas."},
+    {"concept": "High nuclear atypia", "description": "Marked nuclear enlargement and irregularity indicating high-grade tumor cells."},
+    {"concept": "Mitotic activity", "description": "Presence and frequency of mitoses as a marker of proliferation."},
+    {"concept": "Necrosis", "description": "Focal or extensive tumor cell death often seen in high-grade ovarian carcinomas."},
+    {"concept": "Fibroblastic stroma", "description": "Reactive fibroblastic tissue within or surrounding tumor nodules."},
+    {"concept": "Lymphocytic infiltrate", "description": "Immune cell clusters within tumor stroma or at tumor–stromal interface."},
+    {"concept": "Serous vs endometrioid differentiation", "description": "Morphologic patterns distinguishing serous papillae from endometrioid glands."},
+    {"concept": "Ovarian surface involvement", "description": "Tumor spread or adhesion to the ovarian surface epithelium."}
+  ],
+  "lgg": [
+    {"concept": "Diffuse infiltrative glial cells", "description": "Neoplastic glial cells diffusely infiltrating white matter and cortex."},
+    {"concept": "Nuclear atypia", "description": "Irregular, hyperchromatic nuclei of glial cells indicating neoplastic change."},
+    {"concept": "Gemistocytic cells", "description": "Eosinophilic, plump astrocyte-like tumor cells with abundant cytoplasm."},
+    {"concept": "Microcystic change", "description": "Small cystic spaces within tumor composed of vacuolated tumor or extracellular fluid."},
+    {"concept": "Rosenthal fibers", "description": "Eosinophilic, corkscrew-shaped proteinaceous inclusions in long-standing gliosis/tumor."},
+    {"concept": "Perineuronal satellitosis", "description": "Tumor cells clustering around neurons in gray matter."},
+    {"concept": "Calcification", "description": "Basophilic granular or psammomatous deposits within tumor tissue."},
+    {"concept": "Mitotic figures", "description": "Observed mitoses indicating proliferative activity in glial tumor."},
+    {"concept": "Microvascular proliferation", "description": "Tufts of proliferating endothelial cells forming complex vessels."},
+    {"concept": "Necrosis", "description": "Areas of tumor cell death often with surrounding pseudopalisading cells."}
+  ],
+  "ucs": [
+    {"concept": "Biphasic components", "description": "Distinct malignant epithelial and sarcomatoid (spindle) tumor components."},
+    {"concept": "High-grade nuclear atypia", "description": "Severe nuclear pleomorphism and hyperchromasia in tumor cells."},
+    {"concept": "Sarcomatoid spindle cells", "description": "Spindle-shaped malignant cells resembling sarcoma within the tumor."},
+    {"concept": "Tumor necrosis", "description": "Extensive coagulative necrosis common in high-grade uterine carcinosarcoma."},
+    {"concept": "Mitotic activity", "description": "Frequent mitoses reflecting aggressive tumor proliferation."},
+    {"concept": "Lymphovascular invasion", "description": "Tumor cells present within vascular or lymphatic channels."},
+    {"concept": "Heterologous elements", "description": "Non-gynecologic mesenchymal differentiation such as cartilage or bone."},
+    {"concept": "Endometrioid or serous epithelial patterns", "description": "Epithelial component showing typical endometrioid or serous morphology."},
+    {"concept": "Inflammatory infiltrate", "description": "Mixed inflammatory cells within stroma or tumor areas."}
+  ],
+  "pcpg": [
+    {"concept": "Zellballen architecture", "description": "Rounded nests of chief cells separated by delicate vascular stroma."},
+    {"concept": "Chief and sustentacular cells", "description": "Polygonal chief cells with peripheral sustentacular support cells."},
+    {"concept": "Vascular-rich stroma", "description": "Highly vascular connective tissue between tumor nests."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in nuclear size and shape among tumor cells."},
+    {"concept": "Cytoplasmic granularity", "description": "Finely granular eosinophilic cytoplasm typical of neuroendocrine-like cells."},
+    {"concept": "Hyalinized stroma", "description": "Glassy, eosinophilic stromal change often surrounding nests."},
+    {"concept": "Necrosis", "description": "Focal cell death seen in more aggressive lesions."},
+    {"concept": "Capsular invasion", "description": "Tumor breach of capsule indicating invasive behavior."},
+    {"concept": "Mitoses", "description": "Mitotic figures reflecting proliferative activity."}
+  ],
+  "thca": [
+    {"concept": "Papillary structures", "description": "Finger-like epithelial projections with fibrovascular cores."},
+    {"concept": "Orphan Annie nuclei", "description": "Optically clear nuclei with dispersed chromatin characteristic of papillary thyroid carcinoma."},
+    {"concept": "Nuclear grooves", "description": "Longitudinal nuclear indentations seen in tumor cell nuclei."},
+    {"concept": "Psammoma bodies", "description": "Concentric calcified concretions within tumor stroma."},
+    {"concept": "Follicular patterns", "description": "Small to large follicles containing colloid-like material."},
+    {"concept": "Colloid material", "description": "Eosinophilic or pale extracellular substance within follicle-like spaces."},
+    {"concept": "Capsular invasion", "description": "Tumor penetration through fibrous capsule into surrounding tissue."},
+    {"concept": "Lymphocytic thyroiditis background", "description": "Lymphoid aggregates and germinal centers in adjacent thyroid parenchyma."},
+    {"concept": "Oncocytic cells", "description": "Cells with abundant granular eosinophilic cytoplasm from mitochondrial accumulation."}
+  ],
+  "acc": [
+    {"concept": "Nested architecture", "description": "Tumor cells arranged in nests separated by fibrous septa."},
+    {"concept": "Eosinophilic cytoplasm", "description": "Cells with pink, granular cytoplasm typical of many adenocarcinomas."},
+    {"concept": "Nuclear atypia", "description": "Irregular, enlarged nuclei with hyperchromasia in tumor cells."},
+    {"concept": "Mitotic activity", "description": "Counting mitoses to assess tumor proliferative index."},
+    {"concept": "Necrosis", "description": "Focal areas of tumor cell death indicating aggressive disease."},
+    {"concept": "Vascular invasion", "description": "Tumor cells invading blood vessels within or near the tumor."},
+    {"concept": "Fibrous septa", "description": "Collagenous bands partitioning tumor nests or lobules."},
+    {"concept": "Clear cell component", "description": "Areas where tumor cells have clear, glycogen-rich cytoplasm."},
+    {"concept": "Capsular invasion", "description": "Tumor extension through and beyond a capsule if present."}
+  ],
+  "sarc": [
+    {"concept": "Spindle cells", "description": "Elongated tumor cells arranged in fascicles or storiform patterns."},
+    {"concept": "Storiform or fascicular pattern", "description": "Swirling (storiform) or parallel (fascicular) arrangements of spindle cells."},
+    {"concept": "Nuclear pleomorphism", "description": "Marked variation in nuclear size and shape among tumor cells."},
+    {"concept": "Necrosis", "description": "Coagulative necrosis frequently present in high-grade sarcomas."},
+    {"concept": "Mitoses", "description": "Abundant mitotic figures including atypical forms in malignant sarcoma."},
+    {"concept": "Vascular proliferation", "description": "Prominent or abnormal blood vessel formation within tumor."},
+    {"concept": "Myxoid stroma", "description": "Loose mucoid extracellular matrix imparting a gelatinous appearance."},
+    {"concept": "Inflammatory infiltrate", "description": "Variable inflammatory cells mingled with tumor elements."},
+    {"concept": "Heterologous elements", "description": "Components like bone or cartilage differentiating within the sarcoma."}
+  ],
+  "esca": [
+    {"concept": "Squamous differentiation", "description": "Keratinizing squamous cells or nests indicating squamous carcinoma."},
+    {"concept": "Keratin pearls", "description": "Concentric whorls of keratinizing cells typical of well-differentiated squamous carcinoma."},
+    {"concept": "Intercellular bridges", "description": "Desmosomal connections between squamous cells seen microscopically."},
+    {"concept": "Glandular differentiation", "description": "Areas of gland formation indicating adenocarcinomatous components."},
+    {"concept": "Necrosis", "description": "Tumor cell death often seen in ulcerated or high-grade lesions."},
+    {"concept": "Basal cell hyperplasia", "description": "Proliferation of basal-type epithelial cells in adjacent mucosa."},
+    {"concept": "Lymphocytic infiltration", "description": "Immune cells in the stroma or at the invasive front."},
+    {"concept": "Desmoplastic stroma", "description": "Reactive fibrous tissue surrounding infiltrating tumor glands or nests."},
+    {"concept": "Ulceration", "description": "Surface loss of epithelium with granulation tissue and fibrin."}
+  ],
+  "stad": [
+    {"concept": "Glandular formation", "description": "Well-formed tumor glands producing lumenal structures and mucin."},
+    {"concept": "Signet-ring cells", "description": "Cells with peripheral nuclei and large intracytoplasmic mucin vacuoles."},
+    {"concept": "Mucin pools", "description": "Extracellular mucin accumulation often with floating tumor cells."},
+    {"concept": "Poorly cohesive cells", "description": "Single or small clusters of discohesive tumor cells lacking gland formation."},
+    {"concept": "Lymphoid aggregates", "description": "Prominent collections of lymphocytes often at the tumor–stroma interface."},
+    {"concept": "Desmoplastic reaction", "description": "Dense fibrotic stromal response surrounding invasive carcinoma."},
+    {"concept": "Necrosis", "description": "Areas of cell death often within rapidly growing tumor regions."},
+    {"concept": "Lymphovascular invasion", "description": "Tumor emboli identified within vascular or lymphatic channels."},
+    {"concept": "Perineural invasion", "description": "Tumor tracking along or within nerve sheaths."}
+  ],
+  "lusc": [
+    {"concept": "Keratin pearls", "description": "Concentric keratinized structures seen in well-differentiated squamous tumors."},
+    {"concept": "Intercellular bridges", "description": "Visible desmosomal connections between squamous tumor cells."},
+    {"concept": "Dyskeratosis", "description": "Premature keratinization of individual tumor cells."},
+    {"concept": "Basaloid morphology", "description": "Small basaloid cells with high N:C ratio forming nests or cords."},
+    {"concept": "Necrosis", "description": "Coagulative necrosis frequently present in high-grade squamous carcinomas."},
+    {"concept": "Inflammatory infiltrate", "description": "Mixed inflammatory cells in stroma or around tumor islands."},
+    {"concept": "Desmoplastic stroma", "description": "Fibrotic stromal response associated with invasive growth."},
+    {"concept": "Acantholysis", "description": "Loss of intercellular connections producing separated tumor cells."},
+    {"concept": "Perineural invasion", "description": "Tumor extension along nerves indicating aggressive behavior."}
+  ],
+  "lihc": [
+    {"concept": "Trabecular architecture", "description": "Tumor cells arranged in thickened cords or trabeculae resembling liver plates."},
+    {"concept": "Thickened cell plates", "description": "Expanded hepatocellular plates with multiple cell layers."},
+    {"concept": "Endothelial wrapping", "description": "Sinusoidal endothelial cells closely apposed to tumor cell plates."},
+    {"concept": "Bile production", "description": "Intracellular or canalicular bile pigment within tumor cells."},
+    {"concept": "Steatosis", "description": "Cytoplasmic clear vacuoles consistent with fatty change in tumor or surrounding liver."},
+    {"concept": "Pseudo-glandular pattern", "description": "Formation of acinar-like spaces mimicking glandular structures."},
+    {"concept": "Sinusoidal dilatation", "description": "Expansion of sinusoidal spaces between tumor cell trabeculae."},
+    {"concept": "Fibrosis", "description": "Peritumoral or intratumoral fibrotic bands often in chronic liver disease."},
+    {"concept": "Nuclear atypia", "description": "Irregular, enlarged hepatocyte nuclei within malignant foci."}
+  ],
+  "dlbc": [
+    {"concept": "Diffuse sheets of lymphoid cells", "description": "Monomorphic population of large lymphoid cells replacing normal tissue."},
+    {"concept": "High nuclear-cytoplasmic ratio", "description": "Large nuclei with scant cytoplasm typical of aggressive lymphoma cells."},
+    {"concept": "Prominent nucleoli", "description": "One or more large nucleoli visible within tumor cell nuclei."},
+    {"concept": "Mitotic figures", "description": "Frequent mitoses reflecting rapid tumor cell proliferation."},
+    {"concept": "Necrosis", "description": "Coagulative or geographic areas of tumor cell death common in high-grade lymphoma."},
+    {"concept": "Tingible-body macrophages", "description": "Macrophages containing apoptotic debris indicating high turnover."},
+    {"concept": "Apoptotic debris", "description": "Fragmented apoptotic cells scattered through the tumor."},
+    {"concept": "Fibrotic stroma", "description": "Variable collagenous tissue within or between lymphoma cell sheets."}
+  ],
+  "prad": [
+    {"concept": "Glandular architecture", "description": "Neoplastic glands resembling prostatic acini with variable differentiation."},
+    {"concept": "Cribriform pattern", "description": "Large confluent glands with punched-out lumina forming sieve-like structures."},
+    {"concept": "Perineural invasion", "description": "Tumor tracking along nerves commonly seen in prostate carcinoma."},
+    {"concept": "Basal cell layer loss", "description": "Absence of basal cells around glands, supporting invasive diagnosis."},
+    {"concept": "Prominent nucleoli", "description": "Large nucleoli within epithelial nuclei characteristic of prostate cancer."},
+    {"concept": "Intraductal carcinoma", "description": "Expansion of pre-existing ducts by high-grade malignant cells with retained architecture."},
+    {"concept": "Fibromuscular stroma", "description": "Dense stromal tissue of prostate intermingling with tumor glands."},
+    {"concept": "Mucinous differentiation", "description": "Extracellular mucin pools or mucin-producing tumor cells in rare variants."},
+    {"concept": "Inflammatory infiltrate", "description": "Chronic inflammatory cells present in stroma adjacent to tumor."}
+  ],
+  "kirp": [
+    {"concept": "Tubulopapillary structures", "description": "Combination of tubular and papillary formations lined by neoplastic epithelium."},
+    {"concept": "Fibrovascular cores", "description": "Papillary stalks with central fibrovascular tissue supporting epithelium."},
+    {"concept": "Hyaline stroma", "description": "Glassy eosinophilic collagenous stroma often seen in papillary tumors."},
+    {"concept": "Clear cytoplasm areas", "description": "Regions where cells contain glycogen-rich clear cytoplasm."},
+    {"concept": "Eosinophilic cytoplasm", "description": "Pink granular cytoplasm in tubular epithelial tumor cells."},
+    {"concept": "Nuclear atypia", "description": "Enlarged, irregular nuclei indicating neoplastic transformation."},
+    {"concept": "Necrosis", "description": "Focal tumor cell death associated with aggressive features."},
+    {"concept": "Mitotic activity", "description": "Observed mitoses denoting proliferation rate of tumor cells."}
+  ],
+  "uvm": [
+    {"concept": "Spindle and epithelioid melanocytes", "description": "Mixed cell morphologies of melanocytic tumor including spindle and epithelioid forms."},
+    {"concept": "Pigmented cytoplasm", "description": "Intracellular melanin giving brown-black color to tumor cells."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in size and shape of nuclei suggesting malignancy."},
+    {"concept": "Necrosis", "description": "Tumor cell death sometimes seen in aggressive uveal melanoma."},
+    {"concept": "Lymphocytic infiltration", "description": "Immune cells within stroma reflecting host response."},
+    {"concept": "Vascular invasion", "description": "Tumor penetration into blood vessels, common route for metastasis."},
+    {"concept": "Mitotic figures", "description": "Number of mitoses used for prognostic assessment."},
+    {"concept": "Fibrotic stroma", "description": "Collagenous reaction around tumor nests or cells."}
+  ],
+  "thym": [
+    {"concept": "Lobulated architecture", "description": "Tumor arranged in lobules separated by fibrous septa mimicking thymic lobules."},
+    {"concept": "Cortical and medullary differentiation", "description": "Areas resembling thymic cortex (lymphocyte-rich) and medulla (epithelial-rich)."},
+    {"concept": "Hassall corpuscles", "description": "Epithelial whorls resembling normal thymic Hassall bodies when present."},
+    {"concept": "Immature lymphocytes", "description": "Small, lymphocyte-like cells often abundant in thymic tumors."},
+    {"concept": "Epithelial islands", "description": "Clusters of thymic epithelial tumor cells within lymphoid background."},
+    {"concept": "Fibrous septa", "description": "Collagen bands partitioning the tumor into lobules."},
+    {"concept": "Necrosis", "description": "Focal cell death occasionally present in higher-grade thymic neoplasms."},
+    {"concept": "Perivascular spaces", "description": "Clear perivascular zones sometimes seen around vessels in thymic tissue."}
+  ],
+  "luad": [
+    {"concept": "Glandular formation", "description": "Well-formed tumor glands or acinar structures signifying adenocarcinoma."},
+    {"concept": "Lepidic growth pattern", "description": "Tumor cells proliferating along intact alveolar septa without stromal invasion."},
+    {"concept": "Papillary structures", "description": "Tumor epithelial fronds often with fibrovascular cores."},
+    {"concept": "Micropapillary clusters", "description": "Small tight clusters of tumor cells lacking fibrovascular cores associated with poor prognosis."},
+    {"concept": "Mucinous differentiation", "description": "Tumor cells producing intracellular or extracellular mucin."},
+    {"concept": "Necrosis", "description": "Tumor cell death evident as pale acellular areas or geographic necrosis."},
+    {"concept": "Fibroblastic stroma", "description": "Reactive fibroblast-rich connective tissue around invasive tumor."},
+    {"concept": "Nuclear atypia", "description": "Irregular, hyperchromatic nuclei indicative of malignancy."},
+    {"concept": "Inflammatory infiltrate", "description": "Immune cells present within or around tumor tissue."}
+  ],
+  "ucec": [
+    {"concept": "Glandular architecture", "description": "Endometrial-type glands formed by neoplastic epithelial cells."},
+    {"concept": "Squamous morules", "description": "Rounded squamous cell aggregates (morules) within endometrioid lesions."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in nuclear size and shape indicating atypia."},
+    {"concept": "Mitotic figures", "description": "Observed mitoses used to grade proliferative activity."},
+    {"concept": "Necrosis", "description": "Focal areas of tumor cell death, more common in high-grade tumors."},
+    {"concept": "Endometrioid vs serous patterns", "description": "Morphologic distinction between endometrioid glands and papillary serous areas."},
+    {"concept": "Desmoplasia", "description": "Fibrotic stromal response surrounding invasive tumor glands."},
+    {"concept": "Lymphovascular invasion", "description": "Tumor cells present in vessels signaling metastatic potential."}
+  ],
+  "cesc": [
+    {"concept": "Keratinizing squamous cells", "description": "Mature squamous cells with abundant keratin within tumor nests."},
+    {"concept": "Nonkeratinizing tumor nests", "description": "Sheets of basaloid squamous cells lacking prominent keratinization."},
+    {"concept": "Basaloid morphology", "description": "Small cells with scant cytoplasm forming tight nests or cords."},
+    {"concept": "Intercellular bridges", "description": "Desmosomal connections between squamous tumor cells seen on H&E."},
+    {"concept": "Necrosis", "description": "Coagulative necrosis common in high-grade cervical cancers."},
+    {"concept": "Lymphocytic infiltration", "description": "Immune cells within stroma and at tumor margins."},
+    {"concept": "Desmoplastic stroma", "description": "Reactive fibrous tissue accompanying invasive squamous carcinoma."}
+  ],
+  "read": [
+    {"concept": "Glandular formation", "description": "Neoplastic gland structures producing lumina and mucin."},
+    {"concept": "Mucin pools", "description": "Extracellular mucin collections often containing tumor cells."},
+    {"concept": "Signet-ring cells", "description": "Cells with large mucin vacuole displacing the nucleus peripherally."},
+    {"concept": "Necrosis", "description": "Areas of cell death within tumor indicating aggressive biology."},
+    {"concept": "Inflammatory infiltrate", "description": "Numerous immune cells within tumor stroma or mucosa."},
+    {"concept": "Tumor budding", "description": "Single cells or small clusters at invasive front associated with worse prognosis."},
+    {"concept": "Desmoplastic stroma", "description": "Dense reactive fibrosis at the tumor invasion front."},
+    {"concept": "Lymphovascular invasion", "description": "Tumor emboli identified in lymphatic or vascular spaces."}
+  ],
+  "tgct": [
+    {"concept": "Seminomatous cells with clear cytoplasm", "description": "Large clear cells with central nuclei and prominent nucleoli typical of seminoma."},
+    {"concept": "Fibrous septa with lymphocytes", "description": "Fibrous bands containing lymphocytes partitioning tumor nodules."},
+    {"concept": "Syncytiotrophoblastic cells", "description": "Multinucleated trophoblastic cells occasionally present and producing hCG."},
+    {"concept": "Embryonal carcinoma pattern", "description": "Solid sheets and gland-like structures with pleomorphic cells."},
+    {"concept": "Yolk sac pattern", "description": "Microcystic or reticular architecture with Schiller-Duval-like features."},
+    {"concept": "Necrosis", "description": "Areas of hemorrhagic necrosis common in mixed germ cell tumors."},
+    {"concept": "Calcification", "description": "Basophilic calcified deposits often present within tumor or stroma."},
+    {"concept": "Hemorrhage", "description": "Blood extravasation within tumor suggesting vascular fragility or rapid growth."}
+  ],
+  "coad": [
+    {"concept": "Glandular formation", "description": "Neoplastic colon glands forming lumenal structures and producing mucin."},
+    {"concept": "Cribriform glands", "description": "Back-to-back glandular structures with punched-out lumina."},
+    {"concept": "Mucinous areas", "description": "Tumor regions rich in intracellular or extracellular mucin."},
+    {"concept": "Signet-ring cells", "description": "Mucin-laden cells with eccentric nuclei seen in diffuse-type tumors."},
+    {"concept": "Necrosis", "description": "Tumor cell necrosis often seen in high-grade colorectal carcinoma."},
+    {"concept": "Desmoplastic stroma", "description": "Dense fibrous response at invasive fronts of colorectal tumors."},
+    {"concept": "Inflammatory infiltrate", "description": "Mixed immune cell presence within tumor stroma and mucosa."},
+    {"concept": "Lymphovascular invasion", "description": "Tumor cells within vascular or lymphatic channels indicating spread."}
+  ],
+  "meso": [
+    {"concept": "Tubulopapillary structures", "description": "Papillary or tubular formations lined by mesothelial-type cells."},
+    {"concept": "Spindle cell morphology", "description": "Elongated tumor cells forming fascicles or sheets in sarcomatoid areas."},
+    {"concept": "Epithelioid areas", "description": "Polygonal epithelioid tumor cells forming cohesive nests or tubules."},
+    {"concept": "Desmoplastic stroma", "description": "Fibrotic reaction often accompanying invasive mesothelioma."},
+    {"concept": "Nuclear atypia", "description": "Irregular enlarged nuclei within malignant mesothelial cells."},
+    {"concept": "Necrosis", "description": "Focal cell death often seen in aggressive or advanced tumors."},
+    {"concept": "Inflammatory infiltrate", "description": "Chronic inflammatory cells mixed within tumor and stroma."}
+  ],
+  "kich": [
+    {"concept": "Solid or nested architecture", "description": "Sheets or nests of tumor cells with compact arrangement."},
+    {"concept": "Eosinophilic cytoplasm", "description": "Pink granular cytoplasm seen in many chromophobe-like or oncocytic cells."},
+    {"concept": "Perinuclear halos", "description": "Clear zone around nuclei giving a halo appearance in some renal tumors."},
+    {"concept": "Fibrous septa", "description": "Collagenous bands separating nests of tumor cells."},
+    {"concept": "Necrosis", "description": "Areas of cell death indicating higher-grade behavior."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in nuclear size and contour among tumor cells."},
+    {"concept": "Hyalinized stroma", "description": "Glassy, eosinophilic stromal change often present in papillary areas."}
+  ],
+  "brca": [
+    {"concept": "Ductal architecture", "description": "Tumor forming ducts that mimic or distort normal breast lobular units."},
+    {"concept": "Tubule formation", "description": "Well-formed tubular structures indicating glandular differentiation."},
+    {"concept": "Cribriform pattern", "description": "Back-to-back glandular structures with perforated lumina."},
+    {"concept": "High nuclear grade", "description": "Severely atypical nuclei with coarse chromatin and pleomorphism."},
+    {"concept": "Necrosis (comedo-type)", "description": "Central necrosis within ducts forming comedo patterns in high-grade DCIS or invasive tumors."},
+    {"concept": "Lymphocytic infiltrate", "description": "Peritumoral or intratumoral lymphocytes indicating immune engagement."},
+    {"concept": "Stromal fibrosis", "description": "Reactive collagen deposition and scarring associated with invasive disease."},
+    {"concept": "Calcification", "description": "Basophilic granular or laminated calcifications often seen in DCIS or tumor stroma."},
+    {"concept": "Apocrine features", "description": "Cells with abundant eosinophilic granular cytoplasm and prominent nucleoli."}
+  ],
+  "hnsc": [
+    {"concept": "Keratin pearls", "description": "Concentric keratinized whorls indicating squamous differentiation."},
+    {"concept": "Intercellular bridges", "description": "Desmosomal connections between squamous tumor cells visible on H&E."},
+    {"concept": "Basaloid morphology", "description": "Small hyperchromatic cells forming nests or trabeculae."},
+    {"concept": "Necrosis", "description": "Tumor cell death zones often present in ulcerated or high-grade lesions."},
+    {"concept": "Inflammatory infiltrate", "description": "Mixed inflammatory cells including neutrophils and lymphocytes."},
+    {"concept": "Ulceration", "description": "Surface epithelial loss with associated exudate and granulation tissue."},
+    {"concept": "Desmoplastic stroma", "description": "Dense fibrous tissue accompanying invasive tumor front."},
+    {"concept": "Perineural invasion", "description": "Tumor encircling or invading nerve fibers, a poor prognostic sign."}
+  ],
+  "chol": [
+    {"concept": "Glandular structures", "description": "Malignant glands often lined by atypical biliary-type epithelium."},
+    {"concept": "Desmoplastic stroma", "description": "Dense collagenous reaction common in cholangiocarcinoma."},
+    {"concept": "Mucin production", "description": "Intracellular or extracellular mucin secreted by tumor cells."},
+    {"concept": "Perineural invasion", "description": "Tumor infiltration into or around nerves in the biliary tract."},
+    {"concept": "Necrosis", "description": "Areas of tumor cell death, sometimes with hemorrhage."},
+    {"concept": "Inflammatory infiltrate", "description": "Chronic inflammatory cells in tumor stroma or interface with liver."},
+    {"concept": "Fibrosis", "description": "Scarring both within tumor and in surrounding hepatic parenchyma."}
+  ],
+  "blca": [
+    {"concept": "Papillary structures", "description": "Exophytic fibrovascular fronds lined by urothelial tumor epithelium."},
+    {"concept": "Urothelial thickening", "description": "Expansion and hyperplasia of urothelial layers due to tumor."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in nuclear size/shape indicating dysplasia or malignancy."},
+    {"concept": "Squamous differentiation", "description": "Areas showing keratinization or squamous morphology within urothelial carcinoma."},
+    {"concept": "Necrosis", "description": "Tumor cell death which may be extensive in high-grade lesions."},
+    {"concept": "Invasive nests", "description": "Cohesive islands of tumor cells infiltrating lamina propria or muscle."},
+    {"concept": "Inflammatory infiltrate", "description": "Mixed immune cells in stroma or at the mucosal surface."},
+    {"concept": "Muscular invasion", "description": "Tumor penetration into detrusor muscle indicating advanced stage."}
+  ],
+  "kirc": [
+    {"concept": "Clear cytoplasm", "description": "Cells with optically clear cytoplasm due to glycogen/lipid content."},
+    {"concept": "Nested architecture", "description": "Tumor cells arranged in nests separated by delicate vasculature."},
+    {"concept": "Delicate vasculature", "description": "Prominent thin-walled capillaries crisscrossing tumor nests."},
+    {"concept": "Fibrous capsule", "description": "Encapsulating fibrous tissue around tumor margins in some cases."},
+    {"concept": "Necrosis", "description": "Coagulative necrosis within tumor often indicating rapid growth."},
+    {"concept": "Nuclear pleomorphism", "description": "Variation in nuclear size and shape across tumor cells."},
+    {"concept": "Eosinophilic variants", "description": "Areas where tumor cells have abundant pink cytoplasm instead of clear cells."},
+    {"concept": "Hyaline stroma", "description": "Glassy homogeneous stromal change often accompanying tumor nests."}
+  ]
+}

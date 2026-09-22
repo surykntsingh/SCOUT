@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class LanguageModelCriterion(nn.Module):
     def __init__(self):
-        super(LanguageModelCriterion, self).__init__()
+        super().__init__()
 
     def forward(self, input, target, mask):
         # truncate to the same size
@@ -14,3 +14,6 @@ class LanguageModelCriterion(nn.Module):
         output = torch.sum(output) / torch.sum(mask)
 
         return output
+
+
+
