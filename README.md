@@ -39,7 +39,7 @@ The manuscript evaluates SCOUT on 20,905 WSI–report pairs across three heterog
 | HistAI | 9,980 / 1,248 / 1,248 | Multi-cancer | Heterogeneous reports |
 | REG-2025 | 5,924 / 740 / 741 | Multi-cancer | Comparatively standardized reports |
 
-Using fixed case-level splits, identical CONCHv1.5 patch features, and common preprocessing, the paper compares SCOUT with WSI-Caption, HistGen, and Bi-Gen. SCOUT achieved the strongest BLEU-1 through BLEU-4 and METEOR results across all three datasets. It also achieved the strongest ROUGE-L on TCGA-BRCA and REG-2025; Bi-Gen was slightly higher on HistAI ROUGE-L. On REG-2025, SCOUT obtained a Clinical Report Quality Score (CRQS) of 0.7376, a 5.6% relative improvement over the strongest baseline. See [`submit/scout_manuscript.pdf`](submit/scout_manuscript.pdf) for the complete results, ablations, limitations, and evaluation protocol.
+Using fixed case-level splits, identical CONCHv1.5 patch features, and common preprocessing, the paper compares SCOUT with WSI-Caption, HistGen, and Bi-Gen. SCOUT achieved the strongest BLEU-1 through BLEU-4 and METEOR results across all three datasets. It also achieved the strongest ROUGE-L on TCGA-BRCA and REG-2025; Bi-Gen was slightly higher on HistAI ROUGE-L. On REG-2025, SCOUT obtained a Clinical Report Quality Score (CRQS) of 0.7376, a 5.6% relative improvement over the strongest baseline.
 
 ## Repository layout
 
