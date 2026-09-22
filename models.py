@@ -26,7 +26,7 @@ class ReportModel(pl.LightningModule):
         super().__init__()
         self.model = ReportGenModel(args, tokenizer)#.to(torch.bfloat16)
         # self.model.tie_weights()
-        self.concept_lambda = args.concept_lambda
+        self.reg_lambda = args.reg_lambda
         for p in self.model.parameters():
             if not p.is_contiguous():
                 p.data = p.data.contiguous()
@@ -81,7 +81,7 @@ class ReportModel(pl.LightningModule):
         #     concept_magnitude = concept_loss.detach() + 1e-8
         #     scale = (caption_magnitude / concept_magnitude)
         # concept_loss *= scale
-        total_loss = caption_loss + self.concept_lambda * attn_reg
+        total_loss = caption_loss + self.reg_lambda * attn_reg
         return total_loss
 
 

@@ -132,7 +132,7 @@ Commands read the `train` mapping from a YAML file. `config.yaml` records an ear
 | Data | `dataset_type`, `reports_json_path`, `embeddings_path`, `embeddings_path_2`, `gecko_emb_path`, `max_seq_length`, `batch_size`, `num_workers` |
 | Feature dimensions | `d1`, `d2`, `gd`, `gcd`, `d_vf` |
 | Transformer | `d_model`, `d_ff`, `num_heads`, `num_layers`, `dropout_mlp`, `drop_prob_lm`, `use_bn` |
-| Optimization | `lr`, `weight_decay`, `lr_patience`, `concept_lambda`, `max_epochs` |
+| Optimization | `lr`, `weight_decay`, `lr_patience`, `reg_lambda`, `max_epochs` |
 | Decoding | `bos_idx`, `eos_idx`, `pad_idx`, `sample_method`, `beam_size`, `sample_n`, `group_size`, `temperature`, `length_penalty`, `decoding_constraint`, `suppress_UNK`, `block_trigrams`, `output_logsoftmax` |
 | Runtime/output | `devices`, `fast_dev_run`, `resume`, `ckpt_path`, `model_load_path`, `results_path` |
 | Unlabelled prediction | `predict_embeddings_path_1`, `predict_embeddings_path_2`, `gecko_predict_emb_path` |
@@ -170,7 +170,7 @@ train:
   lr: 0.00007
   weight_decay: 0.001
   lr_patience: 5
-
+  concept_lambda: 0.001
   bos_idx: 0
   eos_idx: 0
   pad_idx: 0
